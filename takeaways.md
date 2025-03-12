@@ -80,7 +80,7 @@ python manage.py runserver
 
 **Now, you can visit http://127.0.0.1:8000/ to see the website!**
 
-## 4. Deployment & Best Practices
+## 2. Deployment & Best Practices
 
 ### Create an admin user and log in to the admin panel
 
