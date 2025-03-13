@@ -8,11 +8,9 @@ local_settings.pyc
 
 db.sqlite3
 
-logs/*
-!logs/.gitkeep
+*.log
+*.json
 
 *~~
 
 *.DS_Store
-
-.prettierrc.json
