@@ -8,7 +8,8 @@ local_settings.pyc
 
 db.sqlite3
 
-logs/
+logs/*
+!logs/.gitkeep
 
 *~~
 
