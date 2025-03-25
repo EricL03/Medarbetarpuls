@@ -13,13 +13,13 @@
     <div class="login-container">
       <img src="{% static 'logo.png' %}" alt="Medarbetarpuls" class="logo" />
 
-      <form class="login-form">
+      <form class="input-form">
         <!-- Add code here for POST request to server after the url and view is implemented in the backend. -->
         <label for="email">Mejladress:</label>
-        <input type="email" id="email" placeholder="Mejladress" />
+        <input type="email" id="email" placeholder="Mejladress" required />
 
         <label for="password">Lösenord:</label>
-        <input type="password" id="password" placeholder="Lösenord" />
+        <input type="password" id="password" placeholder="Lösenord" required />
 
         <button type="submit">Logga in</button>
       </form>
