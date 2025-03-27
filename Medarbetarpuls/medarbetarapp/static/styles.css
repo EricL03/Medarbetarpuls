@@ -78,7 +78,7 @@ button:hover {
   text-decoration: underline;
 }
 
-.account-container {
+.create-container {
   background-color: white; /* Vit bakgrund */
   width: 100%;
   max-width: 550px;
@@ -87,28 +87,28 @@ button:hover {
   text-align: center;
 }
 
-.account-container h2 {
-  margin-bottom: 30px;
+.create-container h2 {
+  margin-bottom: 12%;
   font-size: 24px;
   color: #102b46;
 }
 
-.account-form {
+.create-form {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.account-form label {
+.create-form label {
   align-self: flex-start;
-  margin-left: 10%;
+  margin-left: 13%;
   margin-bottom: 5px;
   color: #102b46;
   font-size: 16px;
 }
 
-.account-form input {
-  width: 80%;
+.create-form input {
+  width: 70%;
   padding: 14px;
   font-size: 16px;
   border: none;
@@ -117,7 +117,7 @@ button:hover {
   margin-bottom: 20px; /* Larger space between inputs */
 }
 
-.account-form button {
+.create-form button {
   background-color: #4e8ce1;
   color: white;
   border: none;
@@ -125,9 +125,9 @@ button:hover {
   border-radius: 10px;
   font-size: 16px;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 8%;
 }
 
-.account-form button:hover {
+.create-form button:hover {
   background-color: #a3cbff;
 }
