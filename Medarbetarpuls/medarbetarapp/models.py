@@ -1,39 +1,37 @@
 from django.db import models
+from django.db.models.manager import BaseManager
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
 )
-from django.db.models.query import QuerySet
-from typing import TYPE_CHECKING
 import logging
+
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    # Import all classes and such here to be able to type class-fields
-    from django.db.models import CharField
-    from django.db.models import IntegerField
-    from django.db.models import EmailField
-    from django.db.models import ForeignKey
-    from django.db.models import BooleanField
-
 
 class Organization(models.Model):
-    name: "CharField" = models.CharField(max_length=255)
-
+    name = models.CharField(max_length=255)
     # Add an explicit type hint for employeeGroups (this is just for readability)
-    employeeGroups: QuerySet["EmployeeGroup"]
+    employee_groups: BaseManager
+    admins: BaseManager
 
     def __str__(self) -> str:
         return f"{self.name}"
 
 
 class EmployeeGroup(models.Model):
-    name: "CharField" = models.CharField(max_length=255)
-    organization: "ForeignKey" = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name="employeeGroups"
+    name = models.CharField(max_length=255)
+    # Add an explicit type hint for employees (this is just for readability)
+    employees: BaseManager
+    # Add an explicit type hint for managers (this is just for readability)
+    managers: BaseManager
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="employee_groups", null=True
     )
+    published_surveys: BaseManager
+    survey_templates: BaseManager
 
     def __str__(self) -> str:
         return f"{self.name} {self.organization.name}"
@@ -76,26 +74,35 @@ class CustomUserManager(BaseUserManager):
 
         email = self.normalize_email(email)
         user = self.model(email=email, name=name, **extra_fields)
-        user.set_password(password)
+        user.set_password(password)  # Hashes the password
         user.save(using=self._db)
         return user
 
 
 # The actual custom user class
 class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
-    email: "EmailField" = models.EmailField(unique=True)
-    name: "CharField" = models.CharField(max_length=255)
-    role: "CharField" = models.CharField(
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=255)
+    user_role = models.CharField(
         max_length=15, choices=UserRole.choices, default=UserRole.SURVEY_RESPONDER
     )
+    # We deafult to 0 as the lowest level of authority
+    authorization_level = models.IntegerField(default=0)  # pyright: ignore
+    employee_groups = models.ManyToManyField(EmployeeGroup, related_name="employees")
+    managed_groups = models.ManyToManyField(EmployeeGroup, related_name="managers")
+    admin = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="admins", null=True
+    )
 
-    is_staff: "BooleanField" = models.BooleanField(
+
+    # These are for the built-in django permissions!!!
+    is_staff = models.BooleanField(
         default=False  # pyright: ignore
     )  # Allows access to admin panel
-    is_superuser: "BooleanField" = models.BooleanField(
+    is_superuser = models.BooleanField(
         default=False  # pyright: ignore
     )  # Allows you to do something in the admin panel
-    is_active: "BooleanField" = models.BooleanField(
+    is_active = models.BooleanField(
         default=True  # pyright: ignore
     )  # Controls if the user can log in
 
@@ -105,3 +112,46 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
 
     def __str__(self) -> str:
         return f"{self.name} ({self.email})"
+
+
+
+# Below are models for surveys and their results
+
+
+# What this model does needs to be explained here
+class Survey(models.Model):
+    name = models.CharField(max_length=255)  # Do we want names for surveys???
+    creator = models.OneToOneField(CustomUser, on_delete=models.CASCADE) 
+    employee_groups = models.ManyToManyField(EmployeeGroup, related_name="published_surveys")
+    survey_results: BaseManager
+    deadline = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
+    sending_date = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
+    # What is this???
+    collected_answer_count = models.IntegerField(default=0)  # pyright: ignore 
+    is_viewable = models.BooleanField(default=False)  # pyright: ignore
+    
+    def __str__(self) -> str:
+        return f"{self.name} ({self.creator})"
+
+
+# What this model does needs to be explained here
+class SurveyTemplate(models.Model): 
+    name = models.CharField(max_length=255)  # Do we want names for surveyTemplates???
+    creator = models.OneToOneField(CustomUser, on_delete=models.CASCADE) 
+    employee_groups = models.ManyToManyField(EmployeeGroup, related_name="survey_templates")
+    last_edited = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.creator})"
+
+
+# What this model does needs to be explained here
+class SurveyResult(models.Model):
+    published_survey = models.ForeignKey(
+        Survey, on_delete=models.CASCADE, related_name="survey_results", null=True
+    )
+    user_id = models.IntegerField()
+    is_answered = models.BooleanField(default=False)  # pyright: ignore
+
+    def __str__(self) -> str:
+        return f"{self.user_id} ({self.is_answered})"

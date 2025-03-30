@@ -8,12 +8,12 @@ class CustomUserAdmin(UserAdmin):
     list_display = (
         "email",
         "name",
-        "role",
+        "user_role",
         "is_staff",
         "is_superuser",
     )  # Customize displayed fields
     search_fields = ("email", "name")  # Add search functionality
-    list_filter = ("role", "is_staff", "is_superuser")  # Add filters
+    list_filter = ("user_role", "is_staff", "is_superuser")  # Add filters
     ordering = ("email",)  # Default sorting order
     fieldsets = (
         (None, {"fields": ("email", "password")}),
