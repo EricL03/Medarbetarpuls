@@ -68,7 +68,7 @@ class CustomUserManager(BaseUserManager):
             CustomUser:
         """
         if not email:
-            logger.error("The emial field must be set")
+            logger.error("The email field must be set")
             raise ValueError("The email field must be set")
         if not name:
             logger.error("The name field must be set")
