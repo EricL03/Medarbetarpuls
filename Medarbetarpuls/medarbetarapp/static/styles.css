@@ -1,10 +1,18 @@
+:root {
+  --dark_blue: #102b46;
+  --blue: #4e8ce1;
+  --soft_blue: #a3cbff;
+  --white: white;
+  --almost_white: #eef5fe;
+}
+
 body {
   font-family: Arial, sans-serif; /* change later to PK font */
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: white;
+  background-color: var(--white); /* white; */
   margin: 0;
 }
 
@@ -12,7 +20,7 @@ body {
   width: 70%;
   max-width: 500px;
   text-align: center;
-  background: white;
+  background: var(--white); /* white; */
   padding: 20px;
   border-radius: 10px;
 }
@@ -29,7 +37,7 @@ body {
 }
 
 .input-form label {
-  color: #102b46;
+  color: var(--dark_blue); /* #102b46 */
   display: block;
   margin-bottom: 1%;
   margin-left: -50%;
@@ -41,14 +49,14 @@ body {
   padding: 10px;
   border: none;
   border-radius: 10px;
-  background-color: #eef5fe;
+  background-color: var(--almost_white); /* #eef5fe; */
   margin-bottom: 3%;
   font-size: 16px;
 }
 
 button {
-  background-color: #4e8ce1;
-  color: white;
+  background-color: var(--blue); /* #4e8ce1; */
+  color: var(--white); /*white;*/
   border: none;
   padding: 10px 20px;
   border-radius: 10px;
@@ -57,7 +65,7 @@ button {
 }
 
 button:hover {
-  background-color: #a3cbff;
+  background-color: var(--soft_blue); /* #a3cbff; */
 }
 
 .account-help-links {
@@ -68,23 +76,25 @@ button:hover {
   gap: 10%;
 }
 
-.account-help-links:has(a:only-child) { /* If only one link, center it */
+.account-help-links:has(a:only-child) {
+  /* If only one link, center it */
   justify-content: center;
   margin-top: 8%;
 }
 
 .account-help-links a {
   text-decoration: none;
-  color: #102b46;
+  color: var(--dark_blue); /* #102b46; */
   font-size: 14px;
 }
 
-.account-help-links a:hover { /* In HTML, the <a> tag stands for “anchor”, and it’s used to create hyperlinks  */
+.account-help-links a:hover {
+  /* In HTML, the <a> tag stands for “anchor”, and it’s used to create hyperlinks  */
   text-decoration: underline;
 }
 
 .create-container {
-  background-color: white; 
+  background-color: var(--white); /* white; */
   width: 100%;
   max-width: 550px;
   padding: 30px;
@@ -92,17 +102,19 @@ button:hover {
   text-align: center;
 }
 
-.create-container h1 { /* h1 stands for main heading */
+.create-container h1 {
+  /* h1 stands for main heading */
   margin-bottom: 12%;
   font-size: 24px;
-  color: #4e8ce1;
+  color: var(--blue); /* #4e8ce1; */
 }
 
-.create-container h2 { /* h2 stands for first subheading after h1 */
+.create-container h2 {
+  /* h2 stands for first subheading after h1 */
   margin-bottom: 12%;
   font-weight: normal; /* Heading automatically bold, wants normal */
   font-size: 16px;
-  color: #102b46;
+  color: var(--dark_blue); /* #102b46; */
 }
 
 .create-form {
@@ -115,7 +127,7 @@ button:hover {
   align-self: flex-start;
   margin-left: 13%;
   margin-bottom: 5px;
-  color: #102b46;
+  color: var(--dark_blue); /* #102b46; */
   font-size: 16px;
 }
 
@@ -125,13 +137,13 @@ button:hover {
   font-size: 16px;
   border: none;
   border-radius: 10px;
-  background-color: #eef5fe;
+  background-color: var(--almost_white); /* #eef5fe; */
   margin-bottom: 20px; /* Larger space between inputs */
 }
 
 .create-form button {
-  background-color: #4e8ce1;
-  color: white;
+  background-color: var(--blue); /* #4e8ce1; */
+  color: var(--white); /* white; */
   border: none;
   padding: 10px 20px;
   border-radius: 10px;
@@ -141,5 +153,5 @@ button:hover {
 }
 
 .create-form button:hover {
-  background-color: #a3cbff;
+  background-color: var(--soft_blue); /* #a3cbff; */
 }
