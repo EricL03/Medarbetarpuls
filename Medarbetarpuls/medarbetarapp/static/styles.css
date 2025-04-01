@@ -154,16 +154,17 @@ button:hover {
   display: flex;
   max-width: 900px;
   flex-wrap: wrap; 
-  justify-content: center; 
+  justify-content: center;
   gap: 20px;
 }
 
 /* Items within the grid dose not scale at the moment */
 .grid-item {
   position: relative;
-  width: 30%; 
+  width: calc((100% / 3) - 40px);
+  min-width: 200px;
+  max-width: 250px;
   aspect-ratio: 1 / 1;
-  max-width: 250px; 
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 8px;
