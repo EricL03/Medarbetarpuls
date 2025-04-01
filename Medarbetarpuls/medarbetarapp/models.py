@@ -1,3 +1,4 @@
+from __future__ import annotations
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.contrib.auth.models import (
@@ -17,6 +18,9 @@ class Organization(models.Model):
     # Add an explicit type hint for employeeGroups (this is just for readability)
     employee_groups: BaseManager
     admins: BaseManager
+    # Logo: How do we want to save this???
+    question_bank: BaseManager
+    survey_template_bank: BaseManager
 
     def __str__(self) -> str:
         return f"{self.name}"
@@ -28,11 +32,13 @@ class EmployeeGroup(models.Model):
     employees: BaseManager
     # Add an explicit type hint for managers (this is just for readability)
     managers: BaseManager
+    published_surveys: BaseManager
+    survey_templates: BaseManager
+
+    # Relationships to parent classes
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="employee_groups", null=True
     )
-    published_surveys: BaseManager
-    survey_templates: BaseManager
 
     def __str__(self) -> str:
         return f"{self.name} {self.organization.name}"
@@ -90,7 +96,11 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
     # We deafult to 0 as the lowest level of authority
     authorization_level = models.IntegerField(default=0)  # pyright: ignore
     employee_groups = models.ManyToManyField(EmployeeGroup, related_name="employees")
-    managed_groups = models.ManyToManyField(EmployeeGroup, related_name="managers")
+    un_answered_surveys = BaseManager
+    answered_surveys = BaseManager
+    survey_groups = models.ManyToManyField(EmployeeGroup, related_name="managers")
+
+    # Relationships to parent classes
     admin = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="admins", null=True
     )
@@ -110,6 +120,52 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
     objects = CustomUserManager()
 
     USERNAME_FIELD = "email"  # Use email instead of username when searching through db
+
+    @property
+    def survey_templates(self) -> models.QuerySet["SurveyTemplate"] | None:
+        """
+        This method is a getter function for survey templates.
+        The @property decorator makes it possible to call this 
+        method without (). 
+
+        Args:
+            self.survey_groups (EmployeeGroup): The employee group 
+            this user manages. 
+
+        Returns:
+            SurveyTemplates (in QuerySet) or None: Returns all survey templates if any exists, otherwise None
+        """
+        if self.survey_groups is not None: 
+            # This looks kinda shady but it is necessary for the typing 
+            # The Django model fields ensures correct typing but to handle 
+            # the None edgecase and lsp type errors we need to cast 
+            return cast(models.QuerySet[SurveyTemplate], cast(EmployeeGroup, self.survey_groups).survey_templates)
+
+        logger.info("Survey template returned None. This means that no templates exists!")
+        return None
+
+    @property
+    def published_surveys(self) -> models.QuerySet["Survey"] | None:
+        """
+        This method is a getter function for published surveys.
+        The @property decorator makes it possible to call this 
+        method without (). 
+
+        Args:
+            self.survey_groups (EmployeeGroup): The employee group 
+            this user manages. 
+
+        Returns:
+            Surveys (in QuerySet) or None: Returns all surveys if any exists, otherwise None
+        """
+        if self.survey_groups is not None: 
+            # This looks kinda shady but it is necessary for the typing 
+            # The Django model fields ensures correct typing but to handle 
+            # the None edgecase and lsp type errors we need to cast 
+            return cast(models.QuerySet[Survey], cast(EmployeeGroup, self.survey_groups).published_surveys)
+
+        logger.info("Survey returned None. This means that no Surveys exists!")
+        return None
 
     def __str__(self) -> str:
         return f"{self.name} ({self.email})"
@@ -148,7 +204,6 @@ class Survey(models.Model):
     survey_results: BaseManager
     deadline = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
     sending_date = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
-    # What is this???
     collected_answer_count = models.IntegerField(default=0)  # pyright: ignore 
     is_viewable = models.BooleanField(default=False)  # pyright: ignore
     
@@ -159,9 +214,15 @@ class Survey(models.Model):
 # What this model does needs to be explained here
 class SurveyTemplate(models.Model): 
     name = models.CharField(max_length=255)  # Do we want names for surveyTemplates???
+    questions = BaseManager
     creator = models.OneToOneField(CustomUser, on_delete=models.CASCADE) 
     employee_groups = models.ManyToManyField(EmployeeGroup, related_name="survey_templates")
     last_edited = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
+
+    # Relationships to parent classes
+    bank_survey = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="survey_template_bank", null=True
+    )
 
     def __str__(self) -> str:
         return f"{self.name} ({self.creator})"
@@ -172,9 +233,17 @@ class SurveyResult(models.Model):
     published_survey = models.ForeignKey(
         Survey, on_delete=models.CASCADE, related_name="survey_results", null=True
     )
-    user_id = models.IntegerField()
+    user_id = models.IntegerField()  # This could maybe be implemented as a method...
     answers: BaseManager
     is_answered = models.BooleanField(default=False)  # pyright: ignore
+
+    # Relationships to parent classes
+    un_answered_users = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="un_answered_surveys", null=True
+    )
+    answered_users = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="answered_surveys", null=True
+    )
 
     def __str__(self) -> str:
         return f"{self.user_id} ({self.is_answered})"
@@ -189,6 +258,12 @@ class Question(models.Model):
     connected_surveys = models.ManyToManyField(Survey, related_name="questions")
     question_type = models.CharField(
         max_length=15, choices=QuestionType.choices, default=QuestionType.ONETIME
+    )
+
+    # Relationships to parent classes
+    survey_template = models.ManyToManyField(SurveyTemplate, related_name="questions")
+    bank_question = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="question_bank", null=True
     )
     
     def __str__(self) -> str:
