@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    {% load static %}
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medarbetarpuls - Home</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+  </head>
+  <body>
+    <!-- To test this, switch to start.html in views.py -->
+    <div class="start-container">
+        <h1><center>Välkommen *namn*</center></h1>
+        <div class="grid-container">
+          <a href="#" class="grid-item yellow">
+            <div class="icon">📄</div>
+            <h2>Obesvarade enkäter</h2>
+            <p>Se dina obesvarade enkäter</p>
+          </a>
+          <a href="#" class="grid-item orange">
+            <div class="icon">🔍</div>
+            <h2>Se resultat</h2>
+            <p>Se resultaten av dina tidigare svarade enkäter</p>
+          </a>
+          <a href="#" class="grid-item green">
+            <div class="icon">📝</div>
+            <h2>Skapa enkäter</h2>
+            <p>Skapa nya enkäter</p>
+          </a>
+          <a href="#" class="grid-item lightblue">
+            <div class="icon">📁</div>
+            <h2>Mina enkäter</h2>
+            <p>Se dina tidigare skapade och utkast av enkäter</p>
+          </a>
+          <a href="#" class="grid-item pink">
+            <div class="icon">👥</div>
+            <h2>Min organisation</h2>
+            <p>Se och administrera din organisation</p>
+          </a>
+          <a href="#" class="grid-item blue">
+            <div class="icon">⚙️</div>
+            <h2>Inställningar</h2>
+            <p>Dina personliga inställningar</p>
+          </a>
+        </div>
+    </div>
+  </body>
+</html>
