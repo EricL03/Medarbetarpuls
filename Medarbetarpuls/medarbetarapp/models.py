@@ -12,15 +12,19 @@ from typing import cast
 
 logger = logging.getLogger(__name__)
 
+# Define explicit type aliases to help with readability
+OneToManyManager = BaseManager  # Alias for ForeignKey reverse relations
+ManyToManyManager = BaseManager  # Alias for ManyToManyField relations
+
 
 class Organization(models.Model):
     name = models.CharField(max_length=255)
     # Add an explicit type hint for employeeGroups (this is just for readability)
-    employee_groups: BaseManager
-    admins: BaseManager
+    employee_groups: OneToManyManager["EmployeeGroup"] 
+    admins: OneToManyManager["CustomUser"]
     # Logo: How do we want to save this???
-    question_bank: BaseManager
-    survey_template_bank: BaseManager
+    question_bank: OneToManyManager["Question"] 
+    survey_template_bank: OneToManyManager["SurveyTemplate"]
 
     def __str__(self) -> str:
         return f"{self.name}"
@@ -28,12 +32,10 @@ class Organization(models.Model):
 
 class EmployeeGroup(models.Model):
     name = models.CharField(max_length=255)
-    # Add an explicit type hint for employees (this is just for readability)
-    employees: BaseManager
-    # Add an explicit type hint for managers (this is just for readability)
-    managers: BaseManager
-    published_surveys: BaseManager
-    survey_templates: BaseManager
+    employees: ManyToManyManager["CustomUser"]
+    managers: ManyToManyManager["CustomUser"]
+    published_surveys: ManyToManyManager["Survey"]
+    survey_templates: ManyToManyManager["SurveyTemplate"]
 
     # Relationships to parent classes
     organization = models.ForeignKey(
@@ -96,8 +98,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
     # We deafult to 0 as the lowest level of authority
     authorization_level = models.IntegerField(default=0)  # pyright: ignore
     employee_groups = models.ManyToManyField(EmployeeGroup, related_name="employees")
-    un_answered_surveys = BaseManager
-    answered_surveys = BaseManager
+    un_answered_surveys = OneToManyManager["SurveyResult"]
+    answered_surveys = OneToManyManager["SurveyResult"]
     survey_groups = models.ManyToManyField(EmployeeGroup, related_name="managers")
 
     # Relationships to parent classes
@@ -198,10 +200,10 @@ class QuestionFormat(models.TextChoices):
 # What this model does needs to be explained here
 class Survey(models.Model):
     name = models.CharField(max_length=255)  # Do we want names for surveys???
-    questions = BaseManager
+    questions = ManyToManyManager["Question"]
     creator = models.OneToOneField(CustomUser, on_delete=models.CASCADE) 
     employee_groups = models.ManyToManyField(EmployeeGroup, related_name="published_surveys")
-    survey_results: BaseManager
+    survey_results: OneToManyManager["SurveyResult"]
     deadline = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
     sending_date = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
     collected_answer_count = models.IntegerField(default=0)  # pyright: ignore 
@@ -214,7 +216,7 @@ class Survey(models.Model):
 # What this model does needs to be explained here
 class SurveyTemplate(models.Model): 
     name = models.CharField(max_length=255)  # Do we want names for surveyTemplates???
-    questions = BaseManager
+    questions = ManyToManyManager["Question"]
     creator = models.OneToOneField(CustomUser, on_delete=models.CASCADE) 
     employee_groups = models.ManyToManyField(EmployeeGroup, related_name="survey_templates")
     last_edited = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
@@ -234,7 +236,7 @@ class SurveyResult(models.Model):
         Survey, on_delete=models.CASCADE, related_name="survey_results", null=True
     )
     user_id = models.IntegerField()  # This could maybe be implemented as a method...
-    answers: BaseManager
+    answers: OneToManyManager["Answer"]
     is_answered = models.BooleanField(default=False)  # pyright: ignore
 
     # Relationships to parent classes
