@@ -251,6 +251,45 @@ class SurveyResult(models.Model):
         return f"{self.user_id} ({self.is_answered})"
 
 
+class BaseQuestionDetails(models.Model):
+    parent_question = BaseManager["Question"]
+
+    class Meta:
+        abstract = True
+
+# What this model does needs to be explained here
+class SliderQuestion(BaseQuestionDetails):
+    question_format = models.CharField(
+        max_length=15, choices=QuestionFormat.choices, default=QuestionFormat.SLIDER
+    ) 
+    max_interval = models.IntegerField(default=10)  # pyright: ignore
+    min_interval = models.IntegerField(default=0)  # pyright: ignore
+    max_text = models.CharField(max_length=255)
+    min_text = models.CharField(max_length=255)
+
+
+# What this model does needs to be explained here
+class MultipleChoiceQuestion(BaseQuestionDetails):
+    question_format = models.CharField(
+        max_length=15, choices=QuestionFormat.choices, default=QuestionFormat.MULTIPLE_CHOICE
+    ) 
+    options = models.JSONField(default=list)  # Stores a list of strings 
+
+
+# What this model does needs to be explained here
+class YesNoQuestion(BaseQuestionDetails):
+    question_format = models.CharField(
+        max_length=15, choices=QuestionFormat.choices, default=QuestionFormat.YES_NO
+    ) 
+
+
+# What this model does needs to be explained here
+class TextQuestion(BaseQuestionDetails):
+    question_format = models.CharField(
+        max_length=15, choices=QuestionFormat.choices, default=QuestionFormat.TEXT
+    ) 
+
+
 # What this model does needs to be explained here
 class Question(models.Model):
     question = models.CharField(max_length=255)
@@ -267,7 +306,38 @@ class Question(models.Model):
     bank_question = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="question_bank", null=True
     )
+
+    # All questions tyoe possible 
+    slider_question = models.OneToOneField(SliderQuestion, on_delete=models.CASCADE, null=True, blank=True)
+    multiple_choice_question = models.OneToOneField(MultipleChoiceQuestion, on_delete=models.CASCADE, null=True, blank=True)
+    yes_no_question = models.OneToOneField(YesNoQuestion, on_delete=models.CASCADE, null=True, blank=True)
+    text_question = models.OneToOneField(TextQuestion, on_delete=models.CASCADE, null=True, blank=True)
     
+    @property
+    def specific_question(self) -> BaseQuestionDetails | None:
+        """
+        This method is a getter function for this question specific question (type).
+        The @property decorator makes it possible to call this 
+        method without (). 
+
+        Args:
+            self.question_format (QuestionFormat): The question format of this question  
+
+        Returns:
+            BaseQuestionDetails or None: Returns a specific question if it exists, otherwise None
+        """
+        if self.question_format == QuestionFormat.TEXT:
+            return cast(TextQuestion, self.text_question)
+        elif self.question_format == QuestionFormat.MULTIPLE_CHOICE:
+            return cast(MultipleChoiceQuestion, self.multiple_choice_question)
+        elif self.question_format == QuestionFormat.YES_NO:
+            return cast(YesNoQuestion, self.yes_no_question)
+        elif self.question_format == QuestionFormat.SLIDER:
+            return cast(SliderQuestion, self.slider_question)
+
+        logger.warning("No specific question could be found. This suggests the question was initialized wrong!")
+        return None
+
     def __str__(self) -> str:
         return f"{self.question_format} ({self.question_type})"
 
