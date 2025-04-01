@@ -101,6 +101,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
     un_answered_surveys = OneToManyManager["SurveyResult"]
     answered_surveys = OneToManyManager["SurveyResult"]
     survey_groups = models.ManyToManyField(EmployeeGroup, related_name="managers")
+    survey_templates = OneToManyManager["SurveyTemplate"]
+    published_surveys = OneToManyManager["Survey"]
 
     # Relationships to parent classes
     admin = models.ForeignKey(
@@ -123,59 +125,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
 
     USERNAME_FIELD = "email"  # Use email instead of username when searching through db
 
-    @property
-    def survey_templates(self) -> models.QuerySet["SurveyTemplate"] | None:
-        """
-        This method is a getter function for survey templates.
-        The @property decorator makes it possible to call this 
-        method without (). 
-
-        Args:
-            self.survey_groups (EmployeeGroup): The employee group 
-            this user manages. 
-
-        Returns:
-            SurveyTemplates (in QuerySet) or None: Returns all survey templates if any exists, otherwise None
-        """
-        if self.survey_groups is not None: 
-            # This looks kinda shady but it is necessary for the typing 
-            # The Django model fields ensures correct typing but to handle 
-            # the None edgecase and lsp type errors we need to cast 
-            return cast(models.QuerySet[SurveyTemplate], cast(EmployeeGroup, self.survey_groups).survey_templates)
-
-        logger.info("Survey template returned None. This means that no templates exists!")
-        return None
-
-    @property
-    def published_surveys(self) -> models.QuerySet["Survey"] | None:
-        """
-        This method is a getter function for published surveys.
-        The @property decorator makes it possible to call this 
-        method without (). 
-
-        Args:
-            self.survey_groups (EmployeeGroup): The employee group 
-            this user manages. 
-
-        Returns:
-            Surveys (in QuerySet) or None: Returns all surveys if any exists, otherwise None
-        """
-        if self.survey_groups is not None: 
-            # This looks kinda shady but it is necessary for the typing 
-            # The Django model fields ensures correct typing but to handle 
-            # the None edgecase and lsp type errors we need to cast 
-            return cast(models.QuerySet[Survey], cast(EmployeeGroup, self.survey_groups).published_surveys)
-
-        logger.info("Survey returned None. This means that no Surveys exists!")
-        return None
-
     def __str__(self) -> str:
         return f"{self.name} ({self.email})"
 
 
 
 # Below are models for surveys and their results
-
 
 # Enum class for questions types
 # The left-most string is what is saved in db
@@ -201,7 +156,9 @@ class QuestionFormat(models.TextChoices):
 class Survey(models.Model):
     name = models.CharField(max_length=255)  # Do we want names for surveys???
     questions = ManyToManyManager["Question"]
-    creator = models.OneToOneField(CustomUser, on_delete=models.CASCADE) 
+    creator = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="published_surveys", null=True
+    ) 
     employee_groups = models.ManyToManyField(EmployeeGroup, related_name="published_surveys")
     survey_results: OneToManyManager["SurveyResult"]
     deadline = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
@@ -217,7 +174,9 @@ class Survey(models.Model):
 class SurveyTemplate(models.Model): 
     name = models.CharField(max_length=255)  # Do we want names for surveyTemplates???
     questions = ManyToManyManager["Question"]
-    creator = models.OneToOneField(CustomUser, on_delete=models.CASCADE) 
+    creator = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="survey_templates", null=True
+    ) 
     employee_groups = models.ManyToManyField(EmployeeGroup, related_name="survey_templates")
     last_edited = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
 
