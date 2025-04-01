@@ -183,7 +183,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
 class QuestionType(models.TextChoices):
     ONETIME = "onetime", "Onetime"
     REOCCURRING = "reoccurring", "Reoccurring"
-    BUILTIN = "builtin", "Builtin"
+    BUILTIN = "builtin", "Built in"
     ENPS = "enps", "ENPS"
 
 
@@ -191,8 +191,8 @@ class QuestionType(models.TextChoices):
 # The left-most string is what is saved in db
 # The right-most string is what we humans will read
 class QuestionFormat(models.TextChoices):
-    MULTIPLE_CHOICE = "multiplechoice", "MultipleChoice"
-    YES_NO = "yesno", "YesNo"
+    MULTIPLE_CHOICE = "multiplechoice", "Multiple choice"
+    YES_NO = "yesno", "Yes No"
     TEXT = "text", "Text"
     SLIDER = "slider", "Slider"
 
