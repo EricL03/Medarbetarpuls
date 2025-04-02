@@ -338,4 +338,5 @@ class Answer(models.Model):
 
 class EmailList(models.Model):
     email = models.EmailField(unique=True)
+    objects: models.Manager 
     

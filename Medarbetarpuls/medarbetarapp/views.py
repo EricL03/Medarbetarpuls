@@ -25,12 +25,18 @@ def create_acc_view(request):
     return render(request, "create_acc.html")  # Normal Django redirect for non-HTMX requests
 
 @csrf_exempt
-def create_acc(request):
+def create_acc(request) -> HttpResponse:
     if request.method == 'POST':
         if request.headers.get('HX-Request'):
             name = request.POST.get('name')
             email = request.POST.get('email')
             password = request.POST.get('password')
+            
+            # Check that email is registrated to org
+            if not models.EmailList.objects.filter(email=email).exists():
+                logger.error("This email is not authorized for registration.")
+                return HttpResponse(status=400) 
+            
             models.CustomUser.objects.create_user(email,name,password)
             return HttpResponse(status=204)
     
