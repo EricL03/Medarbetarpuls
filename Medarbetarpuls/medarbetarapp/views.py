@@ -1,9 +1,9 @@
-from django.shortcuts import redirect, render
 import logging
-
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from . import models
 from django.http import HttpResponse
-from . import models 
+from django.shortcuts import redirect, render
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.contrib.auth import authenticate, login
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,19 @@ def create_survey_view(request):
     return render(request, 'create_survey.html')
 
 def login_view(request):
-    return render(request, 'login.html')
+    if request.method == "POST":
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=email, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('start_user')
+        else:
+            logger.warning("Failed login attempt for %s", email)
+            return render(request, 'login.html')
+    else:
+        return render(request, 'login.html')
 
 def my_org_view(request):
     return render(request, 'my_org.html')
