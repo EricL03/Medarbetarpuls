@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 import logging
 
 from django.views.decorators.csrf import csrf_exempt
@@ -15,8 +15,14 @@ def index_view(request):
 
     return render(request, "index.html")
 
+def create_acc_redirect(request):
+    if request.headers.get("HX-Request"):
+        return HttpResponse(headers={"HX-Redirect": "/create_acc_view/"})  # Redirects in HTMX
+
+    return redirect("/create_acc_view/")  # Normal Django redirect for non-HTMX requests
+
 def create_acc_view(request):
-    return render(request, 'create_acc.html')
+    return render(request, "create_acc.html")  # Normal Django redirect for non-HTMX requests
 
 @csrf_exempt
 def create_acc(request):
@@ -33,11 +39,15 @@ def create_acc(request):
 def add_employee_view(request):
     return render(request, 'add_employee.html')
 
+@csrf_exempt
 def add_employee_email(request):
     if request.method == 'POST':
         if request.headers.get('HX-Request'):
             email = request.POST.get('email')
             models.EmailList(email=email)
+            return HttpResponse(status=204)
+    
+    return HttpResponse(status=400)  # Bad request if no expression
 
 def analysis_view(request):
     return render(request, 'analysis.html')
