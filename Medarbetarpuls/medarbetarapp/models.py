@@ -34,8 +34,6 @@ class EmployeeGroup(models.Model):
     name = models.CharField(max_length=255)
     employees: ManyToManyManager["CustomUser"]
     managers: ManyToManyManager["CustomUser"]
-    published_surveys: ManyToManyManager["Survey"]
-    survey_templates: ManyToManyManager["SurveyTemplate"]
 
     # Relationships to parent classes
     organization = models.ForeignKey(
@@ -98,8 +96,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
     # We deafult to 0 as the lowest level of authority
     authorization_level = models.IntegerField(default=0)  # pyright: ignore
     employee_groups = models.ManyToManyField(EmployeeGroup, related_name="employees")
-    un_answered_surveys = OneToManyManager["SurveyResult"]
-    answered_surveys = OneToManyManager["SurveyResult"]
+    survey_results = OneToManyManager["SurveyResult"]
     survey_groups = models.ManyToManyField(EmployeeGroup, related_name="managers")
     survey_templates = OneToManyManager["SurveyTemplate"]
     published_surveys = OneToManyManager["Survey"]
@@ -159,7 +156,7 @@ class Survey(models.Model):
     creator = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="published_surveys", null=True
     ) 
-    employee_groups = models.ManyToManyField(EmployeeGroup, related_name="published_surveys")
+    employee_groups = models.ManyToManyField(EmployeeGroup, related_name="+")
     survey_results: OneToManyManager["SurveyResult"]
     deadline = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
     sending_date = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
@@ -177,7 +174,7 @@ class SurveyTemplate(models.Model):
     creator = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="survey_templates", null=True
     ) 
-    employee_groups = models.ManyToManyField(EmployeeGroup, related_name="survey_templates")
+    employee_groups = models.ManyToManyField(EmployeeGroup, related_name="+")
     last_edited = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
 
     # Relationships to parent classes
@@ -194,20 +191,16 @@ class SurveyResult(models.Model):
     published_survey = models.ForeignKey(
         Survey, on_delete=models.CASCADE, related_name="survey_results", null=True
     )
-    user_id = models.IntegerField()  # This could maybe be implemented as a method...
     answers: OneToManyManager["Answer"]
     is_answered = models.BooleanField(default=False)  # pyright: ignore
 
     # Relationships to parent classes
-    un_answered_users = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="un_answered_surveys", null=True
-    )
-    answered_users = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="answered_surveys", null=True
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="survey_results", null=True
     )
 
     def __str__(self) -> str:
-        return f"{self.user_id} ({self.is_answered})"
+        return f"{self.user} ({self.is_answered})"
 
 
 class BaseQuestionDetails(models.Model):
@@ -259,6 +252,7 @@ class Question(models.Model):
     question_type = models.CharField(
         max_length=15, choices=QuestionType.choices, default=QuestionType.ONETIME
     )
+    answers = OneToManyManager["Answer"]
 
     # Relationships to parent classes
     survey_template = models.ManyToManyField(SurveyTemplate, related_name="questions")
@@ -307,7 +301,9 @@ class Answer(models.Model):
     survey = models.ForeignKey(
         SurveyResult, on_delete=models.CASCADE, related_name="answers", null=True
     )
-    question = models.OneToOneField(Question, on_delete=models.CASCADE) 
+    question = models.ForeignKey(
+        Question, on_delete=models.CASCADE, related_name="answers", null=True
+    ) 
     comment = models.CharField(max_length=255)
     free_text_answer = models.CharField(max_length=255) 
     multiple_choice_answer = models.JSONField(default=list)  # Stores a list of booleans
