@@ -26,6 +26,16 @@ def create_acc_view(request):
 
 @csrf_exempt
 def create_acc(request) -> HttpResponse:
+    """
+    Creates an account with the fetched input 
+    if the email is in the organization email list
+
+    Args:
+        request: The input text from the name, email and password fields 
+
+    Returns:
+        HttpResponse: Returns status 204 if all is good, otherwise 400  
+    """
     if request.method == 'POST':
         if request.headers.get('HX-Request'):
             name = request.POST.get('name')
@@ -46,7 +56,18 @@ def add_employee_view(request):
     return render(request, 'add_employee.html')
 
 @csrf_exempt
-def add_employee_email(request):
+def add_employee_email(request) -> HttpResponse:
+    """
+    Adds the given email to the organization
+    email list of allowed emails. An email in 
+    this list is required to create an account. 
+
+    Args:
+        request: The input text from the email field 
+
+    Returns:
+        HttpResponse: Returns status 204 if all is good, otherwise 400  
+    """
     if request.method == 'POST':
         if request.headers.get('HX-Request'):
             email = request.POST.get('email')
