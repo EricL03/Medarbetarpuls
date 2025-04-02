@@ -8,7 +8,6 @@ from django.contrib.auth.models import (
 import logging
 from typing import cast
 
-<<<<<<< HEAD
 
 logger = logging.getLogger(__name__)
 
@@ -336,8 +335,6 @@ class Answer(models.Model):
     def __str__(self) -> str:
         return f"{self.survey} ({self.is_answered})"
 
-=======
->>>>>>> 08d55d225d9709983972481e924bfb3b5472b77c
 
 # Create your models here.
 
