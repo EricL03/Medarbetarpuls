@@ -1,6 +1,9 @@
 from django.shortcuts import render
 import logging
-import models
+
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+from . import models 
 
 logger = logging.getLogger(__name__)
 
@@ -13,18 +16,28 @@ def index_view(request):
     return render(request, "index.html")
 
 def create_acc_view(request):
+    return render(request, 'create_acc.html')
+
+@csrf_exempt
+def create_acc(request):
     if request.method == 'POST':
         if request.headers.get('HX-Request'):
             name = request.POST.get('name')
             email = request.POST.get('email')
             password = request.POST.get('password')
-            models.CustomUserManager(email,name,password)
-            models.EmailList(email=email)
-
-    return render(request, 'create_acc.html')
+            models.CustomUser.objects.create_user(email,name,password)
+            return HttpResponse(status=204)
+    
+    return HttpResponse(status=400)  # Bad request if no expression
 
 def add_employee_view(request):
     return render(request, 'add_employee.html')
+
+def add_employee_email(request):
+    if request.method == 'POST':
+        if request.headers.get('HX-Request'):
+            email = request.POST.get('email')
+            models.EmailList(email=email)
 
 def analysis_view(request):
     return render(request, 'analysis.html')
