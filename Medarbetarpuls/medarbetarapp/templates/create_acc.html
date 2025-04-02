@@ -36,14 +36,14 @@
           required
         />
 
-        <button
-          type="submit"
+        <form
           hx-post="/create_acc/"
           hx-target=".create-form"
           hx-trigger="click"
         >
-          Skapa nytt konto
-        </button>
+          {% csrf_token %}
+          <button type="submit">Skapa nytt konto</button>
+        </form>
       </form>
     </div>
   </body>

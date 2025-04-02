@@ -1,7 +1,7 @@
 from django.shortcuts import redirect, render
 import logging
 
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.http import HttpResponse
 from . import models 
 
@@ -24,7 +24,7 @@ def create_acc_redirect(request):
 def create_acc_view(request):
     return render(request, "create_acc.html")  # Normal Django redirect for non-HTMX requests
 
-@csrf_exempt
+@csrf_protect
 def create_acc(request) -> HttpResponse:
     """
     Creates an account with the fetched input 
