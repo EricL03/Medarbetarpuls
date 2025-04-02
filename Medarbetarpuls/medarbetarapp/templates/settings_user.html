@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    {% load static %}
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skapa din nya organisation</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+  </head>
+  <body>
+    <div class="settings-container">
+      <!-- Change later, if time, so user.profile_pic shows here (or default) <img src="{% static 'logo.png' %}" alt="Medarbetarpuls" class="logo" /> -->
+      <h1>Inställningar</h1>
+      <div class="info-table">
+        <div class="table-header">INLOGGNINGSUPPGIFTER</div>
+        <div class="table-row">
+            <div class="label">Namn</div>
+            <div class="value"> <!-- Test if username shows up -->
+              {{ user.name }} <a href="#"><span class="edit-icon">✏️</span></a>
+            </div>
+          </div>
+        <div class="table-row">
+          <div class="label">Lösenord</div>
+          <div class="value">
+            **************** <a href="#"><span class="edit-icon">✏️</span></a>
+          </div>
+        </div>
+        <div class="table-row">
+            <div class="label">Mailadress</div>
+            <div class="value">
+              {{ user.email }} <!-- Test if user email shows up -->
+            </div>
+          </div>
+        </div>
+      <button class="delete-button">Radera konto</button>
+  </body>
+</html>

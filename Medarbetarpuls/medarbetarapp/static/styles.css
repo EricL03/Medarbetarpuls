@@ -158,7 +158,7 @@ button:hover {
 .grid-container {
   display: flex;
   max-width: 900px;
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
   justify-content: center;
   gap: 20px;
 }
@@ -187,14 +187,14 @@ button:hover {
 
 /* Line at the bottom of the grid item */
 .grid-item::after {
-  content: ""; 
-  position: absolute; 
+  content: "";
+  position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 4px; 
-  background-color: #ffffff; 
-  z-index: 1; 
+  height: 4px;
+  background-color: #ffffff;
+  z-index: 1;
 }
 
 /* Add specific classes for different colors */
@@ -226,3 +226,65 @@ button:hover {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+.delete-button {
+  margin-top: 5%;
+  background-color: #f95e5e;
+}
+
+.delete-button:hover {
+  background-color: #f98b8b;
+}
+
+.settings-container {
+  text-align: center;
+  padding: 30px;
+  border-radius: 10px;
+  background-color: white;
+}
+
+h1 {
+  font-size: 32px;
+  color: #102b46;
+  margin-bottom: 20%;
+}
+
+.info-table {
+  width: 300px;
+  margin: 0 auto;
+  border-radius: 5px;
+  border: 1px solid #e8ebf1;
+  background-color: white;
+  margin-bottom: 20px;
+}
+
+.table-header {
+  background-color: #e8ebf1;
+  padding: 10px;
+  font-weight: bold;
+  text-align: left;
+}
+
+.table-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+.label {
+  color: #102b46;
+  font-weight: normal;
+}
+
+.value {
+  color: #4e8ce1;
+}
+
+.value a {
+  /* For links in table */
+  color: #4e8ce1;
+  text-decoration: none;
+}
+
+.value a:hover {
+  text-decoration: underline;
+}
