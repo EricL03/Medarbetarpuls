@@ -335,3 +335,11 @@ class Answer(models.Model):
 
     def __str__(self) -> str:
         return f"{self.survey} ({self.is_answered})"
+
+
+# Create your models here.
+
+
+class EmailList(models.Model):
+    email = models.EmailField(unique=True)
+    
