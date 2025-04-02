@@ -288,3 +288,63 @@ h1 {
 .value a:hover {
   text-decoration: underline;
 }
+
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4); /* Alpha: 0.4 = 40% opacity */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Sets the stacking order, higher numbers mean closer to the user */
+}
+
+.popup-content {
+  background-color: #e6f0fa;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  width: 300px;
+  position: relative; /* So the close button can be positioned relative to this */
+}
+
+.close-button {
+  /* Can be used as X-button to close popups */
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 20px;
+  cursor: pointer;
+  color: #102b46;
+}
+
+.close-button:hover {
+  color: #ff4b4b;
+}
+
+/* Popup Content */
+.popup-content {
+  background-color: #e6f0fa;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  width: 300px;
+}
+
+.popup-content input {
+  width: 90%;
+  padding: 14px;
+  margin: 10px 0;
+  border: none;
+  border-radius: 10px;
+  background-color: white;
+}
+
+h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #102b46;
+}
