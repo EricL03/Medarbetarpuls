@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 # Define explicit type aliases to help with readability
 OneToManyManager = BaseManager  # Alias for ForeignKey reverse relations
 ManyToManyManager = BaseManager  # Alias for ManyToManyField relations
-OneToOneManager = BaseManager  # Alias for OneToOneField relations
 
 
 class Organization(models.Model):
@@ -25,7 +24,7 @@ class Organization(models.Model):
     # Logo: How do we want to save this???
     question_bank: OneToManyManager["Question"] 
     survey_template_bank: OneToManyManager["SurveyTemplate"]
-    org_emails = OneToOneManager["EmailList"] 
+    org_emails = OneToManyManager["EmailList"] 
 
     def __str__(self) -> str:
         return f"{self.name}"
@@ -340,7 +339,9 @@ class Answer(models.Model):
 
 class EmailList(models.Model):
     email = models.EmailField(unique=True)
-    org = models.OneToOneField(Organization, on_delete=models.CASCADE, related_name="org_emails", null=True, blank=True)
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="org_emails", null=True, blank=True
+    )
     objects: models.Manager 
 
     def __str__(self) -> str:
