@@ -108,10 +108,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
 
     # These are for the built-in django permissions!!!
     is_staff = models.BooleanField(
-        default=True  # pyright: ignore
+        default=False  # pyright: ignore
     )  # Allows access to admin panel
     is_superuser = models.BooleanField(
-        default=True  # pyright: ignore
+        default=False  # pyright: ignore
     )  # Allows you to do something in the admin panel
     is_active = models.BooleanField(
         default=True  # pyright: ignore
