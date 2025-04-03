@@ -131,8 +131,7 @@ def create_org(request) -> HttpResponse:
             admin_account.admin = org
             admin_account.save()
             
-            return HttpResponse(status=204)
-            return render(request, "partials/create_form.html")
+            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page 
     
     return HttpResponse(status=400)  # Bad request if no expression
 
