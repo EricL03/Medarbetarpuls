@@ -44,7 +44,7 @@ admin.site.register(CustomUser, CustomUserAdmin)
 
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ("name", "get_admins", "get_employee_groups", "get_question_bank", "get_survey_templates")
+    list_display = ("name", "get_admins", "get_employee_groups", "get_question_bank", "get_survey_templates", "get_org_emails")
     search_fields = ("name",)
 
     @admin.display(description="Admins")
@@ -62,3 +62,7 @@ class OrganizationAdmin(admin.ModelAdmin):
     @admin.display(description="Survey Templates")
     def get_survey_templates(self, obj):
         return ", ".join([template.name for template in obj.survey_template_bank.all()])
+
+    @admin.display(description="Organization Emails")
+    def get_org_emails(self, obj): 
+        return ", ".join([template.email for template in obj.org_emails.all()])

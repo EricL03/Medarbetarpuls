@@ -134,6 +134,10 @@ def create_org(request) -> HttpResponse:
             # Create base (everyone) employee group
             base_group = models.EmployeeGroup(name="Alla", organization=org)
             base_group.save()
+
+            # Adding a org approved email for easy testing
+            test_email = models.EmailList(email="user22@example.com", org=org)
+            test_email.save()
             
             return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page 
     
