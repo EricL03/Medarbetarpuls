@@ -52,11 +52,11 @@ def create_acc(request) -> HttpResponse:
             # Check that email is registrated to org
             if not models.EmailList.objects.filter(email=email).exists():
                 logger.error("This email is not authorized for registration.")
-                return HttpResponse(status=400)
-
-            models.CustomUser.objects.create_user(email, name, password)
-            return HttpResponse(status=204)
-
+                return HttpResponse(status=400) 
+            
+            models.CustomUser.objects.create_user(email,name,password)
+            return render(request, "partials/create_form.html")
+    
     return HttpResponse(status=400)  # Bad request if no expression
 
 
@@ -77,10 +77,11 @@ def add_employee_email(request) -> HttpResponse:
     Returns:
         HttpResponse: Returns status 204 if all is good, otherwise 400
     """
-    if request.method == "POST":
-        if request.headers.get("HX-Request"):
-            email = request.POST.get("email")
-            models.EmailList(email=email)
+    if request.method == 'POST':
+        if request.headers.get('HX-Request'):
+            email = request.POST.get('email')
+            email_instance = models.EmailList(email=email)
+            email_instance.save()
             return HttpResponse(status=204)
 
     return HttpResponse(status=400)  # Bad request if no expression
