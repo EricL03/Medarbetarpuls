@@ -92,6 +92,47 @@ def authentication_org_view(request):
 def create_org_view(request):
     return render(request, 'create_org.html')
 
+def create_org_redirect(request):
+    if request.headers.get("HX-Request"):
+        return HttpResponse(headers={"HX-Redirect": "/create_org_view/"})  # Redirects in HTMX
+
+    return redirect("/create_org_view/")  # Normal Django redirect for non-HTMX requests
+
+@csrf_protect
+def create_org(request) -> HttpResponse:
+    """
+    Creates an organization and admin account  
+    with the fetched input  
+
+    Args:
+        request: The input text from the org_name, name, email and password fields 
+
+    Returns:
+        HttpResponse: Returns status 204 if all is good, otherwise 400  
+    """
+    if request.method == 'POST':
+        if request.headers.get('HX-Request'):
+            org_name = request.POST.get('org_name')
+            name = request.POST.get('name')
+            email = request.POST.get('email')
+            password = request.POST.get('password')
+            
+            # Create organization
+            org = models.Organization(name=org_name)
+            org.save()
+
+            # Create admin account
+            admin_account = models.CustomUser.objects.create_user(email,name,password)
+            admin_account.user_role = models.UserRole.ADMIN
+            admin_account.is_staff = True
+            admin_account.is_superuser = True
+            admin_account.save()
+
+            return HttpResponse(status=204)
+            return render(request, "partials/create_form.html")
+    
+    return HttpResponse(status=400)  # Bad request if no expression
+
 def create_survey_view(request):
     return render(request, 'create_survey.html')
 
