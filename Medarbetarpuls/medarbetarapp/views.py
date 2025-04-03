@@ -48,7 +48,7 @@ def create_acc(request) -> HttpResponse:
                 return HttpResponse(status=400) 
             
             models.CustomUser.objects.create_user(email,name,password)
-            return HttpResponse(status=204)
+            return render(request, "partials/create_form.html")
     
     return HttpResponse(status=400)  # Bad request if no expression
 
