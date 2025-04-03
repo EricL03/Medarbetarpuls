@@ -2,6 +2,7 @@ from django.shortcuts import redirect, render
 import logging
 
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from . import models 
 
@@ -42,15 +43,33 @@ def create_acc(request) -> HttpResponse:
             email = request.POST.get('email')
             password = request.POST.get('password')
             
-            # Check that email is registrated to org
-            if not models.EmailList.objects.filter(email=email).exists():
+            # Check that email is registrated to an org
+            org = find_organization_by_email(email)
+            if org is None:  
                 logger.error("This email is not authorized for registration.")
                 return HttpResponse(status=400) 
             
-            models.CustomUser.objects.create_user(email,name,password)
+            # Create user 
+            new_user = models.CustomUser.objects.create_user(email,name,password)
+
+            # Add new user to base (everyone) employee group of org
+            base_group = org.employee_groups.filter(name="Alla").first()  
+
+            if base_group:
+                new_user.employee_groups.add(base_group) 
+                print(f"Saving user to group: {base_group}")
+                new_user.save()
+            else:
+                print(f"No group found with the name '{base_group}' in the organization '{org.name}'")
+
             return render(request, "partials/create_form.html")
     
     return HttpResponse(status=400)  # Bad request if no expression
+
+def find_organization_by_email(email: str) -> models.Organization | None:
+    email_entry = get_object_or_404(models.EmailList, email=email)
+    print(f"Found email entry: {email_entry} with org: {email_entry.org}")
+    return email_entry.org  # Follow the ForeignKey to Organization
 
 def add_employee_view(request):
     return render(request, 'add_employee.html')
