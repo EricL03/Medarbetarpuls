@@ -126,8 +126,11 @@ def create_org(request) -> HttpResponse:
             admin_account.user_role = models.UserRole.ADMIN
             admin_account.is_staff = True
             admin_account.is_superuser = True
-            admin_account.save()
 
+            # Link admin account to org
+            admin_account.admin = org
+            admin_account.save()
+            
             return HttpResponse(status=204)
             return render(request, "partials/create_form.html")
     

@@ -17,7 +17,7 @@ class CustomUserAdmin(UserAdmin):
     ordering = ("email",)  # Default sorting order
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal Info", {"fields": ("name", "role")}),
+        ("Personal Info", {"fields": ("name", "user_role")}),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser")}),
     )
     add_fieldsets = (
@@ -28,7 +28,7 @@ class CustomUserAdmin(UserAdmin):
                 "fields": (
                     "email",
                     "name",
-                    "role",
+                    "user_role",
                     "password1",
                     "password2",
                     "is_staff",
