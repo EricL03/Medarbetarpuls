@@ -28,14 +28,15 @@ def create_acc_view(request):
 @csrf_protect
 def create_acc(request) -> HttpResponse:
     """
-    Creates an account with the fetched input 
-    if the email is in the organization email list
+    Creates an account with the fetched input, if the 
+    email exists in any organization email list, to said
+    organization. 
 
     Args:
         request: The input text from the name, email and password fields 
 
     Returns:
-        HttpResponse: Returns status 204 if all is good, otherwise 400  
+        HttpResponse: Redirects to login page if all is good, otherwise error message 400  
     """
     if request.method == 'POST':
         if request.headers.get('HX-Request'):
@@ -53,16 +54,16 @@ def create_acc(request) -> HttpResponse:
             new_user = models.CustomUser.objects.create_user(email,name,password)
 
             # Add new user to base (everyone) employee group of org
-            base_group = org.employee_groups.filter(name="Alla").first()  
+            base_group = org.employee_groups.filter(name="Alla").first()  # pyright: ignore  
 
             if base_group:
                 new_user.employee_groups.add(base_group) 
-                print(f"Saving user to group: {base_group}")
                 new_user.save()
             else:
-                print(f"No group found with the name '{base_group}' in the organization '{org.name}'")
+                logger.error(f"No group found with the name '{base_group}' in the organization '{org.name}'")
+                return HttpResponse(status=400) 
 
-            return render(request, "partials/create_form.html")
+            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page 
     
     return HttpResponse(status=400)  # Bad request if no expression
 
