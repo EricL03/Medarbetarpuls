@@ -96,19 +96,32 @@ def create_survey_view(request):
     return render(request, 'create_survey.html')
 
 def login_view(request):
+
+    #maybe implement sesion timer so you dont get logged out??
+    if request.user.is_authenticated:
+        logger.debug("User %e is already logged in.", request.user)
+        #return redirect('start_user')
+     
     if request.method == "POST":
         email = request.POST.get('email')
         password = request.POST.get('password')
 
         user = authenticate(request, username=email, password=password)
+
         if user is not None:
-            login(request, user)
-            return redirect('start_user')
+            if user.is_active:
+                login(request, user)
+                logger.debug("User %e successfully logged in.", email)
+                return redirect('start_user')
+            else:
+                logger.warning("Login attempt for inactive user %s", email)
+                return render(request, 'login.html')
+
         else:
-            logger.warning("Failed login attempt for %s", email)
+            logger.warning("Failed login attempt for %e", email)
             return render(request, 'login.html')
-    else:
-        return render(request, 'login.html')
+
+    return render(request, 'login.html')
 
 def my_org_view(request):
     return render(request, 'my_org.html')
