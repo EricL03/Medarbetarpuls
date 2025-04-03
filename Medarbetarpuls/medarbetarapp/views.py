@@ -71,7 +71,8 @@ def add_employee_email(request) -> HttpResponse:
     if request.method == 'POST':
         if request.headers.get('HX-Request'):
             email = request.POST.get('email')
-            models.EmailList(email=email)
+            email_instance = models.EmailList(email=email)
+            email_instance.save()
             return HttpResponse(status=204)
     
     return HttpResponse(status=400)  # Bad request if no expression
