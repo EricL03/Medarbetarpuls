@@ -26,7 +26,7 @@ class Organization(models.Model):
     survey_template_bank: OneToManyManager["SurveyTemplate"]
 
     def __str__(self) -> str:
-        return f"{self.name}"
+        return f"{self.name} | Admins: {', '.join(str(admin) for admin in self.admins.all())}"
 
 
 class EmployeeGroup(models.Model):
