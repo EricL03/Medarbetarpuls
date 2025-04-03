@@ -115,7 +115,25 @@ def login_view(request):
 
 
 def my_org_view(request):
-    return render(request, "my_org.html")
+    organization = request.user.admin
+
+    # Retrieve all employee groups associated with this organization
+    employee_groups = models.EmployeeGroup.objects.filter(organization=organization)
+
+    # Collect all employees from these groups
+    employees = models.CustomUser.objects.filter(
+        employee_groups__in=employee_groups
+    ).distinct()
+    return render(
+        request,
+        "my_org.html",
+        {
+            "user": request.user,
+            "organization": organization,
+            "employees": employees,
+        },
+    )
+    # TODO: test if this works, must be logged in
 
 
 def my_results_view(request):

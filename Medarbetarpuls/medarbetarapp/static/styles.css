@@ -97,7 +97,7 @@ button:hover {
 .create-container h1 {
   /* h1 stands for main heading */
   margin-bottom: 12%;
-  font-size: 32px;
+  font-size: 28px;
   color: #4e8ce1;
 }
 
@@ -348,4 +348,20 @@ button:hover {
   border: none;
   border-radius: 10px;
   background-color: white;
+}
+
+.trashcan-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+}
+
+.trashcan-button:hover img {
+  filter: brightness(0.8); /* Darken on hover */
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
 }
