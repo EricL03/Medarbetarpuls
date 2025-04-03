@@ -69,7 +69,6 @@ def create_acc(request) -> HttpResponse:
 
 def find_organization_by_email(email: str) -> models.Organization | None:
     email_entry = get_object_or_404(models.EmailList, email=email)
-    print(f"Found email entry: {email_entry} with org: {email_entry.org}")
     return email_entry.org  # Follow the ForeignKey to Organization
 
 def add_employee_view(request):
