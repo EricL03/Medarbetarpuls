@@ -130,6 +130,10 @@ def create_org(request) -> HttpResponse:
             # Link admin account to org
             admin_account.admin = org
             admin_account.save()
+
+            # Create base (everyone) employee group
+            base_group = models.EmployeeGroup(name="Alla", organization=org)
+            base_group.save()
             
             return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page 
     
