@@ -109,14 +109,18 @@ def login_view(request):
         user = authenticate(request, username=email, password=password)
 
         if user is not None:
+            logger.debug("User %e has role: %e", email, user.user_role)
             if user.is_active:
                 login(request, user)
-                logger.debug("User %e successfully logged in.", email)
-                return redirect('start_user')
+                if user.user_role == models.UserRole.ADMIN:
+                    logger.debug("Admin %e successfully logged in.", email)
+                    return redirect('start_admin')
+                else:  #implement check if user is creator or responder?
+                    logger.debug("User %e successfully logged in.", email)
+                    return redirect('start_user')
             else:
-                logger.warning("Login attempt for inactive user %s", email)
+                logger.warning("Login attempt for inactive user %e", email)
                 return render(request, 'login.html')
-
         else:
             logger.warning("Failed login attempt for %e", email)
             return render(request, 'login.html')
