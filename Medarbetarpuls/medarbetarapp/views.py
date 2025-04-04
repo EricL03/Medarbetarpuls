@@ -60,9 +60,9 @@ def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
 
-def topbar(request, pagetitle):
+def topbar(request):
     context = {
-        "pagetitle": pagetitle,
+        "pagetitle": "Topbar",
     }
     return render(request, "topbar.html", context)
 
