@@ -84,7 +84,7 @@ def find_organization_by_email(email: str) -> models.Organization | None:
 
 
 def add_employee_view(request):
-    return render(request, "add_employee.html")
+    return render(request, "add_employee.html", {"organization": request.user.admin})
 
 
 @csrf_exempt
