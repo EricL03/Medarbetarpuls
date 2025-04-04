@@ -1,0 +1,16 @@
+{% extends "master.html" %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}{{pagetitle}}{% endblock %}</title>
+  </head>
+  <body>
+    {% block content %}
+    <div class="topnav">
+      <img src="{% static 'logo.png' %}" alt="Medarbetarpuls" class="logo" />
+    </div>
+    {% endblock %}
+  </body>
+</html>
+
+{% comment "" %} Fixa topbar i styles.css {% endcomment %}

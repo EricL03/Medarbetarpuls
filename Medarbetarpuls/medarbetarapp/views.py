@@ -60,11 +60,11 @@ def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
 
-def navbar(request, pagetitle):
+def topbar(request, pagetitle):
     context = {
         "pagetitle": pagetitle,
     }
-    return render(request, "navbar.html", context)
+    return render(request, "topbar.html", context)
 
 
 def publish_survey_view(request):
