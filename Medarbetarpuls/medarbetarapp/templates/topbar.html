@@ -7,7 +7,7 @@ To extend this template, you need to do following code:
   {% extends "topbar.html" %}
 
   {% block title %} 
-    (Text for the title of the page)
+    (Text for the title that should be used in <title>...</title>)
   {% endblock %}
 
   {% block pagetitle %}
@@ -22,10 +22,13 @@ To extend this template, you need to do following code:
 
 {%endcomment%} -->
 
+<!-- The title for <title>...</title> needs to be given by the extending template. -->
 {% block title %}{% endblock %}
-<!---->
+
+<!-- Implementation of the topbar -->
 {% block content %}
 <div class="topbar">
+  <!-- Code for the logo -->
   <div class="topbar-logo">
     <a href="#home"
       ><img
@@ -35,14 +38,18 @@ To extend this template, you need to do following code:
     /></a>
   </div>
 
+  <!-- The title in the topbar needs to be sent from the extending template. -->
   <div class="pagetitle">{% block pagetitle %}{% endblock %}</div>
 
+  <!-- Code for the menu -->
   <div class="menu">
     <a href="javascript:void(0);" onclick="openPanel()"> ☰ </a>
   </div>
+  <!-- Including the code for the sidepanel -->
   {% include 'sidepanel.html' %}
 </div>
 
+<!-- The page's content need to be implemented in the extending template. -->
 <div class="wrapper">{% block page_content %}{% endblock %}</div>
 
 {% endblock %}
