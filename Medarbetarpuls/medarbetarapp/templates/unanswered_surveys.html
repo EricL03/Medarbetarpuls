@@ -8,22 +8,37 @@
     <link rel="stylesheet" href="{% static 'styles.css' %}" />
   </head>
   <body>
-
-    <!--
     <div class="unanswered-survey-container">
         <h1>Obesvarade enkäter</h1>
-        <h2>Du har {{ surveys.count }} obesvarade enkäter</h2>
+        <h2>Du har {{ unanswered_count }} obesvarade enkäter</h2>
         <div class="survey-cards">
-            {% for survey in surveys %}
-            <div class="survey-card {% if survey.is_completed %}completed{% else %}pending{% endif %}">
-                <p>Publicerades: {{ survey.published_date }}</p>
-                <p><strong>*{{ survey.title }}*</strong></p>
-                <p>Deadline: {{ survey.deadline }}</p>
+            {% for survey in unanswered_surveys %}
+            <div class="survey-card">
+                <p>Publicerades: {{ survey.published_survey.sending_date }}</p>
+                <p><strong>*{{ survey.published_survey.name }}*</strong></p>
+                <p>Deadline: {{ survey.published_survey.deadline }}</p>
             </div>
             {% endfor %}
+
+            <!-- Example survey cards for testing -->
+            <div class="survey-card">
+                <p>Publicerades: 2025-02-20</p>
+                <p><strong>*Namn på enkät*</strong></p>
+                <p>Deadline: 2026-02-20</p>
+            </div>
+            <div class="survey-card">
+                <p>Publicerades: 2025-02-20</p>
+                <p><strong>*Namn på enkät*</strong></p>
+                <p>Deadline: 2026-02-20</p>
+            </div>
+            <div class="survey-card">
+                <p>Publicerades: 2025-02-20</p>
+                <p><strong>*Namn på enkät*</strong></p>
+                <p>Deadline: 2026-02-20</p>
+            </div>
+            <!-- Add more survey cards as needed -->
         </div>
-        <button class="view-results">Visa resultat på tidigare enkäter</button>
+        <button class="view-survey_result" onclick="window.location.href='{% url 'survey_result' %}'"> Visa resultat på tidigare enkäter</button>
     </div>
-    -->
   </body>
 </html>
