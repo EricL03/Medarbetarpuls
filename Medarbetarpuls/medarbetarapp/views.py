@@ -273,8 +273,7 @@ def settings_user_view(request):
 
 def start_admin_view(request):
     return render(
-        request,
-        "start_admin.html"
+        request, "start_admin.html"
     )  # Fix so only works if the user is actually an admin
 
 

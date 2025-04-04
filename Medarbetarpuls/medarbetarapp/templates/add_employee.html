@@ -14,7 +14,11 @@
         class="go-back-button"
         onclick="window.location.href='{% url 'my_org' %}'"
       >
-        <img src="{% static 'go-back-btn.png' %}" alt="Go Back" class="back-icon" />
+        <img
+          src="{% static 'go-back-btn.png' %}"
+          alt="Go Back"
+          class="back-icon"
+        />
       </button>
       <h1>Lägg till medarbetare i<br />{{organization.name}}</h1>
       <!-- This form sends the input data to the server using a POST request -->
