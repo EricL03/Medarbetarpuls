@@ -1,30 +1,48 @@
 {% extends "master.html" %} {% load static %}
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>{% block title %}{{pagetitle}}{% endblock %}</title>
-  </head>
-  <body>
-    {% block content %}
-    <!-- Top Navigation Menu -->
-    <div class="topbar">
-      <div class="topbar-logo">
-        <a href="#home"
-          ><img
-            src="{% static 'logo.png' %}"
-            alt="Medarbetarpuls"
-            class="topbar-logo"
-        /></a>
-      </div>
 
-      <div class="pagetitle">{{pagetitle}}</div>
+<!--
+{%comment%} 
+To extend this template, you need to do following code:
 
-      <div class="menu">
-        <a href="javascript:void(0);" onclick="openPanel()"> ☰ </a>
-      </div>
-      {% include 'sidepanel.html' %}
-    </div>
+  {% extends "topbar.html" %}
 
-    {% endblock %}
-  </body>
-</html>
+  {% block title %} 
+    (Text for the title of the page)
+  {% endblock %}
+
+  {% block pagetitle %}
+    (Text for the title that should be shown in the topbar)
+  {% endblock %}
+
+  {% block page_content %}
+    ...
+    (Code for the content of the page)
+    ...
+  {% endblock %}
+
+{%endcomment%} -->
+
+{% block title %}{% endblock %}
+<!---->
+{% block content %}
+<div class="topbar">
+  <div class="topbar-logo">
+    <a href="#home"
+      ><img
+        src="{% static 'logo.png' %}"
+        alt="Medarbetarpuls"
+        class="topbar-logo"
+    /></a>
+  </div>
+
+  <div class="pagetitle">{% block pagetitle %}{% endblock %}</div>
+
+  <div class="menu">
+    <a href="javascript:void(0);" onclick="openPanel()"> ☰ </a>
+  </div>
+  {% include 'sidepanel.html' %}
+</div>
+
+<div class="wrapper">{% block page_content %}{% endblock %}</div>
+
+{% endblock %}

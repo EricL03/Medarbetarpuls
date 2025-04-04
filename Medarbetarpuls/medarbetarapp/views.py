@@ -60,11 +60,15 @@ def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
 
-def topbar(request):
-    context = {
-        "pagetitle": "Topbar",
-    }
-    return render(request, "topbar.html", context)
+def test_topbar(request):
+    return render(request, "test_topbar.html")
+
+
+# def topbar(request):
+#    context = {
+#        "pagetitle": "Topbar",
+#    }
+#    return render(request, "topbar.html", context)
 
 
 def publish_survey_view(request):
