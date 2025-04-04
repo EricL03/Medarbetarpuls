@@ -1,0 +1,29 @@
+<html lang="sv">
+  <head>
+    {% load static %}
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medarbetarpuls - Surveys</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+  </head>
+  <body>
+
+    <!--
+    <div class="unanswered-survey-container">
+        <h1>Obesvarade enkäter</h1>
+        <h2>Du har {{ surveys.count }} obesvarade enkäter</h2>
+        <div class="survey-cards">
+            {% for survey in surveys %}
+            <div class="survey-card {% if survey.is_completed %}completed{% else %}pending{% endif %}">
+                <p>Publicerades: {{ survey.published_date }}</p>
+                <p><strong>*{{ survey.title }}*</strong></p>
+                <p>Deadline: {{ survey.deadline }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        <button class="view-results">Visa resultat på tidigare enkäter</button>
+    </div>
+    -->
+  </body>
+</html>
