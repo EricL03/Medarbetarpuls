@@ -279,4 +279,10 @@ def survey_status_view(request):
 
 
 def unanswered_surveys_view(request):
-    return render(request, "unanswered_surveys.html")
+    user = request.user  # Assuming the user is authenticated
+    unanswered_count = user.count_unanswered_surveys()
+    unanswered_surveys = user.get_unanswered_surveys()
+    return render(request, "unanswered_surveys.html", {
+        'unanswered_count': unanswered_count,
+        'unanswered_surveys': unanswered_surveys,
+    })
