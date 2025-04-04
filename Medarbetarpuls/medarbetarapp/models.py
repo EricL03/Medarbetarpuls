@@ -1,4 +1,3 @@
-from __future__ import annotations
 from django.db import models
 from django.db.models.manager import BaseManager
 from django.contrib.auth.models import (
@@ -25,9 +24,10 @@ class Organization(models.Model):
     # Logo: How do we want to save this???
     question_bank: OneToManyManager["Question"] 
     survey_template_bank: OneToManyManager["SurveyTemplate"]
+    org_emails = OneToManyManager["EmailList"] 
 
     def __str__(self) -> str:
-        return f"{self.name}"
+        return f"{self.name} | Admins: {', '.join(str(admin) for admin in self.admins.all())}"
 
 
 class EmployeeGroup(models.Model):
@@ -335,3 +335,15 @@ class Answer(models.Model):
 
     def __str__(self) -> str:
         return f"{self.survey} ({self.is_answered})"
+
+
+class EmailList(models.Model):
+    email = models.EmailField(unique=True)
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="org_emails", null=True, blank=True
+    )
+    objects: models.Manager 
+
+    def __str__(self) -> str:
+        return f"{self.email}"
+    
