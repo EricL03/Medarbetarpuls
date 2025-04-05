@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 
 import logging
 
@@ -268,6 +268,19 @@ def settings_admin_view(request):
 
 
 def settings_user_view(request):
+    #find object by username typ något sånt
+    #logout(request, user)
+    #user.logout() if "logout".is_clicked() and user.islogin()
+    
+    #if pressed delete user liksom
+    if request.method == "POST":
+        password = request.POST.get("password")
+        email = request.user.email
+
+        user = authenticate(request, username=email, password=password)
+        if user:
+            user.is_active = False
+            logout(request, user)
     return render(request, "settings_user.html", {"user": request.user})
 
 
