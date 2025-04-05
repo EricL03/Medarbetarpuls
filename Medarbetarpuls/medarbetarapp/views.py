@@ -196,8 +196,12 @@ def create_org_redirect(request):
         return HttpResponse(
             headers={"HX-Redirect": "/create_org_view/"}
         )  # Redirects in HTMX
+        return HttpResponse(
+            headers={"HX-Redirect": "/create_org_view/"}
+        )  # Redirects in HTMX
 
     return redirect("/create_org_view/")  # Normal Django redirect for non-HTMX requests
+
 
 
 @csrf_protect
@@ -205,13 +209,24 @@ def create_org(request) -> HttpResponse:
     """
     Creates an organization and admin account
     with the fetched input
+    Creates an organization and admin account
+    with the fetched input
 
     Args:
+        request: The input text from the org_name, name, email and password fields
         request: The input text from the org_name, name, email and password fields
 
     Returns:
         HttpResponse: Returns status 204 if all is good, otherwise 400
+        HttpResponse: Returns status 204 if all is good, otherwise 400
     """
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            org_name = request.POST.get("org_name")
+            name = request.POST.get("name")
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             org_name = request.POST.get("org_name")
@@ -224,6 +239,7 @@ def create_org(request) -> HttpResponse:
             org.save()
 
             # Create admin account
+            admin_account = models.CustomUser.objects.create_user(email, name, password)
             admin_account = models.CustomUser.objects.create_user(email, name, password)
             admin_account.user_role = models.UserRole.ADMIN
             admin_account.is_staff = True
@@ -243,11 +259,19 @@ def create_org(request) -> HttpResponse:
 
             return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
 
+
+            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
+
     return HttpResponse(status=400)  # Bad request if no expression
+
 
 
 def create_survey_view(request):
     return render(request, "create_survey.html")
+
+
+def edit_question_view(request):
+    return render(request, "edit_question.html")
 
 
 def edit_question_view(request):
@@ -325,6 +349,15 @@ def my_results_view(request):
             "current_time": current_time,
         },
     )
+    return render(
+        request,
+        "my_results.html",
+        {
+            "answered_count": answered_count,
+            "answered_surveys": answered_surveys,
+            "current_time": current_time,
+        },
+    )
 
 
 def my_surveys_view(request):
@@ -354,13 +387,17 @@ def start_user_view(request):
 
 
 def survey_result_view(request, survey_id):
-    survey_result = get_object_or_404(SurveyResult, id=survey_id)
 
-    # Check if the survey is accessible to the user
-    if not survey_result.survey.accessible_users.filter(id=request.user.id).exists():
-        return render(request, "403.html", status=403)  # Custom 403 page
+    survey_result = SurveyResult.objects.filter(id=survey_id).first()
+
+    if survey_result is not None:
+        # Check if the survey is accessible to the user
+        if survey_result.user != request.user:
+            survey_result = None
 
     # Proceed to render the survey results
+    return render(request, "survey_result.html", {"survey_result": survey_result})
+
     return render(request, "survey_result.html", {"survey_result": survey_result})
 
 
