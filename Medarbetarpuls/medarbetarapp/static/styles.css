@@ -150,35 +150,6 @@ button:hover {
   background-color: #a3cbff;
 }
 
-.unanswered-survey-container{
-  max-width: 1200px;
-  justify-content: center;
-  padding: 20px;
-  display: flex;             
-  flex-direction: column;      
-  align-items: center; 
-}
-
-/*Should be able to use for all survey-cards*/
-.survey-cards {
-  display: flex; 
-  align-items: center;
-  max-width: 900px;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: center;
-  margin: 20px 0;
-}
-
-.survey-card {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 15px;
-  width: 200px;
-  position: relative;
-  background-color: #fff;
-}
-
 .view-results {
   margin-top: 20px;
   padding: 10px 20px;
@@ -200,6 +171,30 @@ button:hover {
   padding: 20px;
 }
 
+.title-background {
+  display: flex; /* Enable flexbox */
+  justify-content: center; /* Center the items in the flex container */
+  align-items: center; /* Center items vertically */
+  position: relative; /* Allow absolute positioning if needed */
+  width: 100%; /* Make it full width */
+  background-color: #E8EBF1; /* Optional: background color */
+  min-height: auto;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.title-background h2 {
+  flex: 1; /* Allow the heading to take up available space */
+  text-align: center; /* Center the text */
+  margin: 0; /* Remove default margin */
+}
+
+.title-background .title-back-button {
+  position: absolute; /* Position button absolutely */
+  left: 10px; /* Adjust as needed for spacing from the left */
+  transform: translateY(-60%); /* Adjust for vertical centering */
+}
+
 .grid-container {
   display: flex;
   max-width: 900px;
@@ -212,7 +207,7 @@ button:hover {
 .grid-item {
   position: relative;
   width: calc((100% / 3) - 40px);
-  min-width: 200px;
+  min-width: 250px;
   max-width: 250px;
   aspect-ratio: 1 / 1;
   background-color: white;
@@ -230,6 +225,13 @@ button:hover {
   overflow: hidden;
 }
 
+.grid-item.result {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+
 /* Line at the bottom of the grid item */
 .grid-item::after {
   content: "";
@@ -246,19 +248,15 @@ button:hover {
 .grid-item.pink::after {
   background-color: #ff77a1;
 }
-
 .grid-item.lightblue::after {
   background-color: #8bbdf8;
 }
-
 .grid-item.blue::after {
   background-color: #3e82d8;
 }
-
 .grid-item.green::after {
   background-color: #7ed23e;
 }
-
 .grid-item.yellow::after {
   background-color: #ffc757;
 }
@@ -267,8 +265,28 @@ button:hover {
 }
 
 .grid-item:hover {
-  transform: scale(1.05);
+  transform: scale(1.02);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+.question-title {
+  position: relative;
+  width: 100%; /* Make it full width */
+  text-align: center; /* Center the text */
+}
+
+.question-title h1 {
+  margin: 5px; /* Remove default margin */
+  padding: 0; /* Remove any padding if needed */
+  font-size: 1.5em; /* Adjust font size as needed */
+  text-align: center; /* Center the text if desired */
+}
+
+.question-background {
+  position: sticky;
+  background-color: #EEF5FE; /* Change this to your desired blue color */ 
+  width: 100%; /* Make it full width */
+  text-align: center; /* Center the text */
+  padding: 10px;
 }
 
 .delete-button {
