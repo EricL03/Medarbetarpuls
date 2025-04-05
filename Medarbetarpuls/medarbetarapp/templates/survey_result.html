@@ -28,13 +28,19 @@
                 <div class="question-background">
                     <p> Här skriver vi en väldigt lång fråga som går över flera flera rader</p>
                 </div>
+                <div class="question-result">
+                    RESULTAT
+                </div>
             </div>
             <div class="grid-item result green">
                 <div class="question-title">
                     <h1> Fråga 2</h1>
                 </div>
                 <div class="question-background">
-                    <p> Här skriver vi en väldigt lång fråga som går över flera flera rader</p>
+                    <p> Kort fråga</p>
+                </div>
+                <div class="question-result">
+                    RESULTAT
                 </div>
             </div>
             <div class="grid-item result green">
@@ -44,6 +50,9 @@
                 <div class="question-background">
                     <p> Här skriver vi en väldigt lång fråga som går över flera flera rader</p>
                 </div>
+                <div class="question-result">
+                    RESULTAT
+                </div>
             </div>
         </div>
     </div>
@@ -51,8 +60,33 @@
     {% else %}
 
         {% if survey_result %}
-            <p>Your Answers: {{ survey_result.answers }}</p>
-            <p>Survey Name: {{ survey_result.published_survey.name }}</p>
+            <div class="start-container">
+
+                <h1><center><i>This is a testing page</i></center></h1>
+                <p></p>
+        
+                <h1>{{ survey_result.published_survey.name }}</h1>
+                <div class="title-background">
+                    <button class="title-back-button" onclick="window.location.href='{% url 'my_results'%}'"> 
+                        Tillbaka </button>
+                    <h2>Resultat</h2>
+                </div>
+                <div class="grid-container">
+
+                    <!-- How do we get the final answers for questins? -->
+    
+                    <div class="grid-item result green">
+                        <div class="question-title">
+                            <h1> QUESTION NUMBER</h1>
+                        </div>
+                        <div class="question-background">
+                            <p> QUESTION</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
         {% else %}
             <div class="start-container">
             <h1>No results available for this survey.</h1>

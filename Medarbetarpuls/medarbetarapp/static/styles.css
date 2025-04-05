@@ -248,6 +248,10 @@ button:hover {
   overflow: hidden;
 }
 
+.grid-item .grid-item-button {
+  margin-top: 0;
+}
+
 .grid-item.result {
   display: flex;
   flex-direction: column;
@@ -305,11 +309,21 @@ button:hover {
 }
 
 .question-background {
-  position: sticky;
+  position: flex;
+  min-height: 70px;
   background-color: #EEF5FE; /* Change this to your desired blue color */ 
   width: 100%; /* Make it full width */
   text-align: center; /* Center the text */
   padding: 10px;
+}
+
+.question-result {
+  flex-grow: 1; 
+  display: flex;
+  justify-content: center; 
+  align-items: center; 
+  margin-top: 10px; 
+  font-weight: bold; 
 }
 
 .delete-button {
