@@ -199,10 +199,6 @@ button:hover {
   padding: 20px;
 }
 
-.start-container button {
-  margin-top: 40%;
-}
-
 .editable-title {
   font-size: 32px;
   font-weight: bold;
@@ -310,7 +306,6 @@ button:hover {
 
 .delete-button {
   margin-top: 5%;
-  margin-bottom: 10%;
   background-color: #f95e5e;
 }
 
@@ -393,12 +388,56 @@ button:hover {
 }
 
 .popup-content {
-  background-color: #e6f0fa;
+  background-color: white;
   padding: 20px;
   border-radius: 10px;
   text-align: center;
-  width: 300px;
+  width: 400px;
   position: relative; /* So the close button can be positioned relative to this */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.tag-container,
+.reminder-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 10px 0;
+}
+
+.tag,
+.reminder-tag {
+  display: inline-flex;
+  align-items: center;
+  background-color: #dce7f8;
+  color: #102b46;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.tag .close,
+.reminder-tag .close {
+  margin-left: 5px;
+  cursor: pointer;
+  color: #555;
+}
+
+.date-group {
+  display: flex;
+  justify-content: space-between;
+}
+
+.date-input {
+  background-color: #eef5fe;
+  padding: 5px;
+  border: none;
+  border-radius: 10px;
+}
+
+.popup-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 .close-button {
@@ -417,8 +456,8 @@ button:hover {
 
 .go-back-button {
   position: absolute;
-  top: 30px;
-  left: 30px;
+  top: 2%;
+  left: 1%;
   margin: 10px;
   background-color: transparent;
   border: none;
@@ -445,11 +484,11 @@ button:hover {
 
 /* Use for popups */
 .popup-content {
-  background-color: #e6f0fa;
+  background-color: white;
   padding: 20px;
   border-radius: 10px;
   text-align: center;
-  width: 300px;
+  width: 500px;
 }
 
 .popup-content input {
@@ -458,7 +497,27 @@ button:hover {
   margin: 10px 0;
   border: none;
   border-radius: 10px;
-  background-color: white;
+  background-color: #eef5fe;
+}
+
+.checkbox-group {
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+  margin-bottom: 20px;
+}
+
+.checkbox-group label {
+  font-size: 16px;
+  color: #102b46;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin-right: 5px;
 }
 
 .trashcan-button {

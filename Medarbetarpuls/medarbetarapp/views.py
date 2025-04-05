@@ -331,10 +331,6 @@ def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
 
-def publish_survey_view(request):
-    return render(request, "publish_survey.html")
-
-
 def settings_admin_view(request):
     return render(
         request,
