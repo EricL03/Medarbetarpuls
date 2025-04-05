@@ -150,6 +150,35 @@ button:hover {
   background-color: #a3cbff;
 }
 
+.unanswered-survey-container {
+  max-width: 1200px;
+  justify-content: center;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/*Should be able to use for all survey-cards*/
+.survey-cards {
+  display: flex;
+  align-items: center;
+  max-width: 900px;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.survey-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 15px;
+  width: 200px;
+  position: relative;
+  background-color: #fff;
+}
+
 .view-results {
   margin-top: 20px;
   padding: 10px 20px;
@@ -170,52 +199,42 @@ button:hover {
   padding: 20px;
 }
 
-.title-background {
-  display: flex; /* Enable flexbox */
-  justify-content: center; /* Center the items in the flex container */
-  align-items: center; /* Center items vertically */
-  position: relative; /* Allow absolute positioning if needed */
-  width: 100%; /* Make it full width */
-  background-color: #E8EBF1; /* Optional: background color */
-  min-height: auto;
-  padding: 15px;
-  margin-bottom: 20px;
+.start-container button {
+  margin-top: 40%;
 }
 
-.title-background h2 {
-  flex: 1; /* Allow the heading to take up available space */
-  text-align: center; /* Center the text */
-  margin: 0; /* Remove default margin */
+.editable-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: #102b46;
+  border: none;
+  background-color: transparent; /* Remove input background */
+  outline: none; /* Remove focus outline */
+  text-align: center;
+  width: 100%; /* Full width to look like a title */
+  margin-bottom: 20%;
+  padding: 5px 0;
 }
 
-.title-background .title-back-button {
-  position: absolute; /* Position button absolutely */
-  left: 10px; /* Adjust as needed for spacing from the left */
-  transform: translateY(-60%); /* Adjust for vertical centering */
+.editable-title:hover {
+  cursor: text;
 }
 
-.title-background {
-  display: flex; /* Enable flexbox */
-  justify-content: center; /* Center the items in the flex container */
-  align-items: center; /* Center items vertically */
-  position: relative; /* Allow absolute positioning if needed */
-  width: 100%; /* Make it full width */
-  background-color: #E8EBF1; /* Optional: background color */
-  min-height: auto;
-  padding: 15px;
-  margin-bottom: 20px;
+.editable-question {
+  font-size: 16px;
+  font-weight: normal;
+  color: #102b46;
+  border: none;
+  background-color: transparent;
+  outline: none;
+  text-align: center;
+  width: 100%;
+  margin-top: 0%;
+  padding: 5px 0;
 }
 
-.title-background h2 {
-  flex: 1; /* Allow the heading to take up available space */
-  text-align: center; /* Center the text */
-  margin: 0; /* Remove default margin */
-}
-
-.title-background .title-back-button {
-  position: absolute; /* Position button absolutely */
-  left: 10px; /* Adjust as needed for spacing from the left */
-  transform: translateY(-60%); /* Adjust for vertical centering */
+.editable-question:hover {
+  cursor: text;
 }
 
 .grid-container {
