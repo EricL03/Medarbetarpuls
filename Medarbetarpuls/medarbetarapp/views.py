@@ -259,19 +259,27 @@ def my_surveys_view(request):
 def publish_survey_view(request):
     return render(request, "publish_survey.html")
 
-
+@csrf_protect
 def settings_admin_view(request):
 #if pressed leave over account
     if request.method == "POST":
         if request.headers.get("HX-Request"):
-            email = request.POST.get("email")
+            newAdminEmail = request.POST.get("email")
             user = request.user
+            org = user.admin
             
-            if models.EmailList.objects.filter(email=email).exists():
+            if models.EmailList.objects.filter(email=newAdminEmail).exists():
                 user.is_active = False
+                user.is_superuser = False
+                user.admin = None
+                user.user_role = models.UserRole.SURVEY_RESPONDER
+                user.save()
+                newAdmin = models.CustomUser.objects.get(email=newAdminEmail)
+                newAdmin.is_superuser = True
+                newAdmin.user_role = models.UserRole.ADMIN
+                newAdmin.admin = org
+                newAdmin.save()
                 logout(request)
-                adminEmail = email
-                #make it in the database so new adminemail is the admin
                 return HttpResponse(headers={"HX-Redirect": "/"})
             else: 
                 #maybe return message so user knows it was wrong password
@@ -293,6 +301,9 @@ def settings_user_view(request):
             user = authenticate(request, username=email, password=password)
             if user is not None:
                 user.is_active = False
+                user.save()
+
+                #user.delete() maybe not right because we want the users answers to be saved still
                 logout(request)
                 return HttpResponse(headers={"HX-Redirect": "/"})
             else: 

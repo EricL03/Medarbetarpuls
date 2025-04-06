@@ -46,13 +46,15 @@
       <!-- Delete Confirmation Popup -->
 
     <div id="delete-popup" class="popup-overlay" style="display: none;">
-        <div class="popup-content">
+        <div id= "content" class="popup-content">
           <form 
             class="delete-acc-form"
             hx-post="/settings-user/"
-            hx-target="#delete-popup .popup-content"
+            hx-target="#content"
             hx-trigger="submit"
-            hx-swap="outerHTML">
+            hx-swap="outerHTML"
+            >
+            
               <span class="close-button" onclick="closePopup()">&times;</span> <!-- &times multiplication symbol -->
               <h2>OBS!</h2>
               <p>Är du säker på att du vill ta bort ditt konto?</p>
