@@ -207,6 +207,7 @@ def create_org_redirect(request):
     return redirect("/create_org_view/")  # Normal Django redirect for non-HTMX requests
 
 
+
 @csrf_protect
 def create_org(request) -> HttpResponse:
     """
@@ -265,6 +266,7 @@ def create_org(request) -> HttpResponse:
             return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
 
     return HttpResponse(status=400)  # Bad request if no expression
+
 
 
 def create_survey_view(request):
