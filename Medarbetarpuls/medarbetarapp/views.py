@@ -136,6 +136,10 @@ def create_org_view(request):
     return render(request, "create_org.html")
 
 
+def create_question(request):
+    return render(request, "create_question.html")
+
+
 def create_org_redirect(request):
     if request.headers.get("HX-Request"):
         return HttpResponse(
@@ -203,7 +207,6 @@ def create_org_redirect(request):
     return redirect("/create_org_view/")  # Normal Django redirect for non-HTMX requests
 
 
-
 @csrf_protect
 def create_org(request) -> HttpResponse:
     """
@@ -259,11 +262,9 @@ def create_org(request) -> HttpResponse:
 
             return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
 
-
             return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
 
     return HttpResponse(status=400)  # Bad request if no expression
-
 
 
 def create_survey_view(request):
@@ -387,7 +388,6 @@ def start_user_view(request):
 
 
 def survey_result_view(request, survey_id):
-
     survey_result = SurveyResult.objects.filter(id=survey_id).first()
 
     if survey_result is not None:
