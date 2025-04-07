@@ -4,6 +4,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login, logout
+from django.contrib import messages
 
 import logging
 
@@ -258,29 +259,56 @@ def my_surveys_view(request):
 def publish_survey_view(request):
     return render(request, "publish_survey.html")
 
-
+@csrf_protect
 def settings_admin_view(request):
-    return render(
-        request,
-        "settings_admin.html",
-        {"user": request.user, "organization": request.user.admin},
-    )
-
-
-def settings_user_view(request):
-    #find object by username typ något sånt
-    #logout(request, user)
-    #user.logout() if "logout".is_clicked() and user.islogin()
-    
-    #if pressed delete user liksom
+#if pressed leave over account
     if request.method == "POST":
-        password = request.POST.get("password")
-        email = request.user.email
+        if request.headers.get("HX-Request"):
+            newAdminEmail = request.POST.get("email")
+            user = request.user
+            org = user.admin
+            
+            if models.EmailList.objects.filter(email=newAdminEmail).exists():
+                user.is_active = False
+                user.is_superuser = False
+                user.admin = None
+                user.user_role = models.UserRole.SURVEY_RESPONDER
+                user.save()
+                newAdmin = models.CustomUser.objects.get(email=newAdminEmail)
+                newAdmin.is_superuser = True
+                newAdmin.user_role = models.UserRole.ADMIN
+                newAdmin.admin = org
+                newAdmin.save()
+                logout(request)
+                return HttpResponse(headers={"HX-Redirect": "/"})
+            else: 
+                #maybe return message so user knows it was wrong password
+                pass
 
-        user = authenticate(request, username=email, password=password)
-        if user:
-            user.is_active = False
-            logout(request, user)
+    return render(request, "settings_admin.html", {"user": request.user, "organization": request.user.admin})
+
+@csrf_protect
+def settings_user_view(request):
+    #FIX - needs to fix so when wrong password is written the popup doesnt dissappear and a message is sent
+
+    
+    #if pressed delete user
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            password = request.POST.get("password")
+            email = request.user.email
+            
+            user = authenticate(request, username=email, password=password)
+            if user is not None:
+                user.is_active = False
+                user.save()
+
+                #user.delete() maybe not right because we want the users answers to be saved still
+                logout(request)
+                return HttpResponse(headers={"HX-Redirect": "/"})
+            else: 
+                #maybe return message so user knows it was wrong password
+                pass
     return render(request, "settings_user.html", {"user": request.user})
 
 
