@@ -4,7 +4,7 @@ from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 
 import logging
 
@@ -83,11 +83,11 @@ def find_organization_by_email(email: str) -> models.Organization | None:
     email_entry = get_object_or_404(models.EmailList, email=email)
     return email_entry.org  # Follow the ForeignKey to Organization
 
-
+@login_required
 def add_employee_view(request):
     return render(request, "add_employee.html")
 
-
+@login_required
 @csrf_exempt
 def add_employee_email(request) -> HttpResponse:
     """
@@ -114,11 +114,11 @@ def add_employee_email(request) -> HttpResponse:
 
     return HttpResponse(status=400)  # Bad request if no expression
 
-
+@login_required
 def analysis_view(request):
     return render(request, "analysis.html")
 
-
+@login_required
 def answer_survey_view(request):
     return render(request, "answer_survey.html")
 
@@ -189,7 +189,7 @@ def create_org(request) -> HttpResponse:
 
     return HttpResponse(status=400)  # Bad request if no expression
 
-
+@login_required
 def create_survey_view(request):
     return render(request, "create_survey.html")
 
@@ -225,7 +225,7 @@ def login_view(request):
 
     return render(request, "login.html")
 
-
+@login_required
 def my_org_view(request):
     organization = request.user.admin
 
@@ -247,18 +247,19 @@ def my_org_view(request):
     )
     # TODO: test if this works, must be logged in
 
-
+@login_required
 def my_results_view(request):
     return render(request, "my_results.html")
 
-
+@login_required
 def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
-
+@login_required
 def publish_survey_view(request):
     return render(request, "publish_survey.html")
 
+@login_required
 @csrf_protect
 def settings_admin_view(request):
 #if pressed leave over account
@@ -287,6 +288,7 @@ def settings_admin_view(request):
 
     return render(request, "settings_admin.html", {"user": request.user, "organization": request.user.admin})
 
+@login_required
 @csrf_protect
 def settings_user_view(request):
     #FIX - needs to fix so when wrong password is written the popup doesnt dissappear and a message is sent
@@ -311,25 +313,25 @@ def settings_user_view(request):
                 pass
     return render(request, "settings_user.html", {"user": request.user})
 
-
+@login_required
 def start_admin_view(request):
     return render(
         request,
         "start_admin.html"
     )  # Fix so only works if the user is actually an admin
 
-
+@login_required
 def start_user_view(request):
     return render(request, "start_user.html")
 
-
+@login_required
 def survey_result_view(request):
     return render(request, "survey_result.html")
 
-
+@login_required
 def survey_status_view(request):
     return render(request, "survey_status.html")
 
-
+@login_required
 def unanswered_surveys_view(request):
     return render(request, "unanswered_surveys.html")
