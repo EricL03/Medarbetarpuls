@@ -3,8 +3,9 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login
+from django.utils import timezone
+from .models import SurveyResult
 
 import logging
 
@@ -85,7 +86,7 @@ def find_organization_by_email(email: str) -> models.Organization | None:
 
 @login_required
 def add_employee_view(request):
-    return render(request, "add_employee.html")
+    return render(request, "add_employee.html", {"organization": request.user.admin})
 
 @login_required
 @csrf_exempt
@@ -133,6 +134,10 @@ def authentication_org_view(request):
 
 def create_org_view(request):
     return render(request, "create_org.html")
+
+
+def create_question(request):
+    return render(request, "create_question.html")
 
 
 def create_org_redirect(request):
@@ -189,9 +194,89 @@ def create_org(request) -> HttpResponse:
 
     return HttpResponse(status=400)  # Bad request if no expression
 
-@login_required
+
+def create_org_redirect(request):
+    if request.headers.get("HX-Request"):
+        return HttpResponse(
+            headers={"HX-Redirect": "/create_org_view/"}
+        )  # Redirects in HTMX
+        return HttpResponse(
+            headers={"HX-Redirect": "/create_org_view/"}
+        )  # Redirects in HTMX
+
+    return redirect("/create_org_view/")  # Normal Django redirect for non-HTMX requests
+
+
+@csrf_protect
+def create_org(request) -> HttpResponse:
+    """
+    Creates an organization and admin account
+    with the fetched input
+    Creates an organization and admin account
+    with the fetched input
+
+    Args:
+        request: The input text from the org_name, name, email and password fields
+        request: The input text from the org_name, name, email and password fields
+
+    Returns:
+        HttpResponse: Returns status 204 if all is good, otherwise 400
+        HttpResponse: Returns status 204 if all is good, otherwise 400
+    """
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            org_name = request.POST.get("org_name")
+            name = request.POST.get("name")
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            org_name = request.POST.get("org_name")
+            name = request.POST.get("name")
+            email = request.POST.get("email")
+            password = request.POST.get("password")
+
+            # Create organization
+            org = models.Organization(name=org_name)
+            org.save()
+
+            # Create admin account
+            admin_account = models.CustomUser.objects.create_user(email, name, password)
+            admin_account = models.CustomUser.objects.create_user(email, name, password)
+            admin_account.user_role = models.UserRole.ADMIN
+            admin_account.is_staff = True
+            admin_account.is_superuser = True
+
+            # Link admin account to org
+            admin_account.admin = org
+            admin_account.save()
+
+            # Create base (everyone) employee group
+            base_group = models.EmployeeGroup(name="Alla", organization=org)
+            base_group.save()
+
+            # Adding a org approved email for easy testing
+            test_email = models.EmailList(email="user22@example.com", org=org)
+            test_email.save()
+
+            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
+
+            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
+
+    return HttpResponse(status=400)  # Bad request if no expression
+
+
 def create_survey_view(request):
     return render(request, "create_survey.html")
+
+
+def edit_question_view(request):
+    return render(request, "edit_question.html")
+
+
+def edit_question_view(request):
+    return render(request, "edit_question.html")
 
 
 def login_view(request):
@@ -249,18 +334,37 @@ def my_org_view(request):
 
 @login_required
 def my_results_view(request):
-    return render(request, "my_results.html")
+    user = request.user  # Assuming the user is authenticated
+    answered_count = user.count_answered_surveys()
+    answered_surveys = user.get_answered_surveys()
+
+    # Assuming survey deadline is converted to UTC-timezone
+    current_time = timezone.now()
+
+    return render(
+        request,
+        "my_results.html",
+        {
+            "answered_count": answered_count,
+            "answered_surveys": answered_surveys,
+            "current_time": current_time,
+        },
+    )
+    return render(
+        request,
+        "my_results.html",
+        {
+            "answered_count": answered_count,
+            "answered_surveys": answered_surveys,
+            "current_time": current_time,
+        },
+    )
 
 @login_required
 def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
-@login_required
-def publish_survey_view(request):
-    return render(request, "publish_survey.html")
 
-@login_required
-@csrf_protect
 def settings_admin_view(request):
 #if pressed leave over account
     if request.method == "POST":
@@ -316,17 +420,26 @@ def settings_user_view(request):
 @login_required
 def start_admin_view(request):
     return render(
-        request,
-        "start_admin.html"
+        request, "start_admin.html"
     )  # Fix so only works if the user is actually an admin
 
 @login_required
 def start_user_view(request):
     return render(request, "start_user.html")
 
-@login_required
-def survey_result_view(request):
-    return render(request, "survey_result.html")
+
+def survey_result_view(request, survey_id):
+    survey_result = SurveyResult.objects.filter(id=survey_id).first()
+
+    if survey_result is not None:
+        # Check if the survey is accessible to the user
+        if survey_result.user != request.user:
+            survey_result = None
+
+    # Proceed to render the survey results
+    return render(request, "survey_result.html", {"survey_result": survey_result})
+
+    return render(request, "survey_result.html", {"survey_result": survey_result})
 
 @login_required
 def survey_status_view(request):
@@ -334,4 +447,56 @@ def survey_status_view(request):
 
 @login_required
 def unanswered_surveys_view(request):
-    return render(request, "unanswered_surveys.html")
+    user = request.user  # Assuming the user is authenticated
+    unanswered_count = user.count_unanswered_surveys()
+    unanswered_surveys = user.get_unanswered_surveys()
+    return render(
+        request,
+        "unanswered_surveys.html",
+        {
+            "unanswered_count": unanswered_count,
+            "unanswered_surveys": unanswered_surveys,
+        },
+    )
+
+
+def chart_view1(request):
+    SURVEY_ID = 2  # Choose what survey you want to show here
+
+    # ---- ENPS SCORES ----
+    enps_question = Question.objects.filter(question_type="enps").first()
+
+    enps_answers = Answer.objects.filter(
+        is_answered=True,
+        question=enps_question,
+        slider_answer__isnull=False,
+        survey__published_survey__id=SURVEY_ID,
+    )
+
+    promoters = enps_answers.filter(slider_answer__gte=9).count()
+    passives = enps_answers.filter(slider_answer__gte=7, slider_answer__lt=9).count()
+    detractors = enps_answers.filter(slider_answer__lt=7).count()
+
+    enps_labels = ["Promoters", "Passives", "Detractors"]
+    enps_data = [promoters, passives, detractors]
+    # analysisHandler = AnalysisHandler()
+    # print(analysisHandler.calcENPS(promoters, passives, detractors))
+    context = {
+        "enps_labels": enps_labels,
+        "enps_data": enps_data,
+    }
+
+    return render(request, "index.html", context)
+
+
+def chart_view(request):
+    # If no real data exists, show sample data
+    labels = ["Happy", "Neutral", "Sad"]
+    data = [3, 2, 1]
+
+    context = {
+        "labels": labels,
+        "data": data,
+    }
+
+    return render(request, "analysis.html", context)
