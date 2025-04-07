@@ -7,13 +7,13 @@ This template is designed to be used by including it and was specifically design
 
 {% comment %} Sidepanel code {% endcomment %}
 <div class="sidepanel" id="panel">
-  <a href="#">Startsida</a>
-  <a href="#">Obesvarade enkäter</a>
-  <a href="#">Mina enkäter</a>
-  <a href="#">Skapa enkät</a>
-  <a href="#">Se resultat</a>
-  <a href="#">Min organisation</a>
-  <a href="#">Inställningar</a>
+  <a href={% url 'start_user' %}>Startsida</a>
+  <a href={% url 'unanswered_surveys' %}>Obesvarade enkäter</a>
+  <a href={% url 'my_surveys' %}>Mina enkäter</a>
+  <a href={% url 'create_survey' %}>Skapa enkät</a>
+  <a href={% url 'my_results' %}>Se resultat</a>
+  <a href={% url 'my_org' %}>Min organisation</a>
+  <a href={% url 'settings_user' %}>Inställningar</a>
 </div>
 
 <script>
@@ -24,12 +24,10 @@ This template is designed to be used by including it and was specifically design
       // Open the sidepanel
       x.style.transform = "translateX(0)"; // Slide the panel in
       x.style.visibility = "visible"; // Make it visible
-      /*x.style.opacity = "1"; // Fade in*/
     } else {
       // Close the sidepanel
       x.style.transform = "translateX(100%)"; // Slide the panel out
       x.style.visibility = "hidden"; // Make it invisible
-      /*x.style.opacity = "0"; // Fade out*/
     }
   }
 </script>
