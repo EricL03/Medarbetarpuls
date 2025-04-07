@@ -90,3 +90,7 @@ def survey_status_view(request):
 
 def unanswered_surveys_view(request):
     return render(request, "unanswered_surveys.html")
+
+
+def test_topbar(request):
+    return render(request, "test_topbar.html")

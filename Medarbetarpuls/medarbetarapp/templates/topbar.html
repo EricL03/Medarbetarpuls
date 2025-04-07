@@ -1,32 +1,15 @@
-{% extends "master.html" %} {% load static %}
+{% load static %}
 
 <!--
 {%comment%} 
-To extend this template, you need to do following code:
+This template is designed to be used by including it at the start of the body. The code could bring a better result if the code for a specific page is implemented in a seperate container. 
+To include this template, use the following code and input the wanted value for the variable for the page title:
 
-  {% extends "topbar.html" %}
-
-  {% block title %} 
-    (Text for the title that should be used in <title>...</title>)
-  {% endblock %}
-
-  {% block pagetitle %}
-    (Text for the title that should be shown in the topbar)
-  {% endblock %}
-
-  {% block page_content %}
-    ...
-    (Code for the content of the page)
-    ...
-  {% endblock %}
+  {% include "topbar.html" with pagetitle="The title for the page" %}
 
 {%endcomment%} -->
 
-<!-- The title for <title>...</title> needs to be given by the extending template. -->
-{% block title %}{% endblock %}
-
 <!-- Implementation of the topbar -->
-{% block content %}
 <div class="topbar">
   <!-- Code for the logo -->
   <div class="topbar-logo">
@@ -38,8 +21,8 @@ To extend this template, you need to do following code:
     /></a>
   </div>
 
-  <!-- The title in the topbar needs to be sent from the extending template. -->
-  <div class="pagetitle">{% block pagetitle %}{% endblock %}</div>
+  <!-- The title in the topbar needs to be sent by a variable when the template is included. -->
+  <div class="pagetitle">{{pagetitle}}</div>
 
   <!-- Code for the menu -->
   <div class="menu">
@@ -48,8 +31,3 @@ To extend this template, you need to do following code:
   <!-- Including the code for the sidepanel -->
   {% include 'sidepanel.html' %}
 </div>
-
-<!-- The page's content need to be implemented in the extending template. -->
-<div class="wrapper">{% block page_content %}{% endblock %}</div>
-
-{% endblock %}

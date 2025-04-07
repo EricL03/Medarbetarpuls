@@ -29,4 +29,5 @@ urlpatterns = [
     path(
         "unanswered-surveys/", views.unanswered_surveys_view, name="unanswered_surveys"
     ),
+    path("test_topbar/", views.test_topbar, name="test_topbar"),
 ]
