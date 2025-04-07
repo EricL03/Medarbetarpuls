@@ -189,10 +189,7 @@ button:hover {
 
 .pagetitle {
   color: var(--black);
-  font-size: 32px;
-  padding-top: 15%;
-  font-weight: bold;
-  text-align: center;
+  /*text-align: center;*/
 }
 
 .sidepanel {
@@ -209,7 +206,6 @@ button:hover {
   transition: 0.5s;
   visibility: hidden;
   transform: translateX(100%);
-  /*opacity: 0;*/
   display: block;
 }
 
