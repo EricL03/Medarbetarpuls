@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    {% load static %}
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+  
+    <header class="top-bar">
+      <div class="left-icon">
+      <img src="{% static 'logo.png' %}" alt="logo" class="logo" />
+      </div>
+      <h1 class="survey">Mina enkäter</h1>
+      <div class="right-icon">
+      <img src="{% static 'go-back-btn.png' %}" class="back-button" />
+      </div>
+    </header>
+
+    <style>
+      .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background-color: #f8f9fa;
+      }
+
+      .left-icon, .right-icon {
+      display: flex;
+      align-items: center;
+      }
+
+      .logo {
+      height: 40px;
+      }
+
+      .back-button {
+      height: 40px;
+      cursor: pointer;
+      }
+      .top-bar h1 {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .survey {
+      flex-grow: 1;
+      text-align: center;
+      font-size: 24px;
+      color: rgb(0, 132, 255);
+      }
+    </style>
+  
+   
+  </body>
+</html>
+
+
+<div class="search-container">
+  <input type="text" id="search-bar" class="search-bar" placeholder="Sök enkäter..." />
+  <button type="button" class="search-button">Sök</button>
+
+<button type="button" id="toggle-view" class="toggle-view-button">Växla vy</button>
+</div>
+
+<script>
+  document.getElementById('toggle-view').addEventListener('click', function () {
+    const surveyList = document.querySelector('.survey-list');
+    surveyList.classList.toggle('list-view');
+    surveyList.classList.toggle('grid-view');
+  });
+</script>
+
+
+<style>
+
+  .toggle-view-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 20px auto;
+    display: block;
+  }
+
+  .toggle-view-button:hover {
+    background-color: #0056b3;
+  }
+</style>
+<div class="survey-list list-view">
+  <div class="survey-item">
+    <h2 class="survey-title">Survey 1</h2>
+    <div class="survey-actions">
+      <img src="{% static 'delete-icon.png' %}" alt="Delete" class="action-icon" />
+      <img src="{% static 'edit-icon.png' %}" alt="Edit" class="action-icon" />
+      <img src="{% static 'share-icon.png' %}" alt="Share" class="action-icon" />
+    </div>
+  </div>
+  <div class="survey-item">
+    <h2 class="survey-title">Survey 2</h2>
+    <div class="survey-actions">
+      <img src="{% static 'delete-icon.png' %}" alt="Delete" class="action-icon" />
+      <img src="{% static 'edit-icon.png' %}" alt="Edit" class="action-icon" />
+      <img src="{% static 'share-icon.png' %}" alt="Share" class="action-icon" />
+    </div>
+  </div>
+  
+  <div class="survey-item">
+    <h2 class="survey-title">Survey 3</h2>
+    <div class="survey-actions">
+      <img src="{% static 'delete-icon.png' %}" alt="Delete" class="action-icon" />
+      <img src="{% static 'edit-icon.png' %}" alt="Edit" class="action-icon" />
+      <img src="{% static 'share-icon.png' %}" alt="Share" class="action-icon" />
+    </div>
+    </div>
+  
+
+<div class="add-survey-container">
+  <button type="button" class="add-survey-button">Lägg till enkät</button>
+</div>
+</div>
+
+<style>
+  .survey-list {
+      margin-top: 20px;
+    }
+
+    .list-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .grid-view {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: flex-start;
+      padding: 20px 150px;
+    }
+
+    .survey-item {
+      background-color: #f8f9fa;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .list-view .survey-item {
+      width: 80%;
+      margin-bottom: 20px;
+    }
+
+    .grid-view .survey-item {
+      width: 300px;
+      height: 300px;
+    }
+
+  .survey-title {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #007bff;
+  }
+
+  .survey-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+
+  .action-icon {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+  }
+
+  .add-survey-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .add-survey-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .add-survey-button:hover {
+    background-color: #0056b3;
+  }
+
+  .search-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-top: 20px;
+    padding-left: 150px; /* Adds 200px empty space to the left of the search bar */
+  }
+</style>
+
+<style>
+ 
+
+  .search-bar {
+   
+    width: 50%;
+    padding: 10px 200px;
+    font-size: 16px;
+    margin-right: 50px;
+    border: 1px solid #ccc;
+    border-radius: 500px;
+  }
+
+  .search-button {
+    padding: 10px 20px;
+    margin-left: 10px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .search-button:hover {
+    background-color: #0056b3;
+  }
+
+  .survey{
+    color: rgb(0, 132, 255);
+    text-align: center; /* Optional: Ensures the header is centered */
+  }
+
+
+</style>

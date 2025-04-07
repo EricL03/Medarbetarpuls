@@ -1,11 +1,12 @@
 body {
-  font-family: Arial, sans-serif; /* change later to PK font */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: white;
+  font-family: Arial, sans-serif;
   margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column; /* Stack items vertically */
+  align-items: stretch; /* Ensure items span the full width */
+  background-color: white;
 }
 
 .login-container {
@@ -16,10 +17,23 @@ body {
   padding: 20px;
   border-radius: 10px;
 }
+body .survey-header {
+  color: #5226d7;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
 
 .logo {
   width: 50%;
   margin-bottom: 20px;
+  margin-right: 550px;
+}
+.back-button{
+  width: 50%;
+  margin-bottom: 20px;
+  margin-left: 100px;
 }
 
 .input-form {
@@ -99,6 +113,7 @@ button:hover {
   margin-bottom: 12%;
   font-size: 24px;
   color: #4e8ce1;
+
 }
 
 .create-container h2 {
@@ -225,4 +240,23 @@ button:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
+.top-bar {
+  display: flex;
+  align-items: center; /* Align items vertically in the center */
+  justify-content: flex-start; /* Align items to the left */
+  padding: 10px;
+  position: relative; /* Ensure it stays at the top */
+  background-color: #f8f9fa; /* Optional: Add a background color */
+}
+
+.left-icon {
+  margin-right: 10px; /* Add spacing between the logo and the text */
+}
+
+.left-icon .logo {
+  width: 50px; /* Adjust size as needed */
+  height: auto;
+}
+
 
