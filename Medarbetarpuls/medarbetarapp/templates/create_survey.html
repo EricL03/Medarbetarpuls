@@ -21,11 +21,10 @@
         <input
           type="text"
           class="editable-title"
-          placeholder="Skriv din titel här..."
+          placeholder= {{ survey_temp.name }}
           value=""
         />
       </div>
-
       <div class="grid-container">
         <!-- Make all of this dynamic -->
         <a href="{% url 'edit_question' %}" class="grid-item blue">
@@ -41,11 +40,13 @@
             <button class="delete-button">Ta bort</button>
           </div>
         </a>
+
         <a href="{% url 'create_question' %}" class="add-button-link">
           <div class="add-button">
             <span>+</span>
           </div>
         </a>
+
       </div>
       <button class="button" onclick="openPopup()">Publicera enkät</button>
     </div>

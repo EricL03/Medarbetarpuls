@@ -191,8 +191,14 @@ def create_org(request) -> HttpResponse:
 
     return HttpResponse(status=400)  # Bad request if no expression
 
-def create_survey_view(request):
-    return render(request, "create_survey.html")
+def create_survey_view(request, survey_temp = None):
+    if survey_temp is None:
+        survey_temp = models.SurveyTemplate(creator=request.user, last_edited=timezone.now())
+        survey_id = survey_temp.id
+        survey_temp.name = "Survey: " + str(survey_id)
+        survey_temp.save()
+
+    return render(request, "create_survey.html", {"survey_temp": survey_temp})
 
 
 def edit_question_view(request):
