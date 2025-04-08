@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
   <head>
     {% load static %}
@@ -26,12 +26,12 @@
             placeholder="Fråga"
             required
           />
+          <button type="button">Demonstrera</button>
+          <button type="submit">Spara</button>
         </form>
-        <button type="button">Demonstrera</button>
-        <button type="button">Spara</button>
         <button
           class="go-back-button"
-          onclick="window.location.href='{% url 'create_question' %}'"
+          onclick="window.location.href='{% url 'create_question' survey_temp.id %}'"
         >
           <img
             src="{% static 'images/go-back-btn.png' %}"

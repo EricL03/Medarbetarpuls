@@ -216,8 +216,14 @@ def create_survey_view(request, survey_id = None):
     return render(request, "create_survey.html", {"survey_temp": survey_temp})
 
 
-def edit_question_view(request):
-    return render(request, "edit_question.html")
+def edit_question_view(request, survey_id, question_type, question_id = None):
+    user = request.user
+    survey_temp = user.survey_templates.filter(id=survey_id).first()
+    if survey_temp is None:
+        # Handle the case where the survey template does not exist
+        return HttpResponse("Survey template not found", status=404)
+
+    return render(request, "edit_question.html", {"survey_temp": survey_temp})
 
  
 def login_view(request):

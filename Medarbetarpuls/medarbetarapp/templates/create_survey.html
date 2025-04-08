@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
   <head>
     {% load static %}
@@ -10,26 +10,32 @@
   </head>
   <body>
     <div class="start-container">
-
-    <div class="title-background">
-      <button class="title-back-button" onclick="window.location.href='{% url 'my_surveys'%}'"> 
-          Tillbaka </button>
-      <h2>Skapa enkät</h2>
-    </div>
+      <div class="title-background">
+        <button
+          class="title-back-button"
+          onclick="window.location.href='{% url 'my_surveys'%}'"
+        >
+          Tillbaka
+        </button>
+        <h2>Skapa enkät</h2>
+      </div>
 
       <div class="editable-title-container">
         <input
           type="text"
           class="editable-title"
-          placeholder= "Placeholder"
+          placeholder="Placeholder"
           value=""
         />
       </div>
-      
+
       <div class="grid-container">
         <!-- Make all of this dynamic -->
         {% for question in survey_temp.questions.all %}
-        <a href="{% url 'edit_question' %}" class="grid-item blue">
+        <a
+          href="{% url 'edit_question' survey_temp.id 1 question.id %}"
+          class="grid-item blue"
+        >
           <h2>Fråga 1</h2>
           <!-- Fix so edits this question, not creating a new one -->
           <div class="editable-question-container">
@@ -44,17 +50,18 @@
         </a>
         {% endfor %}
 
-        <a href="{% url 'create_question' survey_temp.id %}" class="add-button-link">
+        <a
+          href="{% url 'create_question' survey_temp.id %}"
+          class="add-button-link"
+        >
           <div class="add-button">
             <span>+</span>
           </div>
         </a>
-
       </div>
     </div>
     <button class="button" onclick="openPopup()">Publicera enkät</button>
     <div id="publish-popup" class="popup-overlay" style="display: none">
-      
       <div class="popup-content">
         <h2>Publicera enkät</h2>
 
@@ -104,13 +111,16 @@
           <label>Påminn efter:</label>
           <div class="reminder-tags">
             <div class="reminder-tag">
-              1 v <span class="close">&times;</span>
+              1 v
+              <span class="close">&times;</span>
             </div>
             <div class="reminder-tag">
-              2 v <span class="close">&times;</span>
+              2 v
+              <span class="close">&times;</span>
             </div>
             <div class="reminder-tag">
-              3 v <span class="close">&times;</span>
+              3 v
+              <span class="close">&times;</span>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
   <head>
     {% load static %}
@@ -25,7 +25,7 @@
             <div id="q1" class="question-text" style="display: none">
               Vårt företag utvecklas i rätt riktning
             </div>
-            <a href="{% url 'edit_question' 1 %}">
+            <a href="{% url 'edit_question_new' survey_temp.id 1 %}">
               <button type="button">Välj</button>
             </a>
           </li>
@@ -39,8 +39,8 @@
             <div id="q2" class="question-text" style="display: none">
               Jag gillar mitt jobb
             </div>
-            <a href="{% url 'edit_question'%}">
-              <button type="button">Välj</button> 
+            <a href="{% url 'edit_question_new' survey_temp.id 2 %}">
+              <button type="button">Välj</button>
             </a>
           </li>
           <li class="question-item">
@@ -52,7 +52,7 @@
             <div id="q3" class="question-text" style="display: none">
               Min stressnivå är
             </div>
-            <a href="{% url 'edit_question' %}">
+            <a href="{% url 'edit_question_new' survey_temp.id 3 %}">
               <button type="button">Välj</button>
             </a>
           </li>
