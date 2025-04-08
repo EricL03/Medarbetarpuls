@@ -3,7 +3,8 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import SurveyResult
 
@@ -85,12 +86,9 @@ def find_organization_by_email(email: str) -> models.Organization | None:
     return email_entry.org  # Follow the ForeignKey to Organization
 
 
-def add_employee_view(request):
-    return render(request, "add_employee.html", {"organization": request.user.admin})
-
-
+@login_required
 @csrf_exempt
-def add_employee_email(request) -> HttpResponse:
+def add_employee_view(request):
     """
     Adds the given email to the organization
     email list of allowed emails. An email in
@@ -102,24 +100,30 @@ def add_employee_email(request) -> HttpResponse:
     Returns:
         HttpResponse: Returns status 204 if all is good, otherwise 400
     """
+
     if request.method == "POST":
-        if request.headers.get("HX-Request"):
-            email = request.POST.get("email")
-            user = request.user
+        email = request.POST.get("email")
+        user = request.user
 
-            if user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
-                org = user.admin
-                email_instance = models.EmailList(email=email, org=org)
-                email_instance.save()
-                return HttpResponse(status=204)
+        if user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
+            org = user.admin
+            email_instance = models.EmailList(email=email, org=org)
+            email_instance.save()
+            return HttpResponse(status=204)  # maybe should render back to my_org?
 
-    return HttpResponse(status=400)  # Bad request if no expression
+    return render(
+        request,
+        "add_employee.html",
+        {"pagetitle": f"Lägg till medarbetare i<br>{request.user.admin.name}"},
+    )
 
 
+@login_required
 def analysis_view(request):
     return render(request, "analysis.html")
 
 
+@login_required
 def answer_survey_view(request):
     return render(request, "answer_survey.html")
 
@@ -195,84 +199,8 @@ def create_org(request) -> HttpResponse:
     return HttpResponse(status=400)  # Bad request if no expression
 
 
-def create_org_redirect(request):
-    if request.headers.get("HX-Request"):
-        return HttpResponse(
-            headers={"HX-Redirect": "/create_org_view/"}
-        )  # Redirects in HTMX
-        return HttpResponse(
-            headers={"HX-Redirect": "/create_org_view/"}
-        )  # Redirects in HTMX
-
-    return redirect("/create_org_view/")  # Normal Django redirect for non-HTMX requests
-
-
-@csrf_protect
-def create_org(request) -> HttpResponse:
-    """
-    Creates an organization and admin account
-    with the fetched input
-    Creates an organization and admin account
-    with the fetched input
-
-    Args:
-        request: The input text from the org_name, name, email and password fields
-        request: The input text from the org_name, name, email and password fields
-
-    Returns:
-        HttpResponse: Returns status 204 if all is good, otherwise 400
-        HttpResponse: Returns status 204 if all is good, otherwise 400
-    """
-    if request.method == "POST":
-        if request.headers.get("HX-Request"):
-            org_name = request.POST.get("org_name")
-            name = request.POST.get("name")
-            email = request.POST.get("email")
-            password = request.POST.get("password")
-
-    if request.method == "POST":
-        if request.headers.get("HX-Request"):
-            org_name = request.POST.get("org_name")
-            name = request.POST.get("name")
-            email = request.POST.get("email")
-            password = request.POST.get("password")
-
-            # Create organization
-            org = models.Organization(name=org_name)
-            org.save()
-
-            # Create admin account
-            admin_account = models.CustomUser.objects.create_user(email, name, password)
-            admin_account = models.CustomUser.objects.create_user(email, name, password)
-            admin_account.user_role = models.UserRole.ADMIN
-            admin_account.is_staff = True
-            admin_account.is_superuser = True
-
-            # Link admin account to org
-            admin_account.admin = org
-            admin_account.save()
-
-            # Create base (everyone) employee group
-            base_group = models.EmployeeGroup(name="Alla", organization=org)
-            base_group.save()
-
-            # Adding a org approved email for easy testing
-            test_email = models.EmailList(email="user22@example.com", org=org)
-            test_email.save()
-
-            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
-
-            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
-
-    return HttpResponse(status=400)  # Bad request if no expression
-
-
 def create_survey_view(request):
     return render(request, "create_survey.html")
-
-
-def edit_question_view(request):
-    return render(request, "edit_question.html")
 
 
 def edit_question_view(request):
@@ -311,6 +239,7 @@ def login_view(request):
     return render(request, "login.html")
 
 
+@login_required
 def my_org_view(request):
     organization = request.user.admin
 
@@ -326,13 +255,14 @@ def my_org_view(request):
         "my_org.html",
         {
             "user": request.user,
-            "organization": organization,
             "employees": employees,
+            "pagetitle": f"Din organisation<br>{organization.name}",
         },
     )
     # TODO: test if this works, must be logged in
 
 
+@login_required
 def my_results_view(request):
     user = request.user  # Assuming the user is authenticated
     answered_count = user.count_answered_surveys()
@@ -348,43 +278,86 @@ def my_results_view(request):
             "answered_count": answered_count,
             "answered_surveys": answered_surveys,
             "current_time": current_time,
-        },
-    )
-    return render(
-        request,
-        "my_results.html",
-        {
-            "answered_count": answered_count,
-            "answered_surveys": answered_surveys,
-            "current_time": current_time,
+            "pagetitle": "Resultat på besvarade enkäter",
         },
     )
 
 
+@login_required
 def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
 
 def settings_admin_view(request):
+    # if pressed leave over account
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            newAdminEmail = request.POST.get("email")
+            user = request.user
+            org = user.admin
+
+            if models.EmailList.objects.filter(email=newAdminEmail).exists():
+                print("HAALLÅÅ")
+                logger.error("Testing error!!!")
+
+                user.is_active = False
+                user.is_superuser = False
+                user.admin = None
+                user.user_role = models.UserRole.SURVEY_RESPONDER
+                user.save()
+                newAdmin = models.CustomUser.objects.get(email=newAdminEmail)
+                newAdmin.is_superuser = True
+                newAdmin.user_role = models.UserRole.ADMIN
+                newAdmin.admin = org
+                newAdmin.save()
+                logout(request)
+                return HttpResponse(headers={"HX-Redirect": "/"})
+            else:
+                # maybe return message so user knows it was wrong password
+                pass
+
     return render(
         request,
         "settings_admin.html",
-        {"user": request.user, "organization": request.user.admin},
+        {"user": request.user, "organization": request.user.admin, "pagetitle": "Inställningar"},
     )
 
 
+@login_required
+@csrf_protect
 def settings_user_view(request):
-    return render(request, "settings_user.html", {"user": request.user})
+    # FIX - needs to fix so when wrong password is written the popup doesnt dissappear and a message is sent
+
+    # if pressed delete user
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            password = request.POST.get("password")
+            email = request.user.email
+
+            user = authenticate(request, username=email, password=password)
+            if user is not None:
+                user.is_active = False
+                user.save()
+
+                # user.delete() maybe not right because we want the users answers to be saved still
+                logout(request)
+                return HttpResponse(headers={"HX-Redirect": "/"})
+            else:
+                # maybe return message so user knows it was wrong password
+                pass
+    return render(request, "settings_user.html", {"user": request.user, "pagetitle": "Inställningar"})
 
 
+@login_required
 def start_admin_view(request):
     return render(
-        request, "start_admin.html"
+        request, "start_admin.html", {"pagetitle": f"Välkommen<br>{request.user.name}"}
     )  # Fix so only works if the user is actually an admin
 
 
+@login_required
 def start_user_view(request):
-    return render(request, "start_user.html")
+    return render(request, "start_user.html",  {"pagetitle": f"Välkommen<br>{request.user.name}"})
 
 
 def survey_result_view(request, survey_id):
@@ -398,13 +371,13 @@ def survey_result_view(request, survey_id):
     # Proceed to render the survey results
     return render(request, "survey_result.html", {"survey_result": survey_result})
 
-    return render(request, "survey_result.html", {"survey_result": survey_result})
 
-
+@login_required
 def survey_status_view(request):
     return render(request, "survey_status.html")
 
 
+@login_required
 def unanswered_surveys_view(request):
     user = request.user  # Assuming the user is authenticated
     unanswered_count = user.count_unanswered_surveys()
@@ -415,6 +388,7 @@ def unanswered_surveys_view(request):
         {
             "unanswered_count": unanswered_count,
             "unanswered_surveys": unanswered_surveys,
+            "pagetitle": "Obesvarade enkäter"
         },
     )
 
