@@ -25,7 +25,9 @@
             <div id="q1" class="question-text" style="display: none">
               Vårt företag utvecklas i rätt riktning
             </div>
-            <a href="{% url 'edit_question_new' survey_temp.id 1 %}">
+            <a
+              href="{% url 'edit_question_new' survey_temp.id QuestionFormat.YES_NO %}"
+            >
               <button type="button">Välj</button>
             </a>
           </li>
@@ -39,7 +41,9 @@
             <div id="q2" class="question-text" style="display: none">
               Jag gillar mitt jobb
             </div>
-            <a href="{% url 'edit_question_new' survey_temp.id 2 %}">
+            <a
+              href="{% url 'edit_question_new' survey_temp.id QuestionFormat.SLIDER %}"
+            >
               <button type="button">Välj</button>
             </a>
           </li>
@@ -52,7 +56,9 @@
             <div id="q3" class="question-text" style="display: none">
               Min stressnivå är
             </div>
-            <a href="{% url 'edit_question_new' survey_temp.id 3 %}">
+            <a
+              href="{% url 'edit_question_new' survey_temp.id QuestionFormat.TEXT %}"
+            >
               <button type="button">Välj</button>
             </a>
           </li>

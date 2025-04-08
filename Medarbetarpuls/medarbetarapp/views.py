@@ -140,7 +140,7 @@ def create_question(request, survey_id):
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
     
-    return render(request, "create_question.html", {"survey_temp": survey_temp})
+    return render(request, "create_question.html", {"survey_temp": survey_temp, "QuestionFormat": models.QuestionFormat,})
 
 
 def create_org_redirect(request):
@@ -218,10 +218,28 @@ def create_survey_view(request, survey_id = None):
 
 def edit_question_view(request, survey_id, question_type, question_id = None):
     user = request.user
+    
+    # Get the survey from given id
     survey_temp = user.survey_templates.filter(id=survey_id).first()
     if survey_temp is None:
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
+    
+    # Special case for when a question is created
+    if question_id is None: 
+        question = models.Question()
+        question.save()
+        survey_temp.questions.add(question)
+        return redirect("edit_question", survey_id=survey_id, question_type=question_type, question_id=question.id)
+    
+    # Check for valid question format
+    if question_type not in [choice.value for choice in models.QuestionFormat]:
+        return HttpResponse("Invalid question type", status=404)
+    
+    # Specify question format
+    question = survey_temp.questions.filter(id=question_id).first()
+    question.question_format = question_type 
+    question.save()
 
     return render(request, "edit_question.html", {"survey_temp": survey_temp})
 

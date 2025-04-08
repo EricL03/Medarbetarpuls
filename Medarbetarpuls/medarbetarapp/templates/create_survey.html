@@ -33,7 +33,7 @@
         <!-- Make all of this dynamic -->
         {% for question in survey_temp.questions.all %}
         <a
-          href="{% url 'edit_question' survey_temp.id 1 question.id %}"
+          href="{% url 'edit_question' survey_temp.id question.question_format question.id %}"
           class="grid-item blue"
         >
           <h2>Fråga 1</h2>
