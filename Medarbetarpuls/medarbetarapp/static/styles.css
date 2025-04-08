@@ -12,7 +12,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  height: 100%; /* Ensure the body takes full height */
+  overflow: auto; /* Allow scrolling */
   background-color: var(--white); /* white; */
   margin: 0;
 }
@@ -272,6 +273,8 @@ button:hover {
   flex-wrap: wrap;
   justify-content: center;
   gap: 20px;
+  
+  
 }
 
 /* Items within the grid dose not scale at the moment */
@@ -293,7 +296,14 @@ button:hover {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
+  max-height: 80vh; /* Limit the height */
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+.grid-item > * {
+  overflow: hidden; /* Prevent overflow in child elements */
+  flex-grow: 1; /* Allow children to grow to fill the available space */
 }
 
 /* Line at the bottom of the grid item */
