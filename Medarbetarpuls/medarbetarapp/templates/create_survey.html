@@ -20,15 +20,6 @@
         <h2>Skapa enkät</h2>
       </div>
 
-      <div class="editable-title-container">
-        <input
-          type="text"
-          class="editable-title"
-          placeholder="Placeholder"
-          value=""
-        />
-      </div>
-
       <div class="grid-container">
         <!-- Make all of this dynamic -->
         {% for question in survey_temp.questions.all %}
@@ -36,17 +27,42 @@
           href="{% url 'edit_question' survey_temp.id question.question_format question.id %}"
           class="grid-item blue"
         >
-          <h2>Fråga 1</h2>
-          <!-- Fix so edits this question, not creating a new one -->
-          <div class="editable-question-container">
-            <input
-              type="text"
-              class="editable-question"
-              placeholder="Fråga..."
-              value=""
-            />
-            <button class="delete-button">Ta bort</button>
+          <div class="question-title">
+            <h1>Fråga {{forloop.counter}}</h1>
           </div>
+          <div class="question-background">
+            <p>Oj oj oj vilken intressant fråga!</p>
+          </div>
+          <div class="question-result">
+            <!-- Placeholder for question result -->
+            {% if question.question_format == "yesno" %}
+            <img
+              src="{% static 'images/q1.png' %}"
+              alt="Ikon 1"
+              class="question-icon"
+            />
+            {% elif question.question_format == "slider" %}
+            <img
+              src="{% static 'images/q2.png' %}"
+              alt="Ikon 2"
+              class="question-icon"
+            />
+            {% elif question.question_format == "text" %} 
+            <img
+              src="{% static 'images/q3.png' %}"
+              alt="Ikon 3"
+              class="question-icon"
+            />
+            {% else %}
+
+            {{question.question_format}}
+
+            {% endif %} 
+
+          </div>  
+          <div>
+            <button class="delete-button">Ta bort</button>
+          </div>  
         </a>
         {% endfor %}
 
@@ -59,8 +75,10 @@
           </div>
         </a>
       </div>
+
+      <button class="button" onclick="openPopup()">Publicera enkät</button>
+
     </div>
-    <button class="button" onclick="openPopup()">Publicera enkät</button>
     <div id="publish-popup" class="popup-overlay" style="display: none">
       <div class="popup-content">
         <h2>Publicera enkät</h2>

@@ -55,6 +55,7 @@ body {
   font-size: 16px;
 }
 
+
 button {
   background-color: var(--blue); /* #4e8ce1; */
   color: var(--white); /*white;*/
@@ -199,7 +200,8 @@ button:hover {
 }
 
 .start-container {
-  max-width: 1200px;
+  max-width: 1000px;
+  width: 100%;
   justify-content: center;
   padding: 20px;
   display: flex;
@@ -228,31 +230,7 @@ button:hover {
 .title-background .title-back-button {
   position: absolute; /* Position button absolutely */
   left: 10px; /* Adjust as needed for spacing from the left */
-  transform: translateY(-60%); /* Adjust for vertical centering */
-}
-
-.title-background {
-  display: flex; /* Enable flexbox */
-  justify-content: center; /* Center the items in the flex container */
-  align-items: center; /* Center items vertically */
-  position: relative; /* Allow absolute positioning if needed */
-  width: 100%; /* Make it full width */
-  background-color: #e8ebf1; /* Optional: background color */
-  min-height: auto;
-  padding: 15px;
-  margin-bottom: 20px;
-}
-
-.title-background h2 {
-  flex: 1; /* Allow the heading to take up available space */
-  text-align: center; /* Center the text */
-  margin: 0; /* Remove default margin */
-}
-
-.title-background .title-back-button {
-  position: absolute; /* Position button absolutely */
-  left: 10px; /* Adjust as needed for spacing from the left */
-  transform: translateY(-60%); /* Adjust for vertical centering */
+  margin-top: 0;
 }
 
 .editable-title {
@@ -264,7 +242,6 @@ button:hover {
   outline: none; /* Remove focus outline */
   text-align: center;
   width: 100%; /* Full width to look like a title */
-  margin-bottom: 20%;
   padding: 5px 0;
 }
 
@@ -301,7 +278,7 @@ button:hover {
 .grid-item {
   position: relative;
   width: calc((100% / 3) - 40px);
-  min-width: 200px;
+  min-width: 220px;
   max-width: 250px;
   aspect-ratio: 1 / 1;
   background-color: white;
@@ -391,8 +368,13 @@ button:hover {
   display: flex;
   justify-content: center; 
   align-items: center; 
-  margin-top: 10px; 
+  margin-top: 5px; 
   font-weight: bold; 
+}
+
+.question-result .question-icon {
+  width: 90%;
+  height: 50%;
 }
 
 .delete-button {
