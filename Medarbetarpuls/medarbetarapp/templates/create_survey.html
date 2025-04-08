@@ -10,6 +10,13 @@
   </head>
   <body>
     <div class="start-container">
+
+    <div class="title-background">
+      <button class="title-back-button" onclick="window.location.href='{% url 'my_surveys'%}'"> 
+          Tillbaka </button>
+      <h2>Skapa enkät</h2>
+    </div>
+
       <div class="editable-title-container">
         <input
           type="text"
@@ -18,6 +25,7 @@
           value=""
         />
       </div>
+
       <div class="grid-container">
         <!-- Make all of this dynamic -->
         <a href="{% url 'edit_question' %}" class="grid-item blue">
