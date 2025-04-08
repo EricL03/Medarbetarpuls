@@ -133,8 +133,14 @@ def create_org_view(request):
     return render(request, "create_org.html")
 
 
-def create_question(request):
-    return render(request, "create_question.html")
+def create_question(request, survey_id):
+    user = request.user
+    survey_temp = user.survey_templates.filter(id=survey_id).first()
+    if survey_temp is None:
+        # Handle the case where the survey template does not exist
+        return HttpResponse("Survey template not found", status=404)
+    
+    return render(request, "create_question.html", {"survey_temp": survey_temp})
 
 
 def create_org_redirect(request):

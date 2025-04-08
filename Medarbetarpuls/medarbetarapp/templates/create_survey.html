@@ -21,12 +21,14 @@
         <input
           type="text"
           class="editable-title"
-          placeholder= {{ survey_temp.name }}
+          placeholder= "Placeholder"
           value=""
         />
       </div>
+      
       <div class="grid-container">
         <!-- Make all of this dynamic -->
+        {% for question in survey_temp.questions.all %}
         <a href="{% url 'edit_question' %}" class="grid-item blue">
           <h2>Fråga 1</h2>
           <!-- Fix so edits this question, not creating a new one -->
@@ -40,17 +42,19 @@
             <button class="delete-button">Ta bort</button>
           </div>
         </a>
+        {% endfor %}
 
-        <a href="{% url 'create_question' %}" class="add-button-link">
+        <a href="{% url 'create_question' survey_temp.id %}" class="add-button-link">
           <div class="add-button">
             <span>+</span>
           </div>
         </a>
 
       </div>
-      <button class="button" onclick="openPopup()">Publicera enkät</button>
     </div>
+    <button class="button" onclick="openPopup()">Publicera enkät</button>
     <div id="publish-popup" class="popup-overlay" style="display: none">
+      
       <div class="popup-content">
         <h2>Publicera enkät</h2>
 
@@ -115,7 +119,7 @@
         <div class="popup-buttons">
           <button
             class="go-back-button"
-            onclick="window.location.href='{% url 'create_survey' %}'"
+            onclick="window.location.href='{% url 'create_survey_with_id' survey_temp.id %}'"
           >
             <img
               src="{% static 'images/go-back-btn.png' %}"
