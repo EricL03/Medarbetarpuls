@@ -76,13 +76,15 @@ def create_acc(request) -> HttpResponse:
                     f"No group found with the name '{base_group}' in the organization '{org.name}'"
                 )
                 return HttpResponse(status=400)
+            
             code = 123456 # make random later, just test now
+            #print(new_user.email)
             send_mail(
-            subject='Your Verification Code',
-            message=f'Your verification code is: {code}',
-            from_email='no-reply@example.com',
-            recipient_list=[new_user.email],
-            fail_silently=False,
+                subject='Your Verification Code',
+                message=f'Your verification code is: {code}',
+                from_email='medarbetarpuls@gmail.com',
+                recipient_list=['refecod532@lesotica.com'],
+                fail_silently=False,
             )
             return HttpResponse(headers={"HX-Redirect": "/authentication-acc/"})  # Redirect to authentication account page
             #return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
@@ -291,26 +293,36 @@ def settings_admin_view(request):
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             # get new admins mail
-            newAdminEmail = request.POST.get("email")
+            new_admin_email = request.POST.get("email")
             # get old admin and the organisation
             user = request.user
             org = user.admin
             
             # check if new email exist and then switch roles and save
-            if models.EmailList.objects.filter(email=newAdminEmail).exists():
+            if models.EmailList.objects.filter(email=new_admin_email).exists():
                 """user.is_active = False
                 user.is_superuser = False
                 user.admin = None
                 user.user_role = models.UserRole.SURVEY_RESPONDER
                 user.save()"""
                 user.delete() #maybe not right because we want the users answers to be saved still
-                newAdmin = models.CustomUser.objects.get(email=newAdminEmail)
-                newAdmin.is_superuser = True
-                newAdmin.is_staff = True
-                newAdmin.user_role = models.UserRole.ADMIN
-                newAdmin.admin = org
+                new_admin = models.CustomUser.objects.get(email=new_admin_email)
+                new_admin.is_superuser = True
+                new_admin.is_staff = True
+                new_admin.user_role = models.UserRole.ADMIN
+                new_admin.admin = org
+
+                # Retrieve all employee groups associated with this organization
+                employee_groups = models.EmployeeGroup.objects.filter(organization=org)
+                # Get the new admin user by email
+                user = models.CustomUser.objects.get(email=new_admin_email)
+
+
+                # Remove the user from the specific employee group
+                user.employee_groups.remove(*employee_groups)
+
                 #models.EmailList.objects.filter(email = newAdminEmail, org=org).delete() MAYBE should delete this from emaillist because the account is now admin
-                newAdmin.save()
+                new_admin.save()
                 logout(request)
                 return HttpResponse(headers={"HX-Redirect": "/"})
             else: 
