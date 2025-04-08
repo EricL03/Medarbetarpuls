@@ -7,6 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import SurveyResult
+from django.core.mail import send_mail
 
 import logging
 
@@ -75,8 +76,16 @@ def create_acc(request) -> HttpResponse:
                     f"No group found with the name '{base_group}' in the organization '{org.name}'"
                 )
                 return HttpResponse(status=400)
-
-            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
+            code = 123456 # make random later, just test now
+            send_mail(
+            subject='Your Verification Code',
+            message=f'Your verification code is: {code}',
+            from_email='no-reply@example.com',
+            recipient_list=[new_user.email],
+            fail_silently=False,
+            )
+            return HttpResponse(headers={"HX-Redirect": "/authentication-acc/"})  # Redirect to authentication account page
+            #return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
 
     return HttpResponse(status=400)  # Bad request if no expression
 
@@ -186,6 +195,7 @@ def create_org(request) -> HttpResponse:
             # Adding a org approved email for easy testing
             test_email = models.EmailList(email="user22@example.com", org=org)
             test_email.save()
+            
 
             return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
 
@@ -277,26 +287,29 @@ def my_surveys_view(request):
 
 
 def settings_admin_view(request):
-#if pressed leave over account
+#Leave over account to new admin function
     if request.method == "POST":
         if request.headers.get("HX-Request"):
+            # get new admins mail
             newAdminEmail = request.POST.get("email")
+            # get old admin and the organisation
             user = request.user
             org = user.admin
             
+            # check if new email exist and then switch roles and save
             if models.EmailList.objects.filter(email=newAdminEmail).exists():
-                print("HAALLÅÅ")
-                logger.error("Testing error!!!")
-
-                user.is_active = False
+                """user.is_active = False
                 user.is_superuser = False
                 user.admin = None
                 user.user_role = models.UserRole.SURVEY_RESPONDER
-                user.save()
+                user.save()"""
+                user.delete() #maybe not right because we want the users answers to be saved still
                 newAdmin = models.CustomUser.objects.get(email=newAdminEmail)
                 newAdmin.is_superuser = True
+                newAdmin.is_staff = True
                 newAdmin.user_role = models.UserRole.ADMIN
                 newAdmin.admin = org
+                #models.EmailList.objects.filter(email = newAdminEmail, org=org).delete() MAYBE should delete this from emaillist because the account is now admin
                 newAdmin.save()
                 logout(request)
                 return HttpResponse(headers={"HX-Redirect": "/"})
@@ -312,18 +325,19 @@ def settings_user_view(request):
     #FIX - needs to fix so when wrong password is written the popup doesnt dissappear and a message is sent
 
     
-    #if pressed delete user
+    #Delete user function
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             password = request.POST.get("password")
             email = request.user.email
-            
+            # Check so password is correct
             user = authenticate(request, username=email, password=password)
             if user is not None:
-                user.is_active = False
-                user.save()
+                #set user to inactive and save then logout the user
+                #user.is_active = False
+                #user.save()
 
-                #user.delete() maybe not right because we want the users answers to be saved still
+                user.delete() #maybe not right because we want the users answers to be saved still
                 logout(request)
                 return HttpResponse(headers={"HX-Redirect": "/"})
             else: 
