@@ -191,12 +191,21 @@ def create_org(request) -> HttpResponse:
 
     return HttpResponse(status=400)  # Bad request if no expression
 
-def create_survey_view(request, survey_temp = None):
-    if survey_temp is None:
+def create_survey_view(request, survey_id = None):
+    if survey_id is None:
         survey_temp = models.SurveyTemplate(creator=request.user, last_edited=timezone.now())
-        survey_id = survey_temp.id
-        survey_temp.name = "Survey: " + str(survey_id)
         survey_temp.save()
+        survey_id = survey_temp.id
+        survey_temp.name = "Survey " + str(survey_id)
+        survey_temp.save()
+        
+        return redirect("create_survey_with_id", survey_id=survey_temp.id)
+    
+    user = request.user
+    survey_temp = user.survey_templates.filter(id=survey_id).first()
+    if survey_temp is None:
+        # Handle the case where the survey template does not exist
+        return HttpResponse("Survey template not found", status=404)
 
     return render(request, "create_survey.html", {"survey_temp": survey_temp})
 
@@ -204,7 +213,7 @@ def create_survey_view(request, survey_temp = None):
 def edit_question_view(request):
     return render(request, "edit_question.html")
 
-
+ 
 def login_view(request):
     # maybe implement sesion timer so you dont get logged out??
     if request.user.is_authenticated:
