@@ -247,9 +247,18 @@ def edit_question_view(request, survey_id, question_type, question_id = None):
             question.question = request.POST.get("question")
             question.save()
 
+            # Save the question text in variable that can be returned to frontend
+            question_text = question.question
+
             return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
 
-    return render(request, "edit_question.html", {"survey_temp": survey_temp, "question_format": question_type, "question_id": question_id})
+
+    if question_id is None: 
+        question_text = None 
+    else: 
+        question_text = models.Question.objects.filter(id=question_id).first().question
+
+    return render(request, "edit_question.html", {"survey_temp": survey_temp, "question_format": question_type, "question_id": question_id, "question_text": question_text})
 
  
 def login_view(request):

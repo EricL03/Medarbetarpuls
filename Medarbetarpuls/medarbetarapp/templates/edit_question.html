@@ -34,6 +34,7 @@
         >
         {% endif %}
           {% csrf_token %}
+          {% if question_text is None %}
           <input
             type="text"
             id="question"
@@ -41,6 +42,15 @@
             placeholder="Fråga"
             required
           />
+          {% else %}
+          <input
+            type="text"
+            id="question"
+            name="question"
+            value="{{ question_text }}"
+            required
+          />
+          {% endif %}
           <button type="button">Demonstrera</button>
           <button type="submit">Spara</button>
         </form>
