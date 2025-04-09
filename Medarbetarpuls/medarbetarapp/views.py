@@ -225,23 +225,31 @@ def edit_question_view(request, survey_id, question_type, question_id = None):
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
     
-    # Special case for when a question is created
-    if question_id is None: 
-        question = models.Question()
-        question.save()
-        survey_temp.questions.add(question)
-        return redirect("edit_question", survey_id=survey_id, question_type=question_type, question_id=question.id)
-    
-    # Check for valid question format
-    if question_type not in [choice.value for choice in models.QuestionFormat]:
-        return HttpResponse("Invalid question type", status=404)
-    
-    # Specify question format
-    question = survey_temp.questions.filter(id=question_id).first()
-    question.question_format = question_type 
-    question.save()
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            # Special case for when a question is created
+            if question_id is None: 
+                question = models.Question()
+                question.save()
+                survey_temp.questions.add(question)
+            else: 
+                question = survey_temp.questions.filter(id=question_id).first()
+            
+            # Check for valid question format
+            if question_type not in [choice.value for choice in models.QuestionFormat]:
+                return HttpResponse("Invalid question type", status=404)
+            
+            # Specify question format
+            question.question_format = question_type 
+            question.save()
 
-    return render(request, "edit_question.html", {"survey_temp": survey_temp})
+            # Add question text
+            question.question = request.POST.get("question")
+            question.save()
+
+            return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
+
+    return render(request, "edit_question.html", {"survey_temp": survey_temp, "question_format": question_type, "question_id": question_id})
 
  
 def login_view(request):

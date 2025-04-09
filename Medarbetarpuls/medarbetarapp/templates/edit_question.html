@@ -18,7 +18,22 @@
           class="question-icon"
         />
 
-        <form class="question-form">
+        {% if question_id is None %} 
+        <form
+          class="question-form"
+          hx-post="{% url 'edit_question_new' survey_temp.id question_format %}"
+          hx-target=".question-form"
+          hx-trigger="submit"
+        >
+        {% else %} 
+        <form
+          class="question-form"
+          hx-post="{% url 'edit_question' survey_temp.id question_format question_id %}"
+          hx-target=".question-form"
+          hx-trigger="submit"
+        >
+        {% endif %}
+          {% csrf_token %}
           <input
             type="text"
             id="question"

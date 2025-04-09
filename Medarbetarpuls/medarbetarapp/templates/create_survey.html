@@ -31,7 +31,7 @@
             <h1>Fråga {{forloop.counter}}</h1>
           </div>
           <div class="question-background">
-            <p>Oj oj oj vilken intressant fråga!</p>
+            <p>{{question.question}}</p>
           </div>
           <div class="question-result">
             <!-- Placeholder for question result -->
@@ -47,22 +47,17 @@
               alt="Ikon 2"
               class="question-icon"
             />
-            {% elif question.question_format == "text" %} 
+            {% elif question.question_format == "text" %}
             <img
               src="{% static 'images/q3.png' %}"
               alt="Ikon 3"
               class="question-icon"
             />
-            {% else %}
-
-            {{question.question_format}}
-
-            {% endif %} 
-
-          </div>  
+            {% else %} {{question.question_format}} {% endif %}
+          </div>
           <div>
             <button class="delete-button">Ta bort</button>
-          </div>  
+          </div>
         </a>
         {% endfor %}
 
@@ -77,7 +72,6 @@
       </div>
 
       <button class="button" onclick="openPopup()">Publicera enkät</button>
-
     </div>
     <div id="publish-popup" class="popup-overlay" style="display: none">
       <div class="popup-content">
