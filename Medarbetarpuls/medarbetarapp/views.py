@@ -216,7 +216,20 @@ def create_survey_view(request, survey_id = None):
     return render(request, "create_survey.html", {"survey_temp": survey_temp})
 
 
-def edit_question_view(request, survey_id: int, question_format: models.QuestionFormat, question_id: str | None = None):
+def edit_question_view(request, survey_id: int, question_format: models.QuestionFormat, question_id: str | None = None) -> HttpResponse:
+    """
+    Makes it possible to edit a question. This function is reachable
+    from both create_survey and create_question views. 
+
+    Args:
+        request: The input text from the question text field 
+        survey_id (int): The id of the opened survey
+        question_format (QuestionFormat): The format of the question being created/edited 
+        question_id (int): The id of edited/created question, None if no question has been created
+
+    Returns:
+        HttpResponse: Redirects to create_survey or renders edit_question_view  
+    """
     user: models.CustomUser = request.user
     
     # Get the survey from given id
@@ -250,6 +263,7 @@ def edit_question_view(request, survey_id: int, question_format: models.Question
             return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
 
 
+    # Checks if there is a specific question text to be displayed
     question_text: str | None = None 
     if question_id is not None: 
         question_text = models.Question.objects.filter(id=question_id).first().question
