@@ -29,34 +29,17 @@
         >
           <div class="question-title">
             <h1>Fråga {{forloop.counter}}</h1>
-            <button class="question-remove-button">Ta bort</button>
+            <button class="question-remove-button" onclick="handleRemove(event)">Ta bort</button>
           </div>
 
           <div class="question-background">
             <p>{{question.question}}</p>
           </div>
           <div class="question-result">
-
-            <!-- Placeholder for question result -->
-            {% if question.question_format == "yesno" %}
-            <img
-              src="{% static 'images/q1.png' %}"
-              alt="Ikon 1"
-              class="question-icon"
-            />
-            {% elif question.question_format == "slider" %}
-            <img
-              src="{% static 'images/q2.png' %}"
-              alt="Ikon 2"
-              class="question-icon"
-            />
-            {% elif question.question_format == "text" %}
-            <img
-              src="{% static 'images/q3.png' %}"
-              alt="Ikon 3"
-              class="question-icon"
-            />
-            {% else %} {{question.question_format}} {% endif %}
+            <img src="{% static 'images/' %}{{ question.question_format }}.png" 
+                          alt="{{ question.question_format.label }} image"
+                          class="question-icon"
+                      />
           </div>
         </a>
         {% endfor %}
@@ -161,6 +144,12 @@
       function closePopup() {
         document.getElementById("publish-popup").style.display = "none";
       }
+
+      function handleRemove(event) {
+    event.preventDefault(); // Prevent the link from being followed
+    // Add your logic to handle the removal of the question here
+    console.log("Remove button clicked for question:", event.target);
+}
     </script>
   </body>
 </html>

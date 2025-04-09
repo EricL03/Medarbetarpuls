@@ -12,10 +12,9 @@
     <div class="popup-overlay">
       <div class="popup-content">
         <h2>Redigera fråga</h2>
-        <img
-          src="{% static 'images/q1.png' %}"
-          alt="Ikon 1"
-          class="question-icon"
+        <img src="{% static 'images/' %}{{ question_format }}.png" 
+            alt="{{ question_format }} image"
+            class="question-icon"
         />
 
         {% if question_id is None %} 

@@ -379,6 +379,11 @@ button:hover {
   margin-top: 0;
 }
 
+.question-title .question-remove-button:hover {
+  scale: 1.07;
+  background-color: #ff2828;
+}
+
 .question-background {
   position: flex;
   min-height: 70px;

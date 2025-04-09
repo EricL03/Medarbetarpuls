@@ -19,7 +19,8 @@
                   <li class="question-item">
                       <img src="{% static 'images/' %}{{ type.value }}.png" 
                           alt="{{ type.label }} image"
-                          class="question-icon">
+                          class="question-icon"
+                      />
                       <a href="{% url 'edit_question_new' survey_temp.id type %}">
                           <button type="button">Välj</button>
                       </a>
