@@ -63,7 +63,7 @@ button {
   border: none;
   padding: 10px 20px;
   border-radius: 10px;
-  font-size: 16px;
+  font-size: 16px auto;
   cursor: pointer;
   margin-top: 5%;
 }
@@ -352,16 +352,31 @@ button:hover {
 }
 
 .question-title {
+  display: flex; /* Enable flexbox */
+  justify-content: center; /* Center the items in the flex container */
+  align-items: center; 
   position: relative;
+  top: -5px; /* Compensate for padding */
+  height: 10px;
   width: 100%; /* Make it full width */
   text-align: center; /* Center the text */
 }
 
 .question-title h1 {
-  margin: 5px; /* Remove default margin */
+  margin: 0px; /* Remove default margin */
   padding: 0; /* Remove any padding if needed */
   font-size: 1.5em; /* Adjust font size as needed */
   text-align: center; /* Center the text if desired */
+}
+
+.question-title .question-remove-button {
+  position: absolute; /* Position button absolutely */
+  right: 5px; /* Adjust as needed for spacing from the left */
+  background-color: #f95e5e;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 10px auto;
+  margin-top: 0;
 }
 
 .question-background {

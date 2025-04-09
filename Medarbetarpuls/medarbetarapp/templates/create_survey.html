@@ -29,11 +29,14 @@
         >
           <div class="question-title">
             <h1>Fråga {{forloop.counter}}</h1>
+            <button class="question-remove-button">Ta bort</button>
           </div>
+
           <div class="question-background">
             <p>{{question.question}}</p>
           </div>
           <div class="question-result">
+
             <!-- Placeholder for question result -->
             {% if question.question_format == "yesno" %}
             <img
@@ -54,9 +57,6 @@
               class="question-icon"
             />
             {% else %} {{question.question_format}} {% endif %}
-          </div>
-          <div>
-            <button class="delete-button">Ta bort</button>
           </div>
         </a>
         {% endfor %}
