@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import SurveyResult
 from django.core.mail import send_mail
+from django.core.cache import cache
 
 import logging
 
@@ -55,7 +56,7 @@ def create_acc(request) -> HttpResponse:
             name = request.POST.get("name")
             email = request.POST.get("email")
             password = request.POST.get("password")
-
+            """
             # Check that email is registrated to an org
             org = find_organization_by_email(email)
             if org is None:
@@ -76,16 +77,25 @@ def create_acc(request) -> HttpResponse:
                     f"No group found with the name '{base_group}' in the organization '{org.name}'"
                 )
                 return HttpResponse(status=400)
-            
+            """
             code = 123456 # make random later, just test now
-            #print(new_user.email)
+            cache.set(f'verify_code_{email}', code, timeout=300)
             send_mail(
                 subject='Your Verification Code',
                 message=f'Your verification code is: {code}',
                 from_email='medarbetarpuls@gmail.com',
-                recipient_list=['refecod532@lesotica.com'],
+                recipient_list=[email],
                 fail_silently=False,
             )
+            # Save potential user account data in session
+            request.session['user_data'] = {
+                'name': name,
+                'password': password,
+            }
+
+            # Save the mail where the two factor code is sent
+            request.session['email_two_factor_code'] = email
+
             return HttpResponse(headers={"HX-Redirect": "/authentication-acc/"})  # Redirect to authentication account page
             #return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
 
@@ -131,8 +141,44 @@ def analysis_view(request):
 def answer_survey_view(request):
     return render(request, "answer_survey.html")
 
-
+@csrf_exempt
 def authentication_acc_view(request):
+    if request.method == 'POST':
+        auth_code = request.POST.get('auth_code')
+        email = request.session.get('email_two_factor_code')
+        expected_code = cache.get(f'verify_code_{email}')
+
+        if str(auth_code) == str(expected_code):
+            data = request.session.get('user_data')
+            name=data['name'],
+            password=data['password']
+            del request.session['user_data']
+            del request.session['email_two_factor_code']
+            cache.delete(f'verify_code_{email}')
+            
+
+            # Check that email is registrated to an org
+            org = find_organization_by_email(email)
+            if org is None:
+                logger.error("This email is not authorized for registration.")
+                return HttpResponse(status=400)
+            # Create user
+            new_user = models.CustomUser.objects.create_user(email, name, password)
+
+            # Add new user to base (everyone) employee group of org
+            base_group = org.employee_groups.filter(name="Alla").first()  # pyright: ignore
+
+            if base_group:
+                new_user.employee_groups.add(base_group)
+                new_user.save()
+            else:
+                logger.error(
+                    f"No group found with the name '{base_group}' in the organization '{org.name}'"
+                )
+                return HttpResponse(status=400)
+            
+            return HttpResponse(headers={"HX-Redirect": "/"})
+
     return render(request, "authentication_acc.html")
 
 
@@ -316,7 +362,6 @@ def settings_admin_view(request):
                 employee_groups = models.EmployeeGroup.objects.filter(organization=org)
                 # Get the new admin user by email
                 user = models.CustomUser.objects.get(email=new_admin_email)
-
 
                 # Remove the user from the specific employee group
                 user.employee_groups.remove(*employee_groups)
