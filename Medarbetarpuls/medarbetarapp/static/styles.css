@@ -713,8 +713,8 @@ th {
 }
 
 .question-icon {
-  width: 20%;
-  height: 10%;
+  width: 20% auto;
+  height: 40px;
   margin-right: 10px;
 }
 
