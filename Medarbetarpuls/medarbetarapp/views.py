@@ -134,13 +134,26 @@ def create_org_view(request):
 
 
 def create_question(request, survey_id):
+    """
+    Makes it possible to create a question with predefied formats. 
+    This function is reachable from create_survey.
+    Agrs:
+        request: The input text from the question text field
+        survey_id (int): The id of the opened survey
+    Returns:
+        HttpResponse: Returns status 404 if the survey template does not exist
+    """
     user = request.user
+    # Retrieve the survey template from the database if it belongs to the user
     survey_temp = user.survey_templates.filter(id=survey_id).first()
     if survey_temp is None:
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
     
-    return render(request, "create_question.html", {"survey_temp": survey_temp, "QuestionFormat": models.QuestionFormat,})
+    return render(request, "create_question.html", 
+                  {"survey_temp": survey_temp, 
+                   "QuestionFormat": models.QuestionFormat,
+                   })
 
 
 def create_org_redirect(request):
@@ -198,15 +211,35 @@ def create_org(request) -> HttpResponse:
     return HttpResponse(status=400)  # Bad request if no expression
 
 def create_survey_view(request, survey_id = None):
+    """
+    Creates a survey template. If no survey_id is given, a new
+    survey template is created. If the survey_id is given, the
+    corresponding survey template is fetched from the database.
+
+    Args:
+        request: The input text from the question text field
+        survey_id (int): The id of the opened survey
+
+    Returns:
+        HttpResponse: Redirects to create_survey or renders create_survey_view
+    """
+
+    # Check if survey_id is not given
     if survey_id is None:
+        # Create a new survey template and assign it to the user
         survey_temp = models.SurveyTemplate(creator=request.user, last_edited=timezone.now())
         survey_temp.save()
+        # Set a placeholder name for the survey
         survey_id = survey_temp.id
         survey_temp.name = "Survey " + str(survey_id)
         survey_temp.save()
         
+        # Redirect to the create_survey view with the new survey_id
+        # This will allow the user to edit the survey template immediately
         return redirect("create_survey_with_id", survey_id=survey_temp.id)
     
+    # If survey_id is given, fetch the corresponding survey template
+    # from the database and render the create_survey view
     user = request.user
     survey_temp = user.survey_templates.filter(id=survey_id).first()
     if survey_temp is None:
