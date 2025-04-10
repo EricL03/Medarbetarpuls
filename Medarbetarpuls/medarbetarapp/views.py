@@ -41,15 +41,17 @@ def create_acc_view(request):
 @csrf_protect
 def create_acc(request) -> HttpResponse:
     """
-    Creates an account with the fetched input, if the
-    email exists in any organization email list, to said
-    organization.
+    Saves potential account information in django 
+    session from fetched input, it sends an email 
+    to the mail that has been fetched. 
+    Then redirect to authentication-acc to 
+    authenticate and potentially create account.
 
     Args:
         request: The input text from the name, email and password fields
 
     Returns:
-        HttpResponse: Redirects to login page if all is good, otherwise error message 400
+        HttpResponse: Redirects to authentication page, otherwise error message 400
     """
     if request.method == "POST":
         if request.headers.get("HX-Request"):
@@ -75,7 +77,6 @@ def create_acc(request) -> HttpResponse:
             request.session['email_two_factor_code'] = email
 
             return HttpResponse(headers={"HX-Redirect": "/authentication-acc/"})  # Redirect to authentication account page
-            #return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
 
     return HttpResponse(status=400)  # Bad request if no expression
 
@@ -93,7 +94,7 @@ def add_employee_view(request):
     this list is required to create an account.
 
     Args:
-        request: The input text from the email field
+        request: The input text from the authentication code field
 
     Returns:
         HttpResponse: Returns status 204 if all is good, otherwise 400
@@ -121,6 +122,17 @@ def answer_survey_view(request):
 
 @csrf_exempt
 def authentication_acc_view(request):
+    """
+    Creates an account with the user information 
+    saved in django session if authentication code sent to 
+    the mail matches with the user input
+
+    Args:
+        request: The input text from the name, email and password fields
+
+    Returns:
+        HttpResponse: Redirects to login page if all is good, otherwise error message 400
+    """
     if request.method == 'POST':
         auth_code = request.POST.get('auth_code')
         email = request.session.get('email_two_factor_code')
@@ -128,7 +140,7 @@ def authentication_acc_view(request):
 
         if str(auth_code) == str(expected_code):
             data = request.session.get('user_data')
-            name=data['name'],
+            name=data['name']
             password=data['password']
 
             # Delete everything saved in session and cache - data not needed anymore
@@ -164,8 +176,54 @@ def authentication_acc_view(request):
 
     return render(request, "authentication_acc.html")
 
-
+@csrf_exempt
 def authentication_org_view(request):
+    """
+    COMMENT
+    """
+
+    if request.method == 'POST':
+        auth_code = request.POST.get('auth_code')
+        email = request.session.get('email_two_factor_code_org')
+        expected_code = cache.get(f'verify_code_{email}')
+        if str(auth_code) == str(expected_code):
+
+            data = request.session.get('user_org_data')
+            org_name = str(data['org_name'])
+            name = str(data['name'])
+            password = str(data['password'])
+
+            del request.session['user_org_data']
+            del request.session['email_two_factor_code_org']
+            cache.delete(f'verify_code_{email}')
+
+            # Create organization
+            org = models.Organization(name=org_name)
+            org.save()
+
+            # Create admin account
+            admin_account = models.CustomUser.objects.create_user(email, name, password)
+            admin_account.user_role = models.UserRole.ADMIN
+            admin_account.is_staff = True
+            admin_account.is_superuser = True
+
+            # Link admin account to org
+            admin_account.admin = org
+            admin_account.save()
+
+            # Create base (everyone) employee group
+            base_group = models.EmployeeGroup(name="Alla", organization=org)
+            base_group.save()
+
+            # Adding a org approved email for easy testing
+            test_email = models.EmailList(email="user22@example.com", org=org)
+            test_email.save()
+
+            return HttpResponse(headers={"HX-Redirect": "/"}) 
+        else:
+            logger.error("Wrong authentication code")
+            return HttpResponse(status=400)
+
     return render(request, "authentication_org.html")
 
 
@@ -204,6 +262,33 @@ def create_org(request) -> HttpResponse:
             name = request.POST.get("name")
             email = request.POST.get("email")
             password = request.POST.get("password")
+            code = 123456 # make random later, just test now
+            cache.set(f'verify_code_{email}', code, timeout=300)
+            send_mail(
+                subject='Your Verification Code',
+                message=f'Your verification code is: {code}',
+                from_email='medarbetarpuls@gmail.com',
+                recipient_list=[email],
+                fail_silently=False,
+            )
+            # Save potential user account data in session
+            request.session['user_org_data'] = {
+                'org_name': org_name,
+                'name': name,
+                'password': password,
+            }
+
+            # Save the mail where the two factor code is sent
+            request.session['email_two_factor_code_org'] = email
+
+            return HttpResponse(headers={"HX-Redirect": "/authentication-org/"})  # Redirect to authentication account page
+
+    """if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            org_name = request.POST.get("org_name")
+            name = request.POST.get("name")
+            email = request.POST.get("email")
+            password = request.POST.get("password")
 
             # Create organization
             org = models.Organization(name=org_name)
@@ -228,7 +313,7 @@ def create_org(request) -> HttpResponse:
             test_email.save()
             
 
-            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page
+            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page"""
 
     return HttpResponse(status=400)  # Bad request if no expression
 
