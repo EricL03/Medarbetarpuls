@@ -460,6 +460,15 @@ def edit_question_view(request, survey_id: int, question_format: models.Question
 
     return render(request, "edit_question.html", {"survey_temp": survey_temp, "question_format": question_format, "question_id": question_id, "question_text": question_text})
 
+
+def publish_survey(request, survey_id: int) -> HttpResponse: 
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            print("its working!!!")
+            return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
+
+    return HttpResponse(status=400)  
+
  
 def login_view(request):
     # maybe implement sesion timer so you dont get logged out??

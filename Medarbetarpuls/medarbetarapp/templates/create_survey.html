@@ -72,80 +72,88 @@
       <div class="popup-content">
         <h2>Publicera enkät</h2>
 
-        <!-- Checkbox Options -->
-        <div class="checkbox-group">
-          <label>
-            <input type="checkbox" name="privacy" value="anonymous" />
-            Anonyma svar
-          </label>
-          <label>
-            <input type="checkbox" name="privacy" value="public" />
-            Publicera resultat för svarande
-          </label>
-        </div>
-        <!-- Retrieve the title from create_survey -->
-        <label for="survey-name">Enkätens namn:</label>
-        <input
-          type="text"
-          id="survey-name"
-          placeholder="Namn"
-          class="text-input"
-        />
-        <label for="send-to">Skicka till:</label>
-
-        <!-- Recipient List -->
-        <input
-          type="text"
-          id="send-to"
-          placeholder="Lägg till grupp"
-          class="text-input"
-        />
-
-        <!-- Date Inputs -->
-        <div class="date-group">
-          <div>
-            <label>Publiceringsdatum:</label>
-            <input type="date" class="date-input" />
+        <form
+          hx-post="{% url 'publish_survey' survey_temp.id %}"
+          hx-trigger="submit"
+          hx-confirm="Are you sure you want to publish this survey?"
+          hx-swap="none"
+        >
+          {% csrf_token %}
+          <!-- Checkbox Options -->
+          <div class="checkbox-group">
+            <label>
+              <input type="checkbox" name="privacy" value="anonymous" />
+              Anonyma svar
+            </label>
+            <label>
+              <input type="checkbox" name="privacy" value="public" />
+              Publicera resultat för svarande
+            </label>
           </div>
-          <div>
-            <label>Sista svarsdatum:</label>
-            <input type="date" class="date-input" />
-          </div>
-        </div>
+          <!-- Retrieve the title from create_survey -->
+          <label for="survey-name">Enkätens namn:</label>
+          <input
+            type="text"
+            id="survey-name"
+            placeholder="Namn"
+            class="text-input"
+          />
+          <label for="send-to">Skicka till:</label>
 
-        <!-- Reminder Options -->
-        <div class="reminder-group">
-          <label>Påminn efter:</label>
-          <div class="reminder-tags">
-            <div class="reminder-tag">
-              1 v
-              <span class="close">&times;</span>
+          <!-- Recipient List -->
+          <input
+            type="text"
+            id="send-to"
+            placeholder="Lägg till grupp"
+            class="text-input"
+          />
+
+          <!-- Date Inputs -->
+          <div class="date-group">
+            <div>
+              <label>Publiceringsdatum:</label>
+              <input type="date" class="date-input" />
             </div>
-            <div class="reminder-tag">
-              2 v
-              <span class="close">&times;</span>
-            </div>
-            <div class="reminder-tag">
-              3 v
-              <span class="close">&times;</span>
+            <div>
+              <label>Sista svarsdatum:</label>
+              <input type="date" class="date-input" />
             </div>
           </div>
-        </div>
 
-        <!-- Buttons -->
-        <div class="popup-buttons">
-          <button
-            class="go-back-button"
-            onclick="window.location.href='{% url 'create_survey_with_id' survey_temp.id %}'"
-          >
-            <img
-              src="{% static 'images/go-back-btn.png' %}"
-              alt="Go Back"
-              class="back-icon"
-            />
-          </button>
-          <button type="button">Publicera</button>
-        </div>
+          <!-- Reminder Options -->
+          <div class="reminder-group">
+            <label>Påminn efter:</label>
+            <div class="reminder-tags">
+              <div class="reminder-tag">
+                1 v
+                <span class="close">&times;</span>
+              </div>
+              <div class="reminder-tag">
+                2 v
+                <span class="close">&times;</span>
+              </div>
+              <div class="reminder-tag">
+                3 v
+                <span class="close">&times;</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="popup-buttons">
+            <button
+              class="go-back-button"
+              onclick="window.location.href='{% url 'create_survey_with_id' survey_temp.id %}'"
+            >
+              <img
+                src="{% static 'images/go-back-btn.png' %}"
+                alt="Go Back"
+                class="back-icon"
+              />
+            </button>
+            <button type="submit">Publicera</button>
+          </div>
+        </form>
       </div>
     </div>
     <script>
