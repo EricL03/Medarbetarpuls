@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.mail import send_mail
 from django.db.models.manager import BaseManager
 from django.contrib.auth.models import (
     AbstractBaseUser,
@@ -193,7 +194,16 @@ class Survey(models.Model):
             for employee in group.employees.all():
                 if employee.id not in seen_employees:
                     SurveyResult.objects.create(published_survey=self, user=employee)
-                    seen_employees.add(employee.id)
+                    seen_employees.add(employee)
+
+        # Send email to notify 
+        send_mail(
+            subject="Ny obesvaradenkät",
+            message="Det finns en ny enkät att svara på i Medarbetarpuls",
+            from_email='medarbetarpuls@gmail.com',
+            recipient_list=[employee.email for employee in seen_employees],
+            fail_silently=False,
+        )
 
 
 # What this model does needs to be explained here
