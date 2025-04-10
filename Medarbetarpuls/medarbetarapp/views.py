@@ -325,68 +325,6 @@ def create_org(request) -> HttpResponse:
     return render(request, "authentication_org.html")
 
 
-def create_org_view(request):
-    return render(request, "create_org.html")
-
-
-def create_question(request):
-    return render(request, "create_question.html")
-
-
-def create_org_redirect(request):
-    if request.headers.get("HX-Request"):
-        return HttpResponse(
-            headers={"HX-Redirect": "/create_org_view/"}
-        )  # Redirects in HTMX
-
-    return redirect("/create_org_view/")  # Normal Django redirect for non-HTMX requests
-
-
-@csrf_protect
-def create_org(request) -> HttpResponse:
-    """
-    Saves potential account information in django 
-    session from fetched input, it sends an email 
-    to the mail that has been fetched. 
-    Then redirect to authentication-org to 
-    authenticate and potentially create admin account.
-
-    Args:
-        request: The input text from the org_name, name, email and password fields
-
-    Returns:
-        HttpResponse: Redirects to authentication page, otherwise error message 400
-    """
-    if request.method == "POST":
-        if request.headers.get("HX-Request"):
-            org_name = request.POST.get("org_name")
-            name = request.POST.get("name")
-            email = request.POST.get("email")
-            password = request.POST.get("password")
-            code = 123456 # make random later, just test now
-            cache.set(f'verify_code_{email}', code, timeout=300)
-            send_mail(
-                subject='Your Verification Code',
-                message=f'Your verification code is: {code}',
-                from_email='medarbetarpuls@gmail.com',
-                recipient_list=[email],
-                fail_silently=False,
-            )
-            # Save potential user account data in session
-            request.session['user_org_data'] = {
-                'org_name': org_name,
-                'name': name,
-                'password': password,
-            }
-
-            # Save the mail where the two factor code is sent
-            request.session['email_two_factor_code_org'] = email
-
-            return HttpResponse(headers={"HX-Redirect": "/authentication-org/"})  # Redirect to authentication account page
-        
-    return HttpResponse(status=400)  # Bad request if no expression
-
-
 @csrf_protect
 def delete_question(request, question_id: int, survey_id: int) -> HttpResponse:
     """
