@@ -526,7 +526,9 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             survey.employee_groups.add(employee_group)
             survey.save()
 
-            print(f"Survey: {survey}")
+            # Copy all questions from the template to the survey
+            survey.questions.set(survey_temp.questions.all())
+            survey.save()
 
             return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
 
