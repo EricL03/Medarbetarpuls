@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from .models import SurveyResult
@@ -77,6 +77,33 @@ def create_acc(request) -> HttpResponse:
             request.session['email_two_factor_code'] = email
 
             return HttpResponse(headers={"HX-Redirect": "/authentication-acc/"})  # Redirect to authentication account page
+            existing_user = models.CustomUser.objects.filter(email=email).first()
+            if existing_user:
+                # Should they be able to reset name and password???
+                existing_user.name = name
+                existing_user.set_password(password)
+                existing_user.save()
+                return HttpResponse(headers={"HX-Redirect": "/"})
+                # check for basegroup??
+            else:
+                # Create user
+                new_user = models.CustomUser.objects.create_user(email, name, password)
+
+                # Add new user to base (everyone) employee group of org
+                base_group = org.employee_groups.filter(name="Alla").first()  # pyright: ignore
+
+                if base_group:
+                    new_user.employee_groups.add(base_group)
+                    new_user.save()
+                else:
+                    logger.error(
+                        f"No group found with the name '{base_group}' in the organization '{org.name}'"
+                    )
+                    return HttpResponse(status=400)
+
+                return HttpResponse(
+                    headers={"HX-Redirect": "/"}
+                )  # Redirect to login page
 
     return HttpResponse(status=400)  # Bad request if no expression
 
@@ -84,6 +111,7 @@ def create_acc(request) -> HttpResponse:
 def find_organization_by_email(email: str) -> models.Organization | None:
     email_entry = get_object_or_404(models.EmailList, email=email)
     return email_entry.org  # Follow the ForeignKey to Organization
+
 
 @login_required
 @csrf_exempt
@@ -106,15 +134,33 @@ def add_employee_view(request):
 
         if user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
             org = user.admin
-            email_instance = models.EmailList(email=email, org=org)
-            email_instance.save()
-            return HttpResponse(status=204)   #maybe should render back to my_org?
 
-    return render(request, "add_employee.html", {"organization": request.user.admin})
+            existing_user = models.CustomUser.objects.filter(email=email).first()
+            if existing_user:
+                if not existing_user.is_active:
+                    existing_user.is_active = True
+                    existing_user.save()
+                else:
+                    logger.error("Existing user already have an active account")
+                    pass
+                    # Vad gör vi med folk som vill bli registerade till 2 organisationer
+
+            else:
+                email_instance = models.EmailList(email=email, org=org)
+                email_instance.save()
+            return HttpResponse(status=204)  # maybe should render back to my_org?
+
+    return render(
+        request,
+        "add_employee.html",
+        {"pagetitle": f"Lägg till medarbetare i<br>{request.user.admin.name}"},
+    )
+
 
 @login_required
 def analysis_view(request):
     return render(request, "analysis.html")
+
 
 @login_required
 def answer_survey_view(request):
@@ -298,6 +344,7 @@ def create_org(request) -> HttpResponse:
         
     return HttpResponse(status=400)  # Bad request if no expression
 
+
 def create_survey_view(request):
     return render(request, "create_survey.html")
 
@@ -315,9 +362,7 @@ def login_view(request):
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
-
         user = authenticate(request, username=email, password=password)
-
         if user is not None:
             logger.debug("User %e has role: %e", email, user.user_role)
             if user.is_active:
@@ -337,10 +382,20 @@ def login_view(request):
 
     return render(request, "login.html")
 
+
+@csrf_protect
 @login_required
 def my_org_view(request):
     organization = request.user.admin
 
+    if request.method == "POST":
+        user_id = request.POST.get("user_id")
+        if request.user.user_role == models.UserRole.ADMIN:
+            employee_to_remove = models.CustomUser.objects.get(pk=user_id)
+            print("removing ", employee_to_remove)
+            employee_to_remove.is_active = False
+            employee_to_remove.save()
+        return redirect("my_org")
     # Retrieve all employee groups associated with this organization
     employee_groups = models.EmployeeGroup.objects.filter(organization=organization)
 
@@ -353,11 +408,11 @@ def my_org_view(request):
         "my_org.html",
         {
             "user": request.user,
-            "organization": organization,
             "employees": employees,
+            "pagetitle": f"Din organisation<br>{organization.name}",
         },
     )
-    # TODO: test if this works, must be logged in
+
 
 @login_required
 def my_results_view(request):
@@ -375,8 +430,10 @@ def my_results_view(request):
             "answered_count": answered_count,
             "answered_surveys": answered_surveys,
             "current_time": current_time,
+            "pagetitle": "Resultat på besvarade enkäter",
         },
     )
+
 
 @login_required
 def my_surveys_view(request):
@@ -384,7 +441,8 @@ def my_surveys_view(request):
 
 
 def settings_admin_view(request):
-#Leave over account to new admin function
+    #Leave over account to new admin function
+    # if pressed leave over account
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             # get new admins mail
@@ -423,15 +481,25 @@ def settings_admin_view(request):
                 logger.error(" The mail entered is not an available user ")
                 return HttpResponse(status=400)
 
-    return render(request, "settings_admin.html", {"user": request.user, "organization": request.user.admin})
+    return render(
+        request,
+        "settings_admin.html",
+        {
+            "user": request.user,
+            "organization": request.user.admin,
+            "pagetitle": "Inställningar",
+        },
+    )
+
 
 @login_required
 @csrf_protect
 def settings_user_view(request):
-    #FIX - needs to fix so when wrong password is written the popup doesnt dissappear and a message is sent
+    # FIX - needs to fix so when wrong password is written the popup doesnt dissappear and a message is sent
 
     
     #Delete user function
+    # if pressed delete user
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             password = request.POST.get("password")
@@ -454,12 +522,106 @@ def settings_user_view(request):
 @login_required
 def start_admin_view(request):
     return render(
-        request, "start_admin.html"
+        request, "start_admin.html", {"pagetitle": f"Välkommen<br>{request.user.name}"}
     )  # Fix so only works if the user is actually an admin
+
+
+@login_required
+@csrf_protect
+def settings_change_name(request):
+    """
+    Changes the name of a CustomUser
+
+    Args:
+        request: The input text with the new name
+
+    Returns:
+        HttpResponse: Returns status 204 if all is good, otherwise 400
+    """
+
+    # TODO: test user input
+    if request.headers.get("HX-Request"):
+        new_name = request.POST.get("name")
+        email = request.user.email
+        user = models.CustomUser.objects.filter(email=email).first()
+        user.name = new_name
+        user.save()
+
+    if request.user.admin:
+        return render(
+            request,
+            "settings_admin.html",
+            {
+                "user": request.user,
+                "organization": request.user.admin,
+                "pagetitle": "Inställningar",
+            },
+        )
+    else:
+        return render(
+            request,
+            "settings_user.html",
+            {
+                "user": request.user,
+                "organization": request.user.admin,
+                "pagetitle": "Inställningar",
+            },
+        )
+
+
+@login_required
+@csrf_protect
+def settings_change_pass(request):
+    """
+    Changes the password of a CustomUser
+
+    Args:
+        request: The input containing the old password as well as the new password
+
+    Returns:
+        HttpResponse: Returns status 204 if all is good, otherwise 400
+    """
+
+    if request.headers.get("HX-Request"):
+        old_password = request.POST.get("pass_old")
+        new_password = request.POST.get("pass_new")
+        user = authenticate(request, username=request.user.email, password=old_password)
+        if user:
+            user.set_password(new_password)
+            user.save()
+            # Use this to keep the session alive (avoid being logged out immediately)
+            update_session_auth_hash(request, user)
+            print("saved new password")
+        else:
+            # Did not find any user with this password
+            return HttpResponse(400)
+
+    if request.user.admin:
+        return render(
+            request,
+            "settings_admin.html",
+            {
+                "user": request.user,
+                "organization": request.user.admin,
+                "pagetitle": "Inställningar",
+            },
+        )
+    else:
+        return render(
+            request,
+            "settings_user.html",
+            {
+                "user": request.user,
+                "pagetitle": "Inställningar",
+            },
+        )
+
 
 @login_required
 def start_user_view(request):
-    return render(request, "start_user.html")
+    return render(
+        request, "start_user.html", {"pagetitle": f"Välkommen<br>{request.user.name}"}
+    )
 
 
 def survey_result_view(request, survey_id):
@@ -473,9 +635,11 @@ def survey_result_view(request, survey_id):
     # Proceed to render the survey results
     return render(request, "survey_result.html", {"survey_result": survey_result})
 
+
 @login_required
 def survey_status_view(request):
     return render(request, "survey_status.html")
+
 
 @login_required
 def unanswered_surveys_view(request):
@@ -488,6 +652,7 @@ def unanswered_surveys_view(request):
         {
             "unanswered_count": unanswered_count,
             "unanswered_surveys": unanswered_surveys,
+            "pagetitle": "Obesvarade enkäter",
         },
     )
 
