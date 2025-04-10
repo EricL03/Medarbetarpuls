@@ -1,0 +1,181 @@
+{% load static %} 
+
+<!DOCTYPE html> 
+
+<html lang="sv"> 
+
+<head> 
+
+  <meta charset="UTF-8" /> 
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
+
+  <title>Mina enkäter</title> 
+
+  <script src="https://unpkg.com/htmx.org@1.8.4"></script> 
+
+  <link rel="stylesheet" href="{% static 'styles.css' %}">
+
+</head> 
+
+<body> 
+
+ 
+
+  <!-- Top Bar --> 
+
+  <header class="top-bar"> 
+
+    <div class="left-icon"> 
+
+      <img src="{% static 'logo.png' %}" alt="logo" class="logo" /> 
+
+    </div> 
+
+    <h1 class="survey">Mina enkäter</h1> 
+
+    <div class="right-icon"> 
+
+      <img src="{% static 'go-back-btn.png' %}" alt="back" class="back-button" /> 
+
+    </div> 
+
+  </header> 
+
+ 
+
+  <!-- Search and Toggle --> 
+
+  <div class="search-container"> 
+
+    <input type="text" id="search-bar" class="search-bar" placeholder="Sök enkäter..." /> 
+
+    <button type="button" class="search-button">Sök</button> 
+
+    <button type="button" id="toggle-view" class="toggle-view-button">Växla vy</button> 
+
+  </div> 
+
+<!-- Add Survey Button -->
+<div class="add-survey-container">
+    <button type="button" class="add-survey-button">
+        <img src="{% static 'add.png' %}" alt="Add Survey" class="add-icon" />
+    </button>
+</div>
+
+  <!-- Survey List --> 
+
+  <div class="survey-list list-view" id="surveyList"> 
+
+ 
+
+    <!-- Survey 1 --> 
+
+    <div class="survey-item grid-item yellow">
+
+      <div class="survey-content"> 
+        
+
+        <h2 class="survey-title">Enkät 1</h2> 
+
+       
+        
+
+        <div class="survey-actions"> 
+
+          <img src="{% static 'trashcan.png' %}" alt="Delete" class="action-icon" /> 
+
+          <img src="{% static 'edit-icon.png' %}" alt="Edit" class="action-icon" /> 
+
+          <img src="{% static 'share-icon.png' %}" alt="Share" class="action-icon" /> 
+
+
+        </div> 
+
+      </div> 
+
+    </div> 
+
+ 
+
+    <!-- Survey 2 --> 
+
+    <div class="survey-item"> 
+
+      <div class="survey-content"> 
+
+        <h2 class="survey-title">Enkät 2</h2> 
+
+        <div class="survey-actions"> 
+
+          <img src="{% static 'trashcan.png' %}" alt="Delete" class="action-icon" /> 
+
+          <img src="{% static 'edit-icon.png' %}" alt="Edit" class="action-icon" /> 
+
+          <img src="{% static 'share-icon.png' %}" alt="Share" class="action-icon" /> 
+
+        </div> 
+
+      </div> 
+
+    </div> 
+
+ 
+
+    <!-- Survey 3 --> 
+
+    <div class="survey-item"> 
+
+      <div class="survey-content"> 
+
+        <h2 class="survey-title">Enkät 3</h2> 
+
+        <div class="survey-actions"> 
+
+          <img src="{% static 'trashcan.png' %}" alt="Delete" class="action-icon" /> 
+
+          <img src="{% static 'edit-icon.png' %}" alt="Edit" class="action-icon" /> 
+
+          <img src="{% static 'share-icon.png' %}" alt="Share" class="action-icon" /> 
+
+        </div> 
+
+      </div> 
+
+    </div> 
+
+ 
+
+    <div class="add-survey-container">
+        <button type="button" class="add icon">
+            <img src="{% static 'add.png' %}" alt="Add Survey" class="add-icon" />
+        </button>
+    </div>
+
+ 
+
+
+
+ 
+
+  <!-- Toggle View Script --> 
+
+  <script> 
+
+    document.getElementById('toggle-view').addEventListener('click', function () { 
+
+      const surveyList = document.getElementById('surveyList'); 
+
+      surveyList.classList.toggle('list-view'); 
+
+      surveyList.classList.toggle('grid-view'); 
+
+    }); 
+
+  </script> 
+
+ 
+
+</body> 
+
+</html>
