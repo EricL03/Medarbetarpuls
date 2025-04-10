@@ -9,6 +9,8 @@ from django.utils import timezone
 from .models import SurveyResult
 from django.core.mail import send_mail
 from django.core.cache import cache
+from datetime import datetime, time
+from django.utils.timezone import make_aware
 
 import logging
 
@@ -255,6 +257,11 @@ def authentication_org_view(request):
             base_group = models.EmployeeGroup(name="Alla", organization=org)
             base_group.save()
 
+            # TODO: Remove this and replace with better employee group handling
+            # Add the admin as manager/survey creator to base group for TESTING!!!
+            base_group.managers.add(admin_account)
+            base_group.save()
+
             return HttpResponse(headers={"HX-Redirect": "/"}) 
         else:
             logger.error("Wrong authentication code")
@@ -464,7 +471,63 @@ def edit_question_view(request, survey_id: int, question_format: models.Question
 def publish_survey(request, survey_id: int) -> HttpResponse: 
     if request.method == "POST":
         if request.headers.get("HX-Request"):
-            print("its working!!!")
+            # Fetch the corresponding survey template by survey id
+            # from the database and render the create_survey view
+            user: models.CustomUser = request.user
+            survey_temp: models.SurveyTemplate = user.survey_templates.filter(id=survey_id).first()
+            if survey_temp is None:
+                # Handle the case where the survey template does not exist
+                return HttpResponse("Survey template not found", status=404)
+
+            # Get the input information:
+
+            # Privacy checkboxes (can have multiple selected)
+            privacy_choices = request.POST.getlist('privacy')  # returns list like ['anonymous', 'public']
+            is_anonymous: bool = 'anonymous' in privacy_choices  
+            is_public: bool = 'public' in privacy_choices       
+
+            # Survey name
+            survey_name: str = request.POST.get('survey-name')
+
+            # Get the receiving employee group
+            employee_group_name: str = request.POST.get('send-to')
+            employee_group: models.EmployeeGroup = user.survey_groups.filter(name=employee_group_name).first() 
+
+            # Handle the case where no employee group was found 
+            if employee_group is None: 
+                return HttpResponse("No employee group was found", status=400)
+
+            # Get the dates 
+            publish_date: str = request.POST.get('publish-date')  
+            end_date: str = request.POST.get('end-date')         
+
+            # Make the dates timezone aware to keep django from complaining
+            if end_date:
+                naive_deadline = datetime.combine(
+                    datetime.strptime(end_date, "%Y-%m-%d").date(),
+                    time(hour=23, minute=55)
+                )
+                deadline = make_aware(naive_deadline)  # Now it's timezone-aware
+            else: 
+                deadline = None
+
+            if publish_date:
+                naive_sending_date = datetime.combine(
+                    datetime.strptime(publish_date, "%Y-%m-%d").date(),
+                    time(hour=23, minute=55)
+                )
+                sending_date = make_aware(naive_sending_date)
+            else: 
+                sending_date = None
+
+            # Create a Survey to be send to employess
+            survey: models.Survey = models.Survey(name=survey_name, creator=user, deadline=deadline, sending_date=sending_date, is_viewable=is_public) 
+            survey.save()
+            survey.employee_groups.add(employee_group)
+            survey.save()
+
+            print(f"Survey: {survey}")
+
             return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
 
     return HttpResponse(status=400)  
