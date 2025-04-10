@@ -490,6 +490,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             survey_name: str = request.POST.get('survey-name')
 
             # Get the receiving employee group
+            # TODO: Better error returns and try and give suggestions...
             employee_group_name: str = request.POST.get('send-to')
             employee_group: models.EmployeeGroup = user.survey_groups.filter(name=employee_group_name).first() 
 
@@ -529,6 +530,9 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             # Copy all questions from the template to the survey
             survey.questions.set(survey_temp.questions.all())
             survey.save()
+
+            # TODO: Schedule publishing of surveys
+            survey.publish_survey()
 
             return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
 
