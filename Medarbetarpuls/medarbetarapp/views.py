@@ -179,7 +179,17 @@ def authentication_acc_view(request):
 @csrf_exempt
 def authentication_org_view(request):
     """
-    COMMENT
+    Creates an admin account and an organisation 
+    with the user information saved in 
+    django session if authentication code sent to 
+    the mail matches with the user input
+
+    Args:
+        request: The input text from the org_name, name, email and password fields
+
+    Returns:
+        HttpResponse: Redirects to login page if all is good, otherwise error message 400
+    
     """
 
     if request.method == 'POST':
@@ -247,14 +257,17 @@ def create_org_redirect(request):
 @csrf_protect
 def create_org(request) -> HttpResponse:
     """
-    Creates an organization and admin account
-    with the fetched input
+    Saves potential account information in django 
+    session from fetched input, it sends an email 
+    to the mail that has been fetched. 
+    Then redirect to authentication-org to 
+    authenticate and potentially create admin account.
 
     Args:
         request: The input text from the org_name, name, email and password fields
 
     Returns:
-        HttpResponse: Returns status 204 if all is good, otherwise 400
+        HttpResponse: Redirects to authentication page, otherwise error message 400
     """
     if request.method == "POST":
         if request.headers.get("HX-Request"):
@@ -282,39 +295,7 @@ def create_org(request) -> HttpResponse:
             request.session['email_two_factor_code_org'] = email
 
             return HttpResponse(headers={"HX-Redirect": "/authentication-org/"})  # Redirect to authentication account page
-
-    """if request.method == "POST":
-        if request.headers.get("HX-Request"):
-            org_name = request.POST.get("org_name")
-            name = request.POST.get("name")
-            email = request.POST.get("email")
-            password = request.POST.get("password")
-
-            # Create organization
-            org = models.Organization(name=org_name)
-            org.save()
-
-            # Create admin account
-            admin_account = models.CustomUser.objects.create_user(email, name, password)
-            admin_account.user_role = models.UserRole.ADMIN
-            admin_account.is_staff = True
-            admin_account.is_superuser = True
-
-            # Link admin account to org
-            admin_account.admin = org
-            admin_account.save()
-
-            # Create base (everyone) employee group
-            base_group = models.EmployeeGroup(name="Alla", organization=org)
-            base_group.save()
-
-            # Adding a org approved email for easy testing
-            test_email = models.EmailList(email="user22@example.com", org=org)
-            test_email.save()
-            
-
-            return HttpResponse(headers={"HX-Redirect": "/"})  # Redirect to login page"""
-
+        
     return HttpResponse(status=400)  # Bad request if no expression
 
 def create_survey_view(request):
