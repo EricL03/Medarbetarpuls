@@ -98,6 +98,7 @@
             name="survey-name"
             placeholder="Namn"
             class="text-input"
+            required
           />
           <label for="send-to">Skicka till:</label>
 
@@ -108,17 +109,23 @@
             name="send-to"
             placeholder="Lägg till grupp"
             class="text-input"
+            required
           />
 
           <!-- Date Inputs -->
           <div class="date-group">
             <div>
               <label>Publiceringsdatum:</label>
-              <input type="date" class="date-input" name="publish-date" />
+              <input
+                type="date"
+                class="date-input"
+                name="publish-date"
+                required
+              />
             </div>
             <div>
               <label>Sista svarsdatum:</label>
-              <input type="date" class="date-input" name="end-date" />
+              <input type="date" class="date-input" name="end-date" required />
             </div>
           </div>
 
