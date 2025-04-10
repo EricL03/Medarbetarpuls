@@ -133,19 +133,20 @@ def create_org_view(request):
     return render(request, "create_org.html")
 
 
-def create_question(request, survey_id):
+def create_question(request, survey_id: int) -> HttpResponse: 
     """
-    Makes it possible to create a question with predefied formats. 
+    Makes it possible to create a question with predefined formats. 
     This function is reachable from create_survey.
+
     Agrs:
         request: The input text from the question text field
         survey_id (int): The id of the opened survey
     Returns:
         HttpResponse: Returns status 404 if the survey template does not exist
     """
-    user = request.user
+    user: models.CustomUser = request.user
     # Retrieve the survey template from the database if it belongs to the user
-    survey_temp = user.survey_templates.filter(id=survey_id).first()
+    survey_temp: models.SurveyTemplate = user.survey_templates.filter(id=survey_id).first()
     if survey_temp is None:
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
@@ -210,7 +211,7 @@ def create_org(request) -> HttpResponse:
 
     return HttpResponse(status=400)  # Bad request if no expression
 
-def create_survey_view(request, survey_id = None):
+def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
     """
     Creates a survey template. If no survey_id is given, a new
     survey template is created. If the survey_id is given, the
@@ -227,10 +228,10 @@ def create_survey_view(request, survey_id = None):
     # Check if survey_id is not given
     if survey_id is None:
         # Create a new survey template and assign it to the user
-        survey_temp = models.SurveyTemplate(creator=request.user, last_edited=timezone.now())
+        survey_temp: models.SurveyTemplate = models.SurveyTemplate(creator=request.user, last_edited=timezone.now())
         survey_temp.save()
         # Set a placeholder name for the survey
-        survey_id = survey_temp.id
+        survey_id: int = survey_temp.id
         survey_temp.name = "Survey " + str(survey_id)
         survey_temp.save()
         
@@ -240,8 +241,8 @@ def create_survey_view(request, survey_id = None):
     
     # If survey_id is given, fetch the corresponding survey template
     # from the database and render the create_survey view
-    user = request.user
-    survey_temp = user.survey_templates.filter(id=survey_id).first()
+    user: models.CustomUser = request.user
+    survey_temp: models.SurveyTemplate = user.survey_templates.filter(id=survey_id).first()
     if survey_temp is None:
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
