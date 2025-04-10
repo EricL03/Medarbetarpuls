@@ -310,7 +310,7 @@ class Question(models.Model):
         return None
 
     def __str__(self) -> str:
-        return f"{self.question_format} ({self.question_type})"
+        return f"{self.question_format} ({self.question})"
 
 
 # What this model does needs to be explained here
