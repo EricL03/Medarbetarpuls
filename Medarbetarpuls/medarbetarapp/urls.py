@@ -18,6 +18,7 @@ urlpatterns = [
     path("create_org_view/", views.create_org_view, name="create_org_view"),
     path("create_org_redirect/", views.create_org_redirect, name="create_org_redirect"),
     path("create_org/", views.create_org, name="create_org"),
+    path("delete_question/<int:question_id>/<int:survey_id>/", views.delete_question, name="delete_question"),
     path("create-survey/", views.create_survey_view, name="create_survey"),
     path("create-survey/<int:survey_id>/", views.create_survey_view, name="create_survey_with_id"),
     path("edit-question/<int:survey_id>/<str:question_format>/", views.edit_question_view, name="edit_question_new"),

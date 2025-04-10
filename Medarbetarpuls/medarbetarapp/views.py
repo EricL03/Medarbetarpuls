@@ -211,6 +211,29 @@ def create_org(request) -> HttpResponse:
 
     return HttpResponse(status=400)  # Bad request if no expression
 
+
+@csrf_protect
+def delete_question(request, question_id: int, survey_id: int) -> HttpResponse:
+    """
+    Makes it possible to delete a specific question from 
+    a specific survey. 
+
+    Args:
+        request: The input click from trash button 
+        survey_id (int): The id of the opened survey
+        question_id (int): The id of the clicked question
+    Returns:
+        HttpResponse: Redirects to create_survey or 400
+    """
+    if request.method == "POST":  
+        if request.headers.get("HX-Request"):
+            question: models.Question = get_object_or_404(models.Question, id=question_id)
+            question.delete()
+            return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
+    
+    return HttpResponse(status=400)  # Bad request if no expression
+
+
 def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
     """
     Creates a survey template. If no survey_id is given, a new
@@ -231,7 +254,7 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
         survey_temp: models.SurveyTemplate = models.SurveyTemplate(creator=request.user, last_edited=timezone.now())
         survey_temp.save()
         # Set a placeholder name for the survey
-        survey_id: int = survey_temp.id
+        survey_id = survey_temp.id
         survey_temp.name = "Survey " + str(survey_id)
         survey_temp.save()
         
