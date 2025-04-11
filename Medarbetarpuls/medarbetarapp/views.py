@@ -1,4 +1,5 @@
 from . import models
+import platform
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
@@ -548,9 +549,13 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             survey.questions.set(survey_temp.questions.all())
             survey.save()
 
-            # TODO: Schedule publishing of surveys
-            #survey.publish_survey()
-            publish_survey_async.apply_async(args=[survey.id], eta=survey.sending_date)
+            # Only tries scheduling if we are on linux system!
+            os_type = platform.system()
+
+            if os_type == "Linux": 
+                publish_survey_async.apply_async(args=[survey.id], eta=survey.sending_date)
+            else:
+                survey.publish_survey()
 
             return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
 
