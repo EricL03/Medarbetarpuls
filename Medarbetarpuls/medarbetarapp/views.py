@@ -490,13 +490,12 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             survey_name: str = request.POST.get('survey-name')
 
             # Get the receiving employee group
-            # TODO: Better error returns and try and give suggestions...
             employee_group_name: str = request.POST.get('send-to')
             employee_group: models.EmployeeGroup = user.survey_groups.filter(name=employee_group_name).first() 
 
             # Handle the case where no employee group was found 
             if employee_group is None: 
-                return HttpResponse("No employee group was found", status=400)
+                return render(request, "partials/error_message.html", {"message": "Felaktig arbetsgrupp vald!"})
 
             # Get the dates 
             publish_date: str = request.POST.get('publish-date')  
@@ -520,6 +519,23 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 sending_date = make_aware(naive_sending_date)
             else: 
                 sending_date = None
+
+            # Ensure dates have been set correctly
+            if sending_date and deadline:
+                if deadline <= sending_date:
+                    return render(
+                        request,
+                        "partials/error_message.html",
+                        {"message": "Sista svarsdatum måste vara efter publiceringsdatum"},
+                        status=200
+                    )
+            else:
+                return render(
+                    request,
+                    "partials/error_message.html",
+                    {"message": "Publiceringsdatum och sista svarsdatum måste anges"},
+                    status=200
+                )
 
             # Create a Survey to be send to employess
             survey: models.Survey = models.Survey(name=survey_name, creator=user, deadline=deadline, sending_date=sending_date, is_viewable=is_public) 

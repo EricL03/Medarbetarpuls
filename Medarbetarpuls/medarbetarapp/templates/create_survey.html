@@ -76,9 +76,19 @@
           hx-post="{% url 'publish_survey' survey_temp.id %}"
           hx-trigger="submit"
           hx-confirm="Are you sure you want to publish this survey?"
-          hx-swap="none"
+          hx-target="#error-box"
+          hx-swap="innerHTML"
         >
           {% csrf_token %}
+          <!-- For showing error messages -->
+          <div
+            id="error-box"
+            class="error-msg"
+            style="color: red; font-weight: bold"
+          >
+            {{ message }}
+          </div>
+
           <!-- Checkbox Options -->
           <div class="checkbox-group">
             <label>
@@ -109,8 +119,16 @@
             name="send-to"
             placeholder="Lägg till grupp"
             class="text-input"
+            list="employee-groups"
+            autocomplete="off"
             required
           />
+
+          <!-- Auto suggest valid inputs -->
+          <datalist id="employee-groups">
+            {% for group in user.survey_groups.all %}
+            <option value="{{ group.name }}">{% endfor %}</option>
+          </datalist>
 
           <!-- Date Inputs -->
           <div class="date-group">
