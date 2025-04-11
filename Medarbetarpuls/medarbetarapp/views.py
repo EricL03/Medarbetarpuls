@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.core.cache import cache
 from datetime import datetime, time
 from django.utils.timezone import make_aware
+from .tasks import publish_survey_async
 
 import logging
 
@@ -514,7 +515,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             if publish_date:
                 naive_sending_date = datetime.combine(
                     datetime.strptime(publish_date, "%Y-%m-%d").date(),
-                    time(hour=23, minute=55)
+                    time(hour=0, minute=5)
                 )
                 sending_date = make_aware(naive_sending_date)
             else: 
@@ -548,7 +549,8 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             survey.save()
 
             # TODO: Schedule publishing of surveys
-            survey.publish_survey()
+            #survey.publish_survey()
+            publish_survey_async.apply_async(args=[survey.id], eta=survey.sending_date)
 
             return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
 
