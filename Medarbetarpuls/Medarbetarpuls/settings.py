@@ -189,22 +189,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-import os
-from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 
-# STATIC URL används i mallar som {% static 'fil.css' %}
-STATIC_URL = '/static/'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Gmail's SMTP server
+EMAIL_PORT = 587  # TLS port
+EMAIL_USE_TLS = True  # Use TLS encryption
 
-# STATICFILES_DIRS används vid utveckling om du har en global "static"-mapp
-STATICFILES_DIRS = [
-    BASE_DIR / "medarbetarapp" / "static",  # t.ex. medarbetarapp/static/style.css
-]
+EMAIL_HOST_USER = 'medarbetarpuls@gmail.com'  # Your actual gmail
+EMAIL_HOST_PASSWORD = 'oejv vxry kwrn ezoe'   # Use app password if 2FA is on
 
-# STATIC_ROOT används vid produktion (eller när du kör collectstatic)
-STATIC_ROOT = BASE_DIR / "staticfiles"  # där Django samlar allt vid collectstatic
-
-# Extra (rekommenderat) om du deployar:
-# Talar om för Django att använda den här lagringen i produktion
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

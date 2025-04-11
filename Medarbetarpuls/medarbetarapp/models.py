@@ -24,9 +24,10 @@ class Organization(models.Model):
     # Logo: How do we want to save this???
     question_bank: OneToManyManager["Question"] 
     survey_template_bank: OneToManyManager["SurveyTemplate"]
+    org_emails = OneToManyManager["EmailList"] 
 
     def __str__(self) -> str:
-        return f"{self.name}"
+        return f"{self.name} | Admins: {', '.join(str(admin) for admin in self.admins.all())}"
 
 
 class EmployeeGroup(models.Model):
@@ -108,10 +109,10 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
 
     # These are for the built-in django permissions!!!
     is_staff = models.BooleanField(
-        default=True  # pyright: ignore
+        default=False  # pyright: ignore
     )  # Allows access to admin panel
     is_superuser = models.BooleanField(
-        default=True  # pyright: ignore
+        default=False  # pyright: ignore
     )  # Allows you to do something in the admin panel
     is_active = models.BooleanField(
         default=True  # pyright: ignore
@@ -123,6 +124,22 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
 
     def __str__(self) -> str:
         return f"{self.name} ({self.email})"
+    
+    # To see how many surveys this user has unanswered
+    def count_unanswered_surveys(self):
+        return self.survey_results.filter(is_answered=False).count()
+    
+    # To see how many surveys this user has answered
+    def count_answered_surveys(self):
+        return self.survey_results.filter(is_answered=True).count()
+
+    # To get all unanswered surveys for this user
+    def get_unanswered_surveys(self):
+        return self.survey_results.filter(is_answered=False)
+    
+    # To get all answered surveys for this user
+    def get_answered_surveys(self):
+        return self.survey_results.filter(is_answered=True)
 
 
 
@@ -200,6 +217,8 @@ class SurveyResult(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} ({self.is_answered})"
+    
+    
 
 
 class BaseQuestionDetails(models.Model):
@@ -338,6 +357,9 @@ class Answer(models.Model):
 
 class EmailList(models.Model):
     email = models.EmailField(unique=True)
+    org = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="org_emails", null=True, blank=True
+    )
     objects: models.Manager 
 
     def __str__(self) -> str:

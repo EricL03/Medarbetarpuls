@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    {% load static %}
+    <script src="https://unpkg.com/htmx.org@1.8.4"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redigera fråga</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+  </head>
+  <body>
+    <div class="popup-overlay">
+      <div class="popup-content">
+        <h2>Redigera fråga</h2>
+        <img src="{% static 'images/' %}{{ question_format }}.png" 
+            alt="{{ question_format }} image"
+            class="question-icon"
+        />
+
+        {% if question_id is None %} 
+        <form
+          class="question-form"
+          hx-post="{% url 'edit_question_new' survey_temp.id question_format %}"
+          hx-target=".question-form"
+          hx-trigger="submit"
+        >
+        {% else %} 
+        <form
+          class="question-form"
+          hx-post="{% url 'edit_question' survey_temp.id question_format question_id %}"
+          hx-target=".question-form"
+          hx-trigger="submit"
+        >
+        {% endif %}
+          {% csrf_token %}
+          {% if question_text is None %}
+          <input
+            type="text"
+            id="question"
+            name="question"
+            placeholder="Fråga"
+            required
+          />
+          {% else %}
+          <input
+            type="text"
+            id="question"
+            name="question"
+            value="{{ question_text }}"
+            required
+          />
+          {% endif %}
+          <button type="button">Demonstrera</button>
+          <button type="submit">Spara</button>
+        </form>
+        <button
+          class="go-back-button"
+          onclick="window.location.href='{% url 'create_survey_with_id' survey_temp.id %}'"
+        >
+          <img
+            src="{% static 'images/go-back-btn.png' %}"
+            alt="Go Back"
+            class="back-icon"
+          />
+        </button>
+      </div>
+    </div>
+  </body>
+</html>
