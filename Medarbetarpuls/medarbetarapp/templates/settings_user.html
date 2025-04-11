@@ -100,7 +100,21 @@
         </form>
       </div>
     </div>
+
+    <div id="error-popup" class="popup-overlay" style="display: none;">
+      <div id= "content" class="popup-content">
+        <button type="delete-button" onclick="closeError()">OK</button>
+
+      </div>
+    </div>
     <script>
+      // Error handling
+      document.body.addEventListener("htmx:responseError", function(event) {
+      const errorHtml = event.detail.xhr.response;
+      document.getElementById("error-popup").innerHTML = errorHtml;
+      document.getElementById("error-popup").style.display = "flex";
+      });
+
       function openDelete() {
           document.getElementById("delete-popup").style.display = "flex";
       }
@@ -124,6 +138,11 @@
       function closeEditPass() {
           document.getElementById("edit-pass-popup").style.display = "none";
       }
+
+      function closeError() {
+          document.getElementById("error-popup").style.display = "none";
+      }
+
   </script>
   </body>
 </html>
