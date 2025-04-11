@@ -189,3 +189,22 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# STATIC URL används i mallar som {% static 'fil.css' %}
+STATIC_URL = '/static/'
+
+# STATICFILES_DIRS används vid utveckling om du har en global "static"-mapp
+STATICFILES_DIRS = [
+    BASE_DIR / "medarbetarapp" / "static",  # t.ex. medarbetarapp/static/style.css
+]
+
+# STATIC_ROOT används vid produktion (eller när du kör collectstatic)
+STATIC_ROOT = BASE_DIR / "staticfiles"  # där Django samlar allt vid collectstatic
+
+# Extra (rekommenderat) om du deployar:
+# Talar om för Django att använda den här lagringen i produktion
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
