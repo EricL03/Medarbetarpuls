@@ -201,7 +201,6 @@ EMAIL_HOST_PASSWORD = 'oejv vxry kwrn ezoe'   # Use app password if 2FA is on
 
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-
 # Celery settings/setup for async task scheduling
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_ACCEPT_CONTENT = ['json']
