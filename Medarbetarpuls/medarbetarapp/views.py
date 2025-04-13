@@ -12,6 +12,7 @@ from django.core.mail import send_mail
 from django.core.cache import cache
 from datetime import datetime, time
 from django.utils.timezone import make_aware
+from django.db.models import Count
 from .tasks import publish_survey_async
 
 import logging
@@ -650,6 +651,13 @@ def my_results_view(request):
 
 @login_required
 def my_surveys_view(request):
+    # Annotate and filter templates with 0 questions
+    empty_templates = request.user.survey_templates.annotate(num_questions=Count("questions")).filter(num_questions=0)
+
+    # Delete them
+    empty_templates.delete()
+    
+    # Order templates by last time edited
     survey_templates = request.user.survey_templates.all().order_by('-last_edited')
     return render(request, "my_surveys.html", {"survey_templates": survey_templates})
 
