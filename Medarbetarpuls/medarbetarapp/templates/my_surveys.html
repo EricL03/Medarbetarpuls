@@ -69,97 +69,14 @@
           <h2 class="survey-title">{{ survey_temp.name }}</h2>
           <div class="survey-actions">
             <img src="{% static 'trashcan.png' %}" class="action-icon" />
-            <img src="{% static 'edit-icon.png' %}" class="action-icon" />
+            <a href=""{% url 'create_survey_with_id' survey_temp.id %}"">
+              <img src="{% static 'edit-icon.png' %}" class="action-icon" />
+            </a>
             <img src="{% static 'share-icon.png' %}" class="action-icon" />
           </div>
         </div>
       </div>
       {% endfor %}
-
-      <!-- Enkät 1 -->
-      <div class="survey-item">
-        <div class="survey-content">
-          <div class="survey-icons">
-            <span class="tooltip" data-tooltip="Samtliga svar är anonymiserade">
-              <div class="icon-wrapper">
-                <img src="{% static 'anonymous.png' %}" class="icon-img" />
-              </div>
-            </span>
-            <span
-              class="tooltip"
-              data-tooltip="Resultatet presenteras efter deadline"
-            >
-              <div class="icon-wrapper">
-                <img src="{% static 'survey-info.png' %}" class="icon-img" />
-              </div>
-            </span>
-          </div>
-          <h2 class="survey-title">Enkät 1</h2>
-          <div class="survey-actions">
-            <img src="{% static 'trashcan.png' %}" class="action-icon" />
-            <img src="{% static 'edit-icon.png' %}" class="action-icon" />
-            <img src="{% static 'share-icon.png' %}" class="action-icon" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Enkät 2 -->
-      <div class="survey-item">
-        <div class="survey-content">
-          <div class="survey-icons">
-            <span class="tooltip" data-tooltip="Svaren är INTE anonymiserade">
-              <div class="icon-wrapper">
-                <img src="{% static 'anonymous.png' %}" class="icon-img" />
-                <img src="{% static 'xsymbol.png' %}" class="x-overlay" />
-              </div>
-            </span>
-            <span
-              class="tooltip"
-              data-tooltip="Resultatet presenteras inte efter deadline"
-            >
-              <div class="icon-wrapper">
-                <img src="{% static 'survey-info.png' %}" class="icon-img" />
-                <img src="{% static 'xsymbol.png' %}" class="x-overlay" />
-              </div>
-            </span>
-          </div>
-          <h2 class="survey-title">Enkät 2</h2>
-          <div class="survey-actions">
-            <img src="{% static 'trashcan.png' %}" class="action-icon" />
-            <img src="{% static 'edit-icon.png' %}" class="action-icon" />
-            <img src="{% static 'share-icon.png' %}" class="action-icon" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Enkät 3 -->
-      <div class="survey-item">
-        <div class="survey-content">
-          <div class="survey-icons">
-            <span class="tooltip" data-tooltip="Svaren är INTE anonymiserade">
-              <div class="icon-wrapper">
-                <img src="{% static 'anonymous.png' %}" class="icon-img" />
-                <img src="{% static 'xsymbol.png' %}" class="x-overlay" />
-              </div>
-            </span>
-            <span
-              class="tooltip"
-              data-tooltip="Resultatet presenteras efter deadline"
-            >
-              <div class="icon-wrapper">
-                <img src="{% static 'survey-info.png' %}" class="icon-img" />
-              </div>
-            </span>
-          </div>
-          <h2 class="survey-title">Enkät 3</h2>
-          <div class="survey-actions">
-            <img src="{% static 'trashcan.png' %}" class="action-icon" />
-            <img src="{% static 'edit-icon.png' %}" class="action-icon" />
-            <img src="{% static 'share-icon.png' %}" class="action-icon" />
-          </div>
-        </div>
-      </div>
-    </div>
 
     <div class="add-survey-container">
       <button type="button" class="add-survey-button">
