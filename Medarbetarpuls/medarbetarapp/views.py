@@ -459,6 +459,10 @@ def edit_question_view(request, survey_id: int, question_format: models.Question
             question.question = request.POST.get("question")
             question.save()
 
+            # Update last edited date of survey
+            survey_temp.last_edited = timezone.now()
+            survey_temp.save()
+
             return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
 
 
@@ -646,7 +650,8 @@ def my_results_view(request):
 
 @login_required
 def my_surveys_view(request):
-    return render(request, "my_surveys.html")
+    survey_templates = request.user.survey_templates.all().order_by('-last_edited')
+    return render(request, "my_surveys.html", {"survey_templates": survey_templates})
 
 
 def settings_admin_view(request):

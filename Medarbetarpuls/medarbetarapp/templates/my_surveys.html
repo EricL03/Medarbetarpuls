@@ -48,7 +48,7 @@
 
     <div class="survey-list list-view" id="surveyList">
       <!-- Add all survey templates dynamically -->
-      {% for survey_temp in user.survey_templates.all %}
+      {% for survey_temp in survey_templates %}
       <a href="{% url 'create_survey_with_id' survey_temp.id %}">
       <div class="survey-item">
         <div class="survey-content">
@@ -68,6 +68,7 @@
             </span>
           </div>
           <h2 class="survey-title">{{ survey_temp.name }}</h2>
+          <p>{{ survey_temp.last_edited }}</p>
           <div class="survey-actions">
             <img src="{% static 'images/trashcan.png' %}" class="action-icon" />
               <img src="{% static 'images/edit-icon.png' %}" class="action-icon" />
