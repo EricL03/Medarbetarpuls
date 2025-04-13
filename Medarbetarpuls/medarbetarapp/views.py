@@ -656,7 +656,7 @@ def my_surveys_view(request):
 
     # Delete them
     empty_templates.delete()
-    
+
     # Order templates by last time edited
     survey_templates = request.user.survey_templates.all().order_by('-last_edited')
     return render(request, "my_surveys.html", {"survey_templates": survey_templates})

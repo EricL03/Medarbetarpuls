@@ -71,7 +71,7 @@
           <p>{{ survey_temp.last_edited }}</p>
           <div class="survey-actions">
             <img src="{% static 'images/trashcan.png' %}" class="action-icon" />
-              <img src="{% static 'images/edit-icon.png' %}" class="action-icon" />
+            <img src="{% static 'images/edit-icon.png' %}" class="action-icon" />
             <img src="{% static 'images/share-icon.png' %}" class="action-icon" />
           </div>
         </div>
@@ -79,11 +79,13 @@
       </a>
       {% endfor %}
 
+    <a href="{% url 'create_survey' %}">
     <div class="add-survey-container">
       <button type="button" class="add-survey-button">
         <img src="{% static 'images/add.png' %}" class="action-icon" />
       </button>
     </div>
+    </a>
 
     <script>
       function setListView() {
