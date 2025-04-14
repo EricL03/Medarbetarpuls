@@ -664,6 +664,19 @@ def delete_survey_template(request, survey_id: int) -> HttpResponse:
 @csrf_protect
 @login_required 
 def my_surveys_view(request, search_str: str | None = None) -> HttpResponse:
+    """
+    Displays the my surveys page with all created survey templates. 
+    Also gives functionality for searching for specific surveys via 
+    their name. 
+
+    Args:
+        request: The input text from the search field 
+        search_str (str | None): The search pattern to be filtered for
+
+    Returns:
+        HttpResponse: Renders my_surveys page with survey templates list 
+        or redirects recursively with specific search pattern. 
+    """
     # Annotate and filter templates with 0 questions
     empty_templates: models.SurveyTemplate = request.user.survey_templates.annotate(num_questions=Count("questions")).filter(num_questions=0)
 
@@ -685,6 +698,7 @@ def my_surveys_view(request, search_str: str | None = None) -> HttpResponse:
             )
         ).order_by('-relevance', '-last_edited')
 
+    # Post request for when search button is pressed
     if request.method == "POST":  
         if request.headers.get("HX-Request"):
             search_str_input: str = request.POST.get("search-bar")
