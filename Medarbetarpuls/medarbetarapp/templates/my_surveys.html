@@ -24,13 +24,20 @@
     </header>
 
     <div class="search-container">
-      <input
-        type="text"
-        id="search-bar"
-        class="search-bar"
-        placeholder="Sök enkäter..."
-      />
-      <button type="button" class="search-button">Sök</button>
+      <form 
+          hx-post="{% url 'my_surveys' %}"
+          hx-trigger="submit"
+      >
+        {% csrf_token %}
+        <input
+          type="text"
+          id="search-bar"
+          name="search-bar"
+          class="search-bar"
+          placeholder="Sök enkäter..."
+        />
+        <button type="submit" class="search-button">Sök</button>
+      </form>
       <div class="view-icons">
         <img
           src="{% static 'images/list.png' %}"

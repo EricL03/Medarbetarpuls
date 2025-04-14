@@ -13,6 +13,7 @@ from django.core.cache import cache
 from datetime import datetime, time
 from django.utils.timezone import make_aware
 from django.db.models import Count
+from django.db.models import Case, When, IntegerField, Value
 from .tasks import publish_survey_async
 
 import logging
@@ -660,16 +661,39 @@ def delete_survey_template(request, survey_id: int) -> HttpResponse:
     return HttpResponse(status=400)
 
 
-@login_required
-def my_surveys_view(request):
+@csrf_protect
+@login_required 
+def my_surveys_view(request, search_str: str | None = None) -> HttpResponse:
     # Annotate and filter templates with 0 questions
-    empty_templates = request.user.survey_templates.annotate(num_questions=Count("questions")).filter(num_questions=0)
+    empty_templates: models.SurveyTemplate = request.user.survey_templates.annotate(num_questions=Count("questions")).filter(num_questions=0)
 
     # Delete them
     empty_templates.delete()
 
-    # Order templates by last time edited
-    survey_templates = request.user.survey_templates.all().order_by('-last_edited')
+    if search_str is None: 
+        # Order templates by last time edited
+        survey_templates = request.user.survey_templates.all().order_by('-last_edited')
+    else: 
+        # Order templates by search bar input relevance 
+        survey_templates = request.user.survey_templates.annotate(
+            relevance=Case(
+            When(name__iexact=search_str, then=Value(3)),  # exact match
+            When(name__istartswith=search_str, then=Value(2)),  # startswith
+            When(name__icontains=search_str, then=Value(1)),  # somewhere inside
+            default=Value(0),
+            output_field=IntegerField()
+            )
+        ).order_by('-relevance', '-last_edited')
+
+    if request.method == "POST":  
+        if request.headers.get("HX-Request"):
+            search_str_input: str = request.POST.get("search-bar")
+
+            if search_str_input is None: 
+                return HttpResponse(headers={"HX-Redirect": "/my-surveys/"})  
+            else: 
+                return HttpResponse(headers={"HX-Redirect": "/my-surveys/" + search_str_input})  
+
     return render(request, "my_surveys.html", {"survey_templates": survey_templates})
 
 
