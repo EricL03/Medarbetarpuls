@@ -10,9 +10,7 @@
     <link rel="stylesheet" href="{% static 'styles.css' %}" />
 </head>
 <body>
-    {% include "topbar.html" %}
-
-
+    {% include "topbar.html" with pagetitle=pagetitle %}
     <div class="start-container">
         <div class="title-background">
             <h2>Mina enkäter</h2>
@@ -49,14 +47,20 @@
                     <p>{{ survey_temp.last_edited }}</p>
                 </div>
                 <div class="question-result">
-                    <img src="{% static 'images/trashcan.png' %}" 
-                    class="question-icon" 
-                    onclick="event.stopPropagation(); event.preventDefault();"
-                    hx-post="{% url 'delete_survey_template' survey_temp.id %}"
-                    hx-confirm="Är du säker att du vill ta bort den här enkäten?"
-                    hx-target=".survey-item"
-                    />
-                    <meta name="csrf-token" content="{{ csrf_token }}">
+                    <div class="grid-icon">
+                        <img src="{% static 'images/trashcan.png' %}" 
+                            class="icon-img" 
+                            onclick="event.stopPropagation(); event.preventDefault();"
+                            hx-post="{% url 'delete_survey_template' survey_temp.id %}"
+                            hx-confirm="Är du säker att du vill ta bort den här enkäten?"
+                            hx-target=".survey-item" />
+                    </div>
+                    <div class="grid-icon">
+                        <img src="{% static 'images/share-icon.png' %}" 
+                            class="icon-img" 
+                            onclick="event.stopPropagation(); event.preventDefault();"
+                            hx-get="{% url 'create_survey_with_id' survey_temp.id %}?trigger_popup=true">
+                    </div>
                 </div>
                 </a>
             {% endfor %}
@@ -75,7 +79,7 @@
             const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
             event.detail.headers['X-CSRFToken'] = csrfToken;
         });
-      </script>
+    </script>
 </body>
 </html>
 
