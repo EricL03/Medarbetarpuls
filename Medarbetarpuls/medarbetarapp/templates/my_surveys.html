@@ -60,6 +60,7 @@
       <a href="{% url 'create_survey_with_id' survey_temp.id %}">
       <div class="survey-item">
         <div class="survey-content">
+          <!-- This code should not be here, templates do not have these features! 
           <div class="survey-icons">
             <span class="tooltip" data-tooltip="Samtliga svar är anonymiserade">
               <div class="icon-wrapper">
@@ -75,6 +76,7 @@
               </div>
             </span>
           </div>
+          --> 
           <h2 class="survey-title">{{ survey_temp.name }}</h2>
           <p>{{ survey_temp.last_edited }}</p>
           <div class="survey-actions">
