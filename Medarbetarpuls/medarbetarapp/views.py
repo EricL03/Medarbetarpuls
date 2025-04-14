@@ -188,15 +188,16 @@ def authentication_acc_view(request):
                 # check for basegroup??
             else:
                 # Check that email is registrated to an org
-                # crashes here FIX FIX FIX FIX FIX FIX FIX FIX
                 org = find_organization_by_email(email)
                 if org is None:
                     logger.error("This email is not authorized for registration.")
                     return HttpResponse(status=400)
                 # Create user
                 new_user = models.CustomUser.objects.create_user(email, name, password)
+                # get the email and get the correct employeegroups
                 email_from_list = models.EmailList.objects.get(email=email)
                 group =  email_from_list.employee_groups.all()
+                # add group to employee
                 new_user.employee_groups.add(*group)
                 new_user.save()
                 # Add new user to base (everyone) employee group of org
