@@ -155,12 +155,22 @@ def answer_survey_view(request, survey_result_id, question_index=0):
     question = questions[question_index]
 
     if request.method == "POST":
-        # Returns the object with Boolean 'created', which says if a new object was created
-        answer, created = models.Answer.objects.get_or_create(survey=survey, question=question)
-        answer.slider_answer = request.POST.get("slider")
+        if "slider" in request.POST:
+            # Returns the object with Boolean 'created', which says if a new object was created
+            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, slider_answer=request.POST.get("slider"))
+
+        elif "text" in request.POST:
+            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, free_text_answer=request.POST.get("text"))
+        
+        elif "yesno" in request.POST:
+            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, yes_no_answer=request.POST.get("yesno"))
+        
+        elif "multiplechoice" in request.POST:
+            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, multiple_choice_answer=request.POST.get("multiplechoice"))
+            
         answer.is_answered = True
         answer.save()
-        return redirect("answer_survey", survey_id=survey.id, question_index=question_index + 1)
+        return redirect("answer_survey", survey_result_id=survey.id, question_index=question_index + 1)
 
     return render(request, "answer_survey.html", {
         "question": question,
