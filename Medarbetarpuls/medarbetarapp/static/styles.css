@@ -309,9 +309,7 @@ button:hover {
   flex-wrap: wrap;
   justify-content: center;
   gap: 20px;
-
-
-}
+} 
 
 /* Items within the grid dose not scale at the moment */
 .grid-item {
@@ -725,6 +723,14 @@ button:hover {
   justify-content: center;
   gap: 10px;
   margin-bottom: 15%;
+}
+
+.search-bar {
+  width: 50%;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 500px;
 }
 
 .search-container input {
