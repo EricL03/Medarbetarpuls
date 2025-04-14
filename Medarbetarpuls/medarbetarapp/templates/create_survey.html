@@ -33,7 +33,7 @@
             <form
               hx-post="{% url 'delete_question' question.id survey_temp.id %}"
               hx-trigger="submit"
-              hx-confirm="Are you sure you want to delete this survey?"
+              hx-confirm="Är du säker att du vill ta bort den här frågan?"
               hx-swap="none"
             >
               {% csrf_token %}
