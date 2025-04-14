@@ -103,6 +103,11 @@
     </a>
 
     <script>
+      // Set to grid view on page refresh 
+      const surveyList = document.getElementById("surveyList");
+      surveyList.classList.remove("list-view");
+      surveyList.classList.add("grid-view");
+
       function setListView() {
         const surveyList = document.getElementById("surveyList");
         surveyList.classList.remove("grid-view");
