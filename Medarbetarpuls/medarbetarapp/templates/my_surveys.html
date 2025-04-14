@@ -89,8 +89,11 @@
             />
             <meta name="csrf-token" content="{{ csrf_token }}">
             <img src="{% static 'images/edit-icon.png' %}" class="action-icon" />
-            <img src="{% static 'images/share-icon.png' %}" class="action-icon" />
-          </div>
+            <a href="{% url 'create_survey_with_id' survey_temp.id %}?trigger_popup=true"
+               onclick="event.stopPropagation();"
+              >
+              <img src="{% static 'images/share-icon.png' %}" class="action-icon" />
+            </a> </div>
         </div>
       </div>
       </a>

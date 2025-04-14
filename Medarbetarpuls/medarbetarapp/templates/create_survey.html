@@ -197,6 +197,13 @@
         // Add your logic to handle the removal of the question here
         console.log("Remove button clicked for question:", event.target);
       }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("trigger_popup") === "true") {
+          openPopup();
+        }
+      });
     </script>
   </body>
 </html>
