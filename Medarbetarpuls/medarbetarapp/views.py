@@ -649,6 +649,17 @@ def my_results_view(request):
     )
 
 
+@csrf_protect
+def delete_survey_template(request, survey_id: int) -> HttpResponse:
+    if request.method == "POST":  
+        if request.headers.get("HX-Request"):
+            survey_temp = get_object_or_404(models.SurveyTemplate, id=survey_id, creator=request.user)
+            survey_temp.delete()
+            return HttpResponse(headers={"HX-Redirect": "/my-surveys/"})  
+
+    return HttpResponse(status=400)
+
+
 @login_required
 def my_surveys_view(request):
     # Annotate and filter templates with 0 questions
