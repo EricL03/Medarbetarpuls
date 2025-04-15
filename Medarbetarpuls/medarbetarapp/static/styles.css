@@ -607,6 +607,7 @@ button:hover {
 
 .popup-content.messages {
   width: 300px; /* Make this smaller than for example publish survey popup */
+  padding: 25px;
 }
 
 .tag-container,

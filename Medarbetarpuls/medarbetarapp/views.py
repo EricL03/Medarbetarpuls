@@ -1,7 +1,5 @@
-from tabnanny import check
 from . import models
 import platform
-from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
@@ -67,11 +65,6 @@ def create_acc(request) -> HttpResponse:
             email = request.POST.get("email")
             password = request.POST.get("password")
             from_settings = request.POST.get('from_settings') == 'true'
-            org = find_organization_by_email(email=email)
-            if org is None:
-                logger.error("This email is not authorized for registration.")
-                return HttpResponse(status=400)
-
             code = 123456 # make random later, just test now
             cache.set(f'verify_code_{email}', code, timeout=300)
             send_mail(
@@ -127,15 +120,8 @@ def add_employee_view(request):
             existing_user = models.CustomUser.objects.filter(email=email).first()
             if existing_user:
                 if not existing_user.is_active:
-                    if models.EmployeeGroup.objects.filter(name=team).exists():
-                        group = models.EmployeeGroup.objects.get(name=team)
-                    else:
-                        #create new employee group
-                        group = models.EmployeeGroup(name=team, organization=org)
-                        group.save()
-                    email_instance = models.EmailList(email=email, org=org)
-                    email_instance.save()
-                    email_instance.employee_groups.add(group)
+                    existing_user.is_active = True
+                    existing_user.save()
                 else:
                     logger.error("Existing user already have an active account")
                     pass
@@ -167,16 +153,13 @@ def analysis_view(request):
 
 @login_required
 def answer_survey_view(request, survey_result_id, question_index=0):
-    survey_result = get_object_or_404(SurveyResult, pk=survey_result_id, user=request.user)
-    questions = survey_result.published_survey.questions.all()
+    survey = get_object_or_404(SurveyResult, pk=survey_result_id, user=request.user)
+    questions = survey.published_survey.questions.all()
 
     if question_index >= len(questions):
         # All questions answered, redirect somewhere else
-        survey_result.is_answered = True
-        # This survey has now been answered by another user
-        survey_result.published_survey.collected_answer_count += 1 
-        survey_result.published_survey.save()
-        survey_result.save()
+        survey.is_answered = True
+        survey.save()
         return redirect("start_user")  # or a summary page
 
     question = questions[question_index]
@@ -184,27 +167,26 @@ def answer_survey_view(request, survey_result_id, question_index=0):
     if request.method == "POST":
         if "slider" in request.POST:
             # Returns the object with Boolean 'created', which says if a new object was created
-            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, slider_answer=request.POST.get("slider"))
+            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, slider_answer=request.POST.get("slider"))
 
         elif "text" in request.POST:
-            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, free_text_answer=request.POST.get("text"))
+            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, free_text_answer=request.POST.get("text"))
         
         elif "yesno" in request.POST:
-            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, yes_no_answer=request.POST.get("yesno"))
+            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, yes_no_answer=request.POST.get("yesno"))
         
         elif "multiplechoice" in request.POST:
-            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, multiple_choice_answer=request.POST.get("multiplechoice"))
+            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, multiple_choice_answer=request.POST.get("multiplechoice"))
             
         answer.is_answered = True
         answer.save()
-        # Redirects to the next question to answer
-        return redirect("answer_survey", survey_result_id=survey_result.id, question_index=question_index + 1)
-    
+        return redirect("answer_survey", survey_result_id=survey.id, question_index=question_index + 1)
+
     return render(request, "answer_survey.html", {
         "question": question,
         "question_index": question_index,
         "total": len(questions),
-        "survey_result_id": survey_result.id,
+        "survey_result_id": survey.id,
     })
 
 @csrf_exempt
@@ -237,13 +219,8 @@ def authentication_acc_view(request):
             cache.delete(f'verify_code_{email}')
             
             existing_user = models.CustomUser.objects.filter(email=email).first()
-            if existing_user and existing_user.is_active == False: #and coming from settings page
+            if existing_user and str(from_settings)=='true': #and coming from settings page
                 # Should they be able to reset name and password???
-                org = find_organization_by_email(email)
-                if org is None:
-                    logger.error("This email is not authorized for registration.")
-                    return HttpResponse(status=400)
-                existing_user.is_active = True
                 existing_user.name = name
                 existing_user.set_password(password)
                 existing_user.save()
@@ -685,7 +662,6 @@ def my_org_view(request):
             print("removing ", employee_to_remove)
             employee_to_remove.is_active = False
             employee_to_remove.save()
-            models.EmailList.objects.filter(email=employee_to_remove.email).delete()
         return redirect("my_org")
     # Retrieve all employee groups associated with this organization
     employee_groups = models.EmployeeGroup.objects.filter(organization=organization)
@@ -694,32 +670,15 @@ def my_org_view(request):
     employees = models.CustomUser.objects.filter(
         employee_groups__in=employee_groups
     ).distinct()
-
-     # Fånga sökterm
-    search_query = request.GET.get("search", "")
-    if search_query:
-        employees = employees.filter(
-            Q(name__icontains=search_query) |
-            Q(email__icontains=search_query)
-        )
-
-     # Kolla om detta är en HTMX-request
-    if "HX-Request" in request.headers:
-        # Returnera bara tabell-rader
-        return render(request, "my_org_table.html", {
+    return render(
+        request,
+        "my_org.html",
+        {
+            "user": request.user,
             "employees": employees,
-        })
-    else:
-        return render(
-            request,
-            "my_org.html",
-            {
-                "user": request.user,
-                "employees": employees,
-                "pagetitle": f"Din organisation<br>{organization.name}",
-                "search_query": search_query,
-            },
-        )
+            "pagetitle": f"Din organisation<br>{organization.name}",
+        },
+    )
 
 
 @login_required
@@ -957,6 +916,7 @@ def settings_change_pass(request):
         new_password = request.POST.get("pass_new")
         check_password = request.POST.get("pass_check") # The repeated new password
         user = authenticate(request, username=request.user.email, password=old_password)
+        print(request.user.password)
         # Check that the old password is correct and that the new password is repeated
         if user and check_password == new_password:
             user.set_password(new_password)
@@ -1000,31 +960,15 @@ def start_user_view(request):
 
 
 def survey_result_view(request, survey_id):
-    survey = models.Survey.objects.filter(id=survey_id).first()
-    # Retrieve all survey results of this survey
-    survey_results = survey.survey_results
-    questions = survey.questions.all()
-    result = {} # Map every question to its answer statistics here
+    survey_result = SurveyResult.objects.filter(id=survey_id).first()
 
-    #TODO: some analysis here before sending to survey_result?
-    
-    for question in questions:
-        if question.question_format == models.QuestionFormat.MULTIPLE_CHOICE:
-            pass
-        elif question.question_format == models.QuestionFormat.YES_NO:
-            pass
-        elif question.question_format == models.QuestionFormat.TEXT:
-            pass
-        elif question.question_format == models.QuestionFormat.SLIDER:
-            pass
-
-
-    if survey_results is None:
-        # This survey has no answers (should not even be displayed to the user then)
-        return HttpResponse(400)
+    if survey_result is not None:
+        # Check if the survey is accessible to the user
+        if survey_result.user != request.user:
+            survey_result = None
 
     # Proceed to render the survey results
-    return render(request, "survey_result.html", {"survey_result": result})
+    return render(request, "survey_result.html", {"survey_result": survey_result})
 
 
 @login_required
@@ -1037,7 +981,6 @@ def unanswered_surveys_view(request):
     user = request.user  # Assuming the user is authenticated
     unanswered_count = user.count_unanswered_surveys()
     unanswered_surveys = user.get_unanswered_surveys()
-    current_time = timezone.now()
     return render(
         request,
         "unanswered_surveys.html",
@@ -1045,7 +988,6 @@ def unanswered_surveys_view(request):
             "unanswered_count": unanswered_count,
             "unanswered_surveys": unanswered_surveys,
             "pagetitle": "Obesvarade enkäter",
-            "current_time": current_time
         },
     )
 

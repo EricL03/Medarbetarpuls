@@ -19,7 +19,7 @@
         <div class="table-header">Inloggningsuppgifter</div>
         <div class="table-row">
             <div class="label">Namn</div>
-            <div class="value"> <!-- Test if username shows up -->
+            <div class="value"> 
               {{ user.name }} <a href="#" onclick="openEditName()"><span class="edit-icon">✏️</span></a>
             </div>
           </div>
@@ -32,7 +32,7 @@
         <div class="table-row">
             <div class="label">Mailadress</div>
             <div class="value">
-              {{ user.email }} <!-- Test if user email shows up -->
+              {{ user.email }}
             </div>
           </div>
         </div>
@@ -45,13 +45,13 @@
           <form 
             class="transfer-form"
             hx-post="/settings-admin/"
-            hx-target="#error-box"
+            hx-target="#transfer-error-box"
             hx-trigger="submit"
-            hx-swap="outerHTML">
+            hx-swap="innerHTML">
 
             <!-- For showing error messages -->
           <div
-            id="error-box"
+            id="transfer-error-box"
             class="error-msg"
             style="color: red; font-weight: bold"
             >
@@ -97,13 +97,13 @@
         <form class="edit-pass-form"
           hx-post="/settings-pass/"
           hx-trigger="submit"
-          hx-target="#error-box"
-          hx-swap="none"
+          hx-target="#pass-error-box"
+          hx-swap="innerHTML"
         >
           {% csrf_token %}
           <!-- For showing error messages -->
           <div
-            id="error-box"
+            id="pass-error-box"
             class="error-msg"
             style="color: red; font-weight: bold"
           >
@@ -126,16 +126,22 @@
     <script>
       // Error handling
       document.body.addEventListener("htmx:afterRequest", function (event) {
-        const errorBox = document.getElementById("error-box");
+        const form = event.target;
+
+        // Find the nearest error box *inside that form*
+        const errorBox = form.querySelector(".error-msg");
+
+        // Safety check
+        if (!errorBox) return;
 
         if (event.detail.successful) {
-        errorBox.innerHTML = "Lösenordet har ändrats";
+        errorBox.innerHTML = "Ändringen lyckades";
         errorBox.style.color = "green";
         errorBox.style.display = "block";
         // Close the popup for the user
         setTimeout(() => location.reload(), 1000);
       } else {
-        errorBox.innerHTML = event.detail.xhr.responseText || "Fel lösenord";
+        errorBox.innerHTML = event.detail.xhr.responseText || "Något gick fel";
         errorBox.style.color = "red";
         errorBox.style.display = "block";
       }
