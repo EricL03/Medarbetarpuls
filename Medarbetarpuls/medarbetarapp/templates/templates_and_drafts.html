@@ -61,6 +61,8 @@
                 class="icon-img"
                 onclick="event.stopPropagation(); event.preventDefault();"
                 hx-get="{% url 'create_survey_with_id' survey_temp.id %}?trigger_popup=true"
+                hx-target="body"
+                hx-swap="outerHTML"
               />
             </div>
           </div>
