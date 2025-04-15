@@ -26,7 +26,6 @@
             {{ employee_group.name }} {% endfor %}
           </p>
           <p>Pågår till: {{ survey.deadline }}</p>
-          <p>{{survey.collected_answer_count}} har svarat hittils</p>
           <p>
             {{survey.collected_answer_count}}/{{ survey.participant_count }} har
             svarat hittils
@@ -36,7 +35,6 @@
         <div class="grid-item green">
           <p><strong>{{ survey.name }}</strong></p>
           <p>Genomfördes: {{ survey.sending_date }} - {{ survey.deadline }}</p>
-          <p>{{survey.collected_answer_count}} svarade på enkäten</p>
           <p>
             {{survey.collected_answer_count}}/{{ survey.participant_count }}
             svarade på enkäten
