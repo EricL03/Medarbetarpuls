@@ -126,6 +126,7 @@ def add_employee_view(request):
                 group.save()
             email_instance = models.EmailList.objects.get(email=editUserMail)
             email_instance.employee_groups.add(group)
+            user.survey_groups.add(group)
         elif user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
             org = user.admin
 
@@ -141,6 +142,7 @@ def add_employee_view(request):
                     email_instance = models.EmailList(email=email, org=org)
                     email_instance.save()
                     email_instance.employee_groups.add(group)
+                    user.survey_groups.add(group)
                 else:
                     logger.error("Existing user already have an active account")
                     pass
@@ -156,6 +158,7 @@ def add_employee_view(request):
                 email_instance = models.EmailList(email=email, org=org)
                 email_instance.save()
                 email_instance.employee_groups.add(group)
+                user.survey_groups.add(group)
             return HttpResponse(status=204)  # maybe should render back to my_org?
 
     return render(
