@@ -703,16 +703,16 @@ def delete_survey_template(request, survey_id: int) -> HttpResponse:
         if request.headers.get("HX-Request"):
             survey_temp = get_object_or_404(models.SurveyTemplate, id=survey_id, creator=request.user)
             survey_temp.delete()
-            return HttpResponse(headers={"HX-Redirect": "/my-surveys/"})  
+            return HttpResponse(headers={"HX-Redirect": "/templates_and_drafts/"})  
 
     return HttpResponse(status=400)
 
 
 @csrf_protect
 @login_required 
-def my_surveys_view(request, search_str: str | None = None) -> HttpResponse:
+def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse: 
     """
-    Displays the my surveys page with all created survey templates. 
+    Displays the survey templates and drafts page with all created survey templates. 
     Also gives functionality for searching for specific surveys via 
     their name. 
 
@@ -751,11 +751,17 @@ def my_surveys_view(request, search_str: str | None = None) -> HttpResponse:
             search_str_input: str = request.POST.get("search-bar")
 
             if search_str_input is None: 
-                return HttpResponse(headers={"HX-Redirect": "/my-surveys/"})  
+                return HttpResponse(headers={"HX-Redirect": "/templates_and_drafts/"})  
             else: 
-                return HttpResponse(headers={"HX-Redirect": "/my-surveys/" + search_str_input})  
+                return HttpResponse(headers={"HX-Redirect": "/templates_and_drafts/" + search_str_input})  
+    
+    return render(request, "templates_and_drafts.html", {"survey_templates": survey_templates})
 
-    return render(request, "my_surveys.html", {"survey_templates": survey_templates})
+
+
+@login_required 
+def my_surveys_view(request):
+    return render(request, "my_surveys.html")
 
 
 def settings_admin_view(request):

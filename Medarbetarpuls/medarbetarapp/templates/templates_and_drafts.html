@@ -13,17 +13,17 @@
 
     <div class="start-container">
       <div class="title-background">
-        <h2>Mina enkäter</h2>
+        <h2>Mallar & Utkast</h2>
       </div>
       <div class="search-container">
-        <form hx-post="{% url 'my_surveys' %}" hx-trigger="submit">
+        <form hx-post="{% url 'templates_and_drafts' %}" hx-trigger="submit">
           {% csrf_token %}
           <input
             type="text"
             id="search-bar"
             name="search-bar"
             class="search-bar"
-            placeholder="Sök enkäter..."
+            placeholder="Sök bland enkätmallar..."
           />
           <button type="submit" class="search-button">Sök</button>
         </form>
@@ -49,7 +49,7 @@
               class="question-icon"
               onclick="event.stopPropagation(); event.preventDefault();"
               hx-post="{% url 'delete_survey_template' survey_temp.id %}"
-              hx-confirm="Är du säker att du vill ta bort den här enkäten?"
+              hx-confirm="Är du säker att du vill ta bort den här enkätmallen?"
               hx-target=".grid-item"
             />
             <meta name="csrf-token" content="{{ csrf_token }}" />
@@ -93,4 +93,3 @@
   <img src="{% static 'images/share-icon.png' %}" class="action-icon" />
 </a>
 {% endcomment %}
-
