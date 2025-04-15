@@ -616,7 +616,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 )
 
             # Create a Survey to be send to employess
-            survey: models.Survey = models.Survey(name=survey_name, creator=user, deadline=deadline, sending_date=sending_date, is_viewable=is_public) 
+            survey: models.Survey = models.Survey(name=survey_name, creator=user, deadline=deadline, sending_date=sending_date, is_viewable=is_public, is_anonymous=is_anonymous) 
             survey.save()
             survey.employee_groups.add(employee_group)
             survey.save()

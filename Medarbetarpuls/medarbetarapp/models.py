@@ -178,7 +178,8 @@ class Survey(models.Model):
     deadline = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
     sending_date = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
     collected_answer_count = models.IntegerField(default=0)  # pyright: ignore 
-    is_viewable = models.BooleanField(default=False)  # pyright: ignore
+    is_viewable = models.BooleanField(default=True)  # pyright: ignore
+    is_anonymous = models.BooleanField(default=True)  # pyright: ignore
 
     def __str__(self) -> str:
         return f"{self.name} ({self.creator})"
