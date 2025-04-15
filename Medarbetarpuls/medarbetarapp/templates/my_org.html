@@ -40,6 +40,7 @@
               <th>Namn</th>
               <th>Mejladress</th>
               <th>Grupp</th>
+              <th></th>
               <!-- Empty column for removal symbol -->
             </tr>
           </thead>
@@ -54,26 +55,48 @@
               </td>
 
               <td>
-                <form
-                  action="{% url 'my_org' %}"
-                  method="POST"
-                  style="display: inline"
+                <!-- Delete employee popup -->
+                <div
+                  id="delete-employee-popup"
+                  class="popup-overlay"
+                  style="display: none"
                 >
-                  {% csrf_token %}
-                  <input
-                    type="hidden"
-                    name="user_id"
-                    value="{{ employee.id }}"
+                  <div id="content" class="popup-content messages">
+                    <h3>
+                      Är du säker på att du vill ta bort den här medarbetaren?
+                    </h3>
+                    <p>
+                      Kontot kommer att raderas, och om personen vill återvända
+                      till organisationen måste du bjuda in hen på nytt.
+                    </p>
+                    <button type="button" onclick="closeConfirmDelete()">
+                      Avbryt
+                    </button>
+                    <form
+                      action="{% url 'my_org' %}"
+                      method="POST"
+                      style="display: inline"
+                    >
+                      {% csrf_token %}
+                      <input
+                        type="hidden"
+                        name="user_id"
+                        value="{{ employee.id }}"
+                      />
+                      <button type="submit" class="delete-button">
+                        Ta bort medarbetaren
+                      </button>
+                    </form>
+                  </div>
+                </div>
+                <button onclick="openConfirmDelete()" class="trashcan-button">
+                  <img
+                    src="{% static 'images/trashcan.png' %}"
+                    alt="Delete"
+                    class="icon"
                   />
-                  <button type="submit" class="trashcan-button">
-                    <!-- Maybe confirm popup???-->
-                    <img
-                      src="{% static 'images/trashcan.png' %}"
-                      alt="Delete"
-                      class="icon"
-                    />
-                  </button>
-                </form>
+                </button>
+
                 {% endif %}
               </td>
             </tr>
@@ -86,4 +109,13 @@
       </a>
     </div>
   </body>
+  <script>
+    function openConfirmDelete() {
+      document.getElementById("delete-employee-popup").style.display = "flex";
+    }
+
+    function closeConfirmDelete() {
+      document.getElementById("delete-employee-popup").style.display = "none";
+    }
+  </script>
 </html>

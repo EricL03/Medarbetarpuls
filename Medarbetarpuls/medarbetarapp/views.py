@@ -1,3 +1,4 @@
+from tabnanny import check
 from . import models
 import platform
 from django.db.models import Q
@@ -848,7 +849,7 @@ def settings_admin_view(request):
                 return HttpResponse(headers={"HX-Redirect": "/"})
             else: 
                 logger.error(" The mail entered is not an available user ")
-                return HttpResponse(status=400)
+                return HttpResponse("Den angivna mejladressen tillhör inget konto", status=400)
 
     return render(
         request,
@@ -954,16 +955,21 @@ def settings_change_pass(request):
     if request.headers.get("HX-Request"):
         old_password = request.POST.get("pass_old")
         new_password = request.POST.get("pass_new")
+        check_password = request.POST.get("pass_check") # The repeated new password
         user = authenticate(request, username=request.user.email, password=old_password)
-        if user:
+        # Check that the old password is correct and that the new password is repeated
+        if user and check_password == new_password:
             user.set_password(new_password)
             user.save()
             # Use this to keep the session alive (avoid being logged out immediately)
             update_session_auth_hash(request, user)
             print("saved new password")
-        else:
+        elif not user:
             # Did not find any user with this password
-            return HttpResponse(400)
+            return HttpResponse("Fel lösenord", status=400)
+        else: 
+            # New passwords did not match
+            return HttpResponse("De nya lösenorden matchar inte", status=400)
 
     if request.user.admin:
         return render(
