@@ -1,5 +1,6 @@
 from . import models
 import platform
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
@@ -65,6 +66,11 @@ def create_acc(request) -> HttpResponse:
             email = request.POST.get("email")
             password = request.POST.get("password")
             from_settings = request.POST.get('from_settings') == 'true'
+            org = find_organization_by_email(email=email)
+            if org is None:
+                logger.error("This email is not authorized for registration.")
+                return HttpResponse(status=400)
+
             code = 123456 # make random later, just test now
             cache.set(f'verify_code_{email}', code, timeout=300)
             send_mail(
@@ -120,8 +126,15 @@ def add_employee_view(request):
             existing_user = models.CustomUser.objects.filter(email=email).first()
             if existing_user:
                 if not existing_user.is_active:
-                    existing_user.is_active = True
-                    existing_user.save()
+                    if models.EmployeeGroup.objects.filter(name=team).exists():
+                        group = models.EmployeeGroup.objects.get(name=team)
+                    else:
+                        #create new employee group
+                        group = models.EmployeeGroup(name=team, organization=org)
+                        group.save()
+                    email_instance = models.EmailList(email=email, org=org)
+                    email_instance.save()
+                    email_instance.employee_groups.add(group)
                 else:
                     logger.error("Existing user already have an active account")
                     pass
@@ -219,8 +232,13 @@ def authentication_acc_view(request):
             cache.delete(f'verify_code_{email}')
             
             existing_user = models.CustomUser.objects.filter(email=email).first()
-            if existing_user and str(from_settings)=='true': #and coming from settings page
+            if existing_user and existing_user.is_active == False: #and coming from settings page
                 # Should they be able to reset name and password???
+                org = find_organization_by_email(email)
+                if org is None:
+                    logger.error("This email is not authorized for registration.")
+                    return HttpResponse(status=400)
+                existing_user.is_active = True
                 existing_user.name = name
                 existing_user.set_password(password)
                 existing_user.save()
@@ -460,6 +478,11 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
     if survey_temp is None:
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
+    
+    # Redirect to publish survey
+    if request.method == "GET":
+        if request.headers.get("HX-Request"):
+            return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id) + "?trigger_popup=true"})  
 
     return render(request, "create_survey.html", {"survey_temp": survey_temp})
 
@@ -657,6 +680,7 @@ def my_org_view(request):
             print("removing ", employee_to_remove)
             employee_to_remove.is_active = False
             employee_to_remove.save()
+            models.EmailList.objects.filter(email=employee_to_remove.email).delete()
         return redirect("my_org")
     # Retrieve all employee groups associated with this organization
     employee_groups = models.EmployeeGroup.objects.filter(organization=organization)
@@ -665,15 +689,32 @@ def my_org_view(request):
     employees = models.CustomUser.objects.filter(
         employee_groups__in=employee_groups
     ).distinct()
-    return render(
-        request,
-        "my_org.html",
-        {
-            "user": request.user,
+
+     # Fånga sökterm
+    search_query = request.GET.get("search", "")
+    if search_query:
+        employees = employees.filter(
+            Q(name__icontains=search_query) |
+            Q(email__icontains=search_query)
+        )
+
+     # Kolla om detta är en HTMX-request
+    if "HX-Request" in request.headers:
+        # Returnera bara tabell-rader
+        return render(request, "my_org_table.html", {
             "employees": employees,
-            "pagetitle": f"Din organisation<br>{organization.name}",
-        },
-    )
+        })
+    else:
+        return render(
+            request,
+            "my_org.html",
+            {
+                "user": request.user,
+                "employees": employees,
+                "pagetitle": f"Din organisation<br>{organization.name}",
+                "search_query": search_query,
+            },
+        )
 
 
 @login_required
@@ -703,16 +744,16 @@ def delete_survey_template(request, survey_id: int) -> HttpResponse:
         if request.headers.get("HX-Request"):
             survey_temp = get_object_or_404(models.SurveyTemplate, id=survey_id, creator=request.user)
             survey_temp.delete()
-            return HttpResponse(headers={"HX-Redirect": "/my-surveys/"})  
+            return HttpResponse(headers={"HX-Redirect": "/templates_and_drafts/"})  
 
     return HttpResponse(status=400)
 
 
 @csrf_protect
 @login_required 
-def my_surveys_view(request, search_str: str | None = None) -> HttpResponse:
+def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse: 
     """
-    Displays the my surveys page with all created survey templates. 
+    Displays the survey templates and drafts page with all created survey templates. 
     Also gives functionality for searching for specific surveys via 
     their name. 
 
@@ -751,11 +792,17 @@ def my_surveys_view(request, search_str: str | None = None) -> HttpResponse:
             search_str_input: str = request.POST.get("search-bar")
 
             if search_str_input is None: 
-                return HttpResponse(headers={"HX-Redirect": "/my-surveys/"})  
+                return HttpResponse(headers={"HX-Redirect": "/templates_and_drafts/"})  
             else: 
-                return HttpResponse(headers={"HX-Redirect": "/my-surveys/" + search_str_input})  
+                return HttpResponse(headers={"HX-Redirect": "/templates_and_drafts/" + search_str_input})  
+    
+    return render(request, "templates_and_drafts.html", {"survey_templates": survey_templates})
 
-    return render(request, "my_surveys.html", {"survey_templates": survey_templates})
+
+
+@login_required 
+def my_surveys_view(request):
+    return render(request, "my_surveys.html")
 
 
 def settings_admin_view(request):
