@@ -179,9 +179,25 @@ class Survey(models.Model):
     sending_date = models.DateTimeField()  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
     collected_answer_count = models.IntegerField(default=0)  # pyright: ignore 
     is_viewable = models.BooleanField(default=False)  # pyright: ignore
-    
+
     def __str__(self) -> str:
         return f"{self.name} ({self.creator})"
+
+    def participant_count(self) -> int:
+        """
+        Returns the amount of users this survey has been 
+        sent to. 
+        """
+        seen_employees = set()
+        count: int = 0
+
+        for group in self.employee_groups.all():
+            for employee in group.employees.all():
+                if employee.id not in seen_employees:
+                    count += 1
+                    seen_employees.add(employee)
+
+        return count
 
     def publish_survey(self): 
         """

@@ -1004,7 +1004,8 @@ def survey_result_view(request, survey_id):
 @login_required
 def survey_status_view(request):
     user = request.user
-    return render(request, "survey_status.html", {"published_surveys": user.published_surveys, "current_time": timezone.now()})
+    published_count = user.published_surveys.count()
+    return render(request, "survey_status.html", {"published_surveys": user.published_surveys, "current_time": timezone.now(), "published_count": published_count})
 
 
 @login_required

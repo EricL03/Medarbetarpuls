@@ -27,12 +27,20 @@
           </p>
           <p>Pågår till: {{ survey.deadline }}</p>
           <p>{{survey.collected_answer_count}} har svarat hittils</p>
+          <p>
+            {{survey.collected_answer_count}}/{{ survey.participant_count }} har
+            svarat hittils
+          </p>
         </div>
         {% else %}
         <div class="grid-item green">
           <p><strong>{{ survey.name }}</strong></p>
           <p>Genomfördes: {{ survey.sending_date }} - {{ survey.deadline }}</p>
           <p>{{survey.collected_answer_count}} svarade på enkäten</p>
+          <p>
+            {{survey.collected_answer_count}}/{{ survey.participant_count }}
+            svarade på enkäten
+          </p>
           <button
             class="view-survey-button"
             onclick="window.location.href='{% url 'survey_result' 
