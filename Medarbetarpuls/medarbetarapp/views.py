@@ -1,34 +1,25 @@
-from . import models
+import logging
 import platform
+from . import models
 from django.db.models import Q
-from django.http import HttpResponse
-from django.shortcuts import redirect, render
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from django.shortcuts import get_object_or_404
-from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
 from .models import SurveyResult
-from django.core.mail import send_mail
+from django.utils import timezone
+from django.db.models import Count
 from django.core.cache import cache
 from datetime import datetime, time
-from django.utils.timezone import make_aware
-from django.db.models import Count
-from django.db.models import Case, When, IntegerField, Value
+from django.http import HttpResponse
+from django.core.mail import send_mail
 from .tasks import publish_survey_async
+from django.shortcuts import redirect, render
+from django.utils.timezone import make_aware
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.db.models import Case, When, IntegerField, Value
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 
-import logging
 
 logger = logging.getLogger(__name__)
-
-
-def index_view(request):
-    logger.info("Testing")
-    logger.warning("Testing warning!")
-    logger.error("Testing error!!!")
-
-    return render(request, "index.html")
-
 
 def create_acc_redirect(request):
     if request.headers.get("HX-Request"):
@@ -93,12 +84,6 @@ def create_acc(request) -> HttpResponse:
             return HttpResponse(headers={"HX-Redirect": "/authentication-acc/"})  # Redirect to authentication account page
 
     return HttpResponse(status=400)  # Bad request if no expression
-
-
-def find_organization_by_email(email: str) -> models.Organization | None:
-    email_entry = get_object_or_404(models.EmailList, email=email)
-    return email_entry.org  # Follow the ForeignKey to Organization
-
 
 @login_required
 @csrf_exempt
@@ -181,6 +166,19 @@ def analysis_view(request):
 
 @login_required
 def answer_survey_view(request, survey_result_id, question_index=0):
+    """
+    Saves a survey answer and moves to the next question.
+    Retrieves the survey for the user, saves the answer based on the input type,
+    and redirects to the next question or finalizes the survey if all questions are answered.
+
+    Args:
+        request: The HTTP request containing the survey answer.
+        survey_result_id: The ID of the user's survey result.
+        question_index: The index of the current question to answer.
+
+    Returns:
+        HttpResponse: Renders the current question or redirects after completion.
+    """
     survey_result = get_object_or_404(SurveyResult, pk=survey_result_id, user=request.user)
     questions = survey_result.published_survey.questions.all()
 
@@ -658,6 +656,17 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
 
  
 def login_view(request):
+    """
+    Authenticates the user and logs them in.
+    If credentials are valid, redirects based on user role; otherwise, re-renders the login page.
+
+    Args:
+        request: The HTTP request with user login credentials.
+    
+    Returns:
+        HttpResponse: Redirects to the appropriate page on success or renders the login page on failure.
+    """
+    
     # maybe implement sesion timer so you dont get logged out??
     if request.user.is_authenticated:
         logger.debug("User %e is already logged in.", request.user)
@@ -690,6 +699,17 @@ def login_view(request):
 @csrf_protect
 @login_required
 def my_org_view(request):
+    """
+    Displays the organization's employee list and processes employee removal.
+    For POST, deactivates a selected employee if the current user is admin.
+    Supports search and HTMX requests for table updates.
+
+    Args:
+        request: The HTTP request with employee removal or search parameters.
+    
+    Returns:
+        HttpResponse: Renders the organization page or redirects after a removal.
+    """
     organization = request.user.admin
 
     if request.method == "POST":
@@ -1058,6 +1078,9 @@ def unanswered_surveys_view(request):
         },
     )
 
+def find_organization_by_email(email: str) -> models.Organization | None:
+    email_entry = get_object_or_404(models.EmailList, email=email)
+    return email_entry.org  # Follow the ForeignKey to Organization
 
 def chart_view1(request):
     SURVEY_ID = 2  # Choose what survey you want to show here
