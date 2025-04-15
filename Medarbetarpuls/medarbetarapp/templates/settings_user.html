@@ -73,6 +73,7 @@
           {% csrf_token %}
               <label for="name">Ditt nya namn:</label>
               <input type="name" id="name" name="name" placeholder="Namn" required > 
+              <input type="hidden" name="from_settings" value="true">
               <!-- This line will reload the page after 100 ms (after the form is submitted) -->
               <button type="submit" onclick="setTimeout(() => location.reload(), 100);" class="delete-button">Byt namn</button>
         </form>
