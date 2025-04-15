@@ -10,31 +10,40 @@
   <body>
     {% include "topbar.html" with pagetitle=pagetitle %}
     <div class="start-container">
-        <div class="pagetitle">
-            <h2>Du har publicerat {{ publiced_count }} enkäter</h2>
+      <div class="pagetitle">
+        <h2>Du har publicerat {{ published_count }} enkäter</h2>
+      </div>
+      <div class="grid-container">
+        {% for survey in published_surveys.all %}
+        <!-- prettier-ignore -->
+        {% if survey.deadline > current_time %}
+        <!-- Check if sending_date exists -->
+        <div class="grid-item yellow">
+          <p><strong>{{ survey.name }}</strong></p>
+          <p>
+            {% for employee_group in survey.employee_groups.all %}
+            <!-- prettier-ignore -->
+            {{ employee_group.name }} {% endfor %}
+          </p>
+          <p>Pågår till: {{ survey.deadline }}</p>
+          <p>{{survey.collected_answer_count}} har svarat hittils</p>
         </div>
-        <div class="grid-container">
-            {% for survey in published_surveys %}
-
-            {% if survey.published_survey.deadline > current_time %} <!-- Check if sending_date exists -->
-                <div class="grid-item yellow">
-                    <p> Pågående enkät</p>
-                    <p><strong>*{{ survey.published_survey.name }}*</strong></p>
-                    <p> {{survey.published_survey.collected_answer_count}} har svarat hittils</p>
-                </div>
-            {% else %}
-                <div class="grid-item green">
-                    <p>Genomfördes: {{ survey.published_survey.sending_date }} 
-                        - {{ survey.published_survey.deadline }}</p>
-                    <p><strong>*{{ survey.published_survey.name }}*</strong></p>
-                    <p> {{survey.published_survey.collected_answer_count}} svarade på enkäten</p>
-                    <button class="view-survey-button" onclick="window.location.href='{% url 'survey_result' 
-                    survey.id %}'"> 
-                        Se resultat</button>
-                </div>
-            {% endif %}
-            {% endfor %}
+        {% else %}
+        <div class="grid-item green">
+          <p><strong>{{ survey.name }}</strong></p>
+          <p>Genomfördes: {{ survey.sending_date }} - {{ survey.deadline }}</p>
+          <p>{{survey.collected_answer_count}} svarade på enkäten</p>
+          <button
+            class="view-survey-button"
+            onclick="window.location.href='{% url 'survey_result' 
+                      survey.id %}'"
+          >
+            Se resultat
+          </button>
         </div>
+        {% endif %} {% endfor %}
+      </div>
     </div>
   </body>
 </html>
+
