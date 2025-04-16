@@ -68,8 +68,13 @@
                                 {{ employee_group.name }} 
                                 {% endfor %}
                             </p>
-                            {{survey.collected_answer_count}}/{{ survey.participant_count }} har
-                            svarat hittils
+                            {% if survey.deadline > current_time %}
+                              {{survey.collected_answer_count}}/{{ survey.published_count }} har
+                              svarat hittils
+                                
+                            {% else %}
+                              {{survey.collected_answer_count}}/{{ survey.published_count }} svarade
+                            {% endif %}
                         </div>
                         <!-- See result -->
                         <div>
