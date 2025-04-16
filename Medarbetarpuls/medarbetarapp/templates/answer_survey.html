@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
   <head>
     {% load static %}
@@ -10,17 +10,23 @@
   </head>
   <body>
     <div class="create-container">
-      <form method="POST">
+      <form
+        hx-post="{% url 'answer_survey' survey_result_id=survey_result_id question_index=question_index %}"
+        hx-trigger="submit"
+      >
         {% csrf_token %}
         <h2>{{ question.question }}</h2>
 
         {% if question.question_format == "slider" %}
+        <input type="hidden" name="question_format" value="slider" />
         <input type="range" name="slider" min="0" max="10" step="1" required />
-        
+
         {% elif question.question_format == "text" %}
+        <input type="hidden" name="question_format" value="text" />
         <input type="text" name="text" required />
-        
+
         {% elif question.question_format == "yesno" %}
+        <input type="hidden" name="question_format" value="yesno" />
         <label>
           <input type="radio" name="yesno" value="True" required />
           Ja
@@ -30,17 +36,21 @@
           Nej
         </label>
 
-        {% elif question.question_format == "multiplechoice" %} 
-            {% for option in question.multiple_choice_question.options %}
-            <label>
-            <input type="checkbox" name="multiplechoice" value="{{ option }}" />
-            {{ option }} </label
-            ><br />
-            {% endfor %} 
-            <label>
-                <input type="checkbox" name="multiplechoice" value="Option 1" />
-                Option 1 </label
-                ><br />
+        {% elif question.question_format == "multiplechoice" %}
+        <input type="hidden" name="question_format" value="multiplechoice" />
+        <!-- prettier-ignore -->
+        {% for option in question.multiple_choice_question.options %}
+        <label>
+          <input type="checkbox" name="multiplechoice" value="{{ option }}" />
+          {{ option }}
+        </label>
+        <br />
+        {% endfor %}
+        <label>
+          <input type="checkbox" name="multiplechoice" value="Option 1" />
+          Option 1
+        </label>
+        <br />
         {% endif %}
 
         <div>

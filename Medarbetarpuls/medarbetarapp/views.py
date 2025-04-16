@@ -180,6 +180,7 @@ def analysis_view(request):
 
 
 @login_required
+@csrf_protect
 def answer_survey_view(request, survey_result_id, question_index=0):
     survey_result = get_object_or_404(SurveyResult, pk=survey_result_id, user=request.user)
     questions = survey_result.published_survey.questions.all()
@@ -196,22 +197,28 @@ def answer_survey_view(request, survey_result_id, question_index=0):
     question = questions[question_index]
 
     if request.method == "POST":
-        if "slider" in request.POST:
-            # Returns the object with Boolean 'created', which says if a new object was created
-            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, slider_answer=request.POST.get("slider"))
+        if request.headers.get("HX-Request"):
+            question_format = request.POST.get("question_format")
 
-        elif "text" in request.POST:
-            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, free_text_answer=request.POST.get("text"))
-        
-        elif "yesno" in request.POST:
-            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, yes_no_answer=request.POST.get("yesno"))
-        
-        elif "multiplechoice" in request.POST:
-            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, multiple_choice_answer=request.POST.get("multiplechoice"))
+            if question_format is not None:
+                answer: models.Answer = models.Answer() 
+
+                if question_format == "slider": 
+                    # Returns the object with Boolean 'created', which says if a new object was created
+                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, slider_answer=request.POST.get("slider"))
+                elif question_format == "text": 
+                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, free_text_answer=request.POST.get("text"))
+                elif question_format == "yesno": 
+                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, yes_no_answer=request.POST.get("yesno"))
+                elif question_format == "multiplechoice": 
+                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, multiple_choice_answer=request.POST.get("multiplechoice"))
+
+                answer.is_answered = True
+                answer.save()
+                
+                return HttpResponse(headers={"HX-Redirect": "/survey/" + str(survey_result.id) + "/question/" + str(question_index+1)})  
             
-        answer.is_answered = True
-        answer.save()
-        return redirect("answer_survey", survey_result_id=survey_result.id, question_index=question_index + 1)
+            return HttpResponse(status=400)
 
     return render(request, "answer_survey.html", {
         "question": question,
