@@ -622,8 +622,9 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
  
 def login_view(request):
     # maybe implement sesion timer so you dont get logged out??
-    if request.user.is_authenticated:
-        logger.debug("User %e is already logged in.", request.user)
+    #if request.user.is_authenticated:
+       # logger.debug("User %e is already logged in.", request.user)
+       # return HttpResponse("Användaren %e är redan inloggad", status=400)
         # return redirect('start_user')
 
     if request.method == "POST":
@@ -635,17 +636,21 @@ def login_view(request):
             if user.is_active:
                 login(request, user)
                 if user.user_role == models.UserRole.ADMIN:
+                    response = HttpResponse()
+                    response["HX-Redirect"] = "/start-admin/"  
                     logger.debug("Admin %e successfully logged in.", email)
-                    return redirect("start_admin")
+                    return response
                 else:  # implement check if user is creator or responder?
-                    logger.debug("User %e successfully logged in.", email)
-                    return redirect("start_user")
+                    response = HttpResponse()
+                    response["HX-Redirect"] = "/start-user/" 
+                    logger.debug("User %e successfully logged in.", email) 
+                    return response
             else:
                 logger.warning("Login attempt for inactive user %e", email)
-                return render(request, "login.html")
+                return HttpResponse("Användare %e är en inaktiv användare", status=400)
         else:
             logger.warning("Failed login attempt for %e", email)
-            return render(request, "login.html")
+            return HttpResponse("Felaktiga inloggningsuppgifter", status=400)
 
     return render(request, "login.html")
 
