@@ -355,11 +355,6 @@ def authentication_org_view(request):
 
     return render(request, "authentication_org.html")
 
-
-def create_org_view(request):
-    return render(request, "create_org.html")
-
-
 def create_question(request, survey_id: int) -> HttpResponse: 
     """
     Makes it possible to create a question with predefined formats. 
@@ -383,7 +378,6 @@ def create_question(request, survey_id: int) -> HttpResponse:
                    "QuestionFormat": models.QuestionFormat,
                    })
 
-
 def create_org_redirect(request):
     if request.headers.get("HX-Request"):
         return HttpResponse(
@@ -392,6 +386,8 @@ def create_org_redirect(request):
 
     return redirect("/create_org_view/")  # Normal Django redirect for non-HTMX requests
 
+def create_org_view(request):
+    return render(request, "create_org.html")
 
 @csrf_protect
 def create_org(request) -> HttpResponse:
@@ -758,6 +754,18 @@ def my_org_view(request):
 
 @login_required
 def my_results_view(request):
+    """
+    Displays the logged-in user's survey results.
+    Retrieves the count of answered surveys, the list of surveys, and current UTC time,
+    then renders the "my_results.html" template.
+
+    Args:
+        request: The HTTP request with the authenticated user.
+    
+    Returns:
+        HttpResponse: Renders the survey results page.
+    """
+
     user = request.user  # Assuming the user is authenticated
     answered_count = user.count_answered_surveys()
     answered_surveys = user.get_answered_surveys()
@@ -779,6 +787,17 @@ def my_results_view(request):
 
 @csrf_protect
 def delete_survey_template(request, survey_id: int) -> HttpResponse:
+    """
+    Deletes a survey template via HTMX.
+    If the request is a POST and an HTMX request, deletes the survey template for the logged-in user.
+
+    Args:
+        request: The HTTP request containing the survey deletion action.
+        survey_id (int): The ID of the survey template to delete.
+
+    Returns:
+        HttpResponse: Redirects to "/templates_and_drafts/" on success or returns status 400 on failure.
+    """
     if request.method == "POST":  
         if request.headers.get("HX-Request"):
             survey_temp = get_object_or_404(models.SurveyTemplate, id=survey_id, creator=request.user)
@@ -845,6 +864,17 @@ def my_surveys_view(request):
 
 
 def settings_admin_view(request):
+    """
+    Transfers admin rights to a new admin user.
+    On HTMX POST, validates the new admin's email, updates user roles, and logs out the current admin;
+    otherwise, renders the settings page.
+
+    Args:
+        request: The HTTP request containing the admin settings update.
+
+    Returns:
+        HttpResponse: Redirects to home on success or renders the settings page.
+    """
     #Leave over account to new admin function
     # if pressed leave over account
     if request.method == "POST":
@@ -899,9 +929,18 @@ def settings_admin_view(request):
 @login_required
 @csrf_protect
 def settings_user_view(request):
-    # FIX - needs to fix so when wrong password is written the popup doesnt dissappear and a message is sent
+    """
+    Deletes the user account after password verification.
+    deletes the account on success, and logs out the user.
 
+    Args:
+        request: The HTTP request with the password for account deletion.
     
+    Returns:
+        HttpResponse: Redirects to home on deletion or returns status 400 if authentication fails.
+    """
+    
+    # FIX - needs to fix so when wrong password is written the popup doesnt dissappear and a message is sent
     #Delete user function
     # if pressed delete user
     if request.method == "POST":
