@@ -15,39 +15,49 @@
       </div>
       <div class="grid-container">
         {% for survey in published_surveys.all %}
-        <!-- prettier-ignore -->
-        {% if survey.deadline > current_time %}
-        <!-- Check if sending_date exists -->
-        <div class="grid-item yellow">
-          <p><strong>{{ survey.name }}</strong></p>
-          <p>
-            {% for employee_group in survey.employee_groups.all %}
             <!-- prettier-ignore -->
-            {{ employee_group.name }} {% endfor %}
-          </p>
-          <p>Pågår till: {{ survey.deadline }}</p>
-          <p>
-            {{survey.collected_answer_count}}/{{ survey.participant_count }} har
-            svarat hittils
-          </p>
-        </div>
-        {% else %}
-        <div class="grid-item green">
-          <p><strong>{{ survey.name }}</strong></p>
-          <p>Genomfördes: {{ survey.sending_date }} - {{ survey.deadline }}</p>
-          <p>
-            {{survey.collected_answer_count}}/{{ survey.participant_count }}
-            svarade på enkäten
-          </p>
-          <button
-            class="view-survey-button"
-            onclick="window.location.href='{% url 'survey_result' 
-                      survey.id %}'"
-          >
-            Se resultat
-          </button>
-        </div>
-        {% endif %} {% endfor %}
+            {% if survey.deadline > current_time %}
+                <!-- Check if sending_date exists -->
+                <div class="grid-item yellow">
+                    {% if survey.is_viewable %}
+                        <span class="tooltip" data-tooltip="Samtliga svar är anonymiserade">
+                            <div class="icon-wrapper">
+                            <img src="{% static 'images/is-viewable.png' %}" />
+                        </div>
+                      </span>
+                    {% else %}
+                    
+                    {% endif %}
+                    <p><strong>{{ survey.name }}</strong></p>
+                    <p>
+                        {% for employee_group in survey.employee_groups.all %}
+                        <!-- prettier-ignore -->
+                        {{ employee_group.name }} {% endfor %}
+                    </p>
+                    <p>Pågår till: {{ survey.deadline }}</p>
+                    <p>
+                        {{survey.collected_answer_count}}/{{ survey.participant_count }} har
+                        svarat hittils
+                    </p>
+                </div>
+            {% else %}
+                <div class="grid-item green">
+                    <p><strong>{{ survey.name }}</strong></p>
+                    <p>Genomfördes: {{ survey.sending_date }} - {{ survey.deadline }}</p>
+                    <p>
+                        {{survey.collected_answer_count}}/{{ survey.participant_count }}
+                        svarade på enkäten
+                    </p>
+                    <button
+                        class="view-survey-button"
+                        onclick="window.location.href='{% url 'survey_result' 
+                                survey.id %}'"
+                    >
+                        Se resultat
+                    </button>
+                </div>
+            {% endif %} 
+        {% endfor %}
       </div>
     </div>
   </body>
