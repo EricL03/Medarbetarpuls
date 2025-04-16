@@ -211,7 +211,11 @@ def answer_survey_view(request, survey_result_id, question_index=0):
                 elif question_format == "yesno": 
                     answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, yes_no_answer=request.POST.get("yesno"))
                 elif question_format == "multiplechoice": 
-                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, multiple_choice_answer=request.POST.get("multiplechoice"))
+                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question)
+                    selected = request.POST.getlist("multiplechoice")
+                    all_options = question.multiple_choice_question.options 
+                    bool_list = [opt in selected for opt in all_options]
+                    answer.multiple_choice_answer.extend(bool_list)
 
                 answer.is_answered = True
                 answer.save()
@@ -226,6 +230,7 @@ def answer_survey_view(request, survey_result_id, question_index=0):
         "total": len(questions),
         "survey_result_id": survey_result.id,
     })
+
 
 @csrf_exempt
 def authentication_acc_view(request):

@@ -19,7 +19,14 @@
 
         {% if question.question_format == "slider" %}
         <input type="hidden" name="question_format" value="slider" />
-        <input type="range" name="slider" min="0" max="10" step="1" required />
+        <input
+          type="range"
+          name="slider"
+          min="0"
+          max="10"
+          step="0.1"
+          required
+        />
 
         {% elif question.question_format == "text" %}
         <input type="hidden" name="question_format" value="text" />
@@ -45,13 +52,7 @@
           {{ option }}
         </label>
         <br />
-        {% endfor %}
-        <label>
-          <input type="checkbox" name="multiplechoice" value="Option 1" />
-          Option 1
-        </label>
-        <br />
-        {% endif %}
+        {% endfor %} {% endif %}
 
         <div>
           <button type="submit">Nästa</button>
