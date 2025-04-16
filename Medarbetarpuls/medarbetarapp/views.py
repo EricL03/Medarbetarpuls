@@ -182,8 +182,11 @@ def analysis_view(request):
 @login_required
 @csrf_protect
 def answer_survey_view(request, survey_result_id, question_index=0):
-    survey_result = get_object_or_404(SurveyResult, pk=survey_result_id, user=request.user)
+    user = request.user
+    survey_result = get_object_or_404(SurveyResult, pk=survey_result_id, user=user)
     questions = survey_result.published_survey.questions.all()
+    answers = survey_result.answers.all()
+    answer = models.Answer()
     
     # Calculate question navigation indexes
     if question_index - 1 < 0: 
@@ -198,32 +201,39 @@ def answer_survey_view(request, survey_result_id, question_index=0):
 
     question = questions[question_index]
 
+    # Create a new answer if none exists for this question 
+    if question_index >= len(answers): 
+        question_format = question.question_format
+        if question_format is not None:
+            answer: models.Answer = models.Answer() 
+
+            if question_format == "slider": 
+                answer = models.Answer(survey=survey_result, question=question, slider_answer=5.0)
+            elif question_format == "text": 
+                answer = models.Answer(survey=survey_result, question=question, free_text_answer="")
+            elif question_format == "yesno": 
+                answer = models.Answer(survey=survey_result, question=question)
+            elif question_format == "multiplechoice": 
+                answer = models.Answer(survey=survey_result, question=question)
+
+            answer.save()
+    # Otherwise get the existing question 
+    else: 
+        answer = answers[question_index] 
+
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             question_format = request.POST.get("question_format")
             submit_answers = request.POST.get("submit_answers")
 
-            if submit_answers is not None: 
-                # All questions answered, redirect somewhere else
-                survey_result.is_answered = True
-                # This survey has now been answered by another user
-                survey_result.published_survey.collected_answer_count += 1 
-                survey_result.published_survey.save()
-                survey_result.save()
-                return HttpResponse(headers={"HX-Redirect": "/unanswered-surveys/"})  
-
             if question_format is not None:
-                answer: models.Answer = models.Answer() 
-
                 if question_format == "slider": 
-                    # Returns the object with Boolean 'created', which says if a new object was created
-                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, slider_answer=request.POST.get("slider"))
+                    answer.slider_answer = request.POST.get("slider") 
                 elif question_format == "text": 
-                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, free_text_answer=request.POST.get("text"))
+                    answer.free_text_answer=request.POST.get("text")
                 elif question_format == "yesno": 
-                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, yes_no_answer=request.POST.get("yesno"))
+                    answer.yes_no_answer=request.POST.get("yesno")
                 elif question_format == "multiplechoice": 
-                    answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question)
                     selected = request.POST.getlist("multiplechoice")
                     all_options = question.multiple_choice_question.options 
                     bool_list = [opt in selected for opt in all_options]
@@ -231,6 +241,15 @@ def answer_survey_view(request, survey_result_id, question_index=0):
 
                 answer.is_answered = True
                 answer.save()
+            
+                if submit_answers is not None: 
+                    # All questions answered, redirect somewhere else
+                    survey_result.is_answered = True
+                    # This survey has now been answered by another user
+                    survey_result.published_survey.collected_answer_count += 1 
+                    survey_result.published_survey.save()
+                    survey_result.save()
+                    return HttpResponse(headers={"HX-Redirect": "/unanswered-surveys/"})  
                 
                 return HttpResponse(headers={"HX-Redirect": "/survey/" + str(survey_result.id) + "/question/" + str(question_index+1)})  
             
