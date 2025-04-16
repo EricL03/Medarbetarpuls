@@ -192,7 +192,7 @@ def answer_survey_view(request, survey_result_id, question_index=0):
         survey_result.published_survey.collected_answer_count += 1 
         survey_result.published_survey.save()
         survey_result.save()
-        return redirect("start_user")  # or a summary page
+        return redirect("unanswered_surveys") 
 
     question = questions[question_index]
 
@@ -224,11 +224,24 @@ def answer_survey_view(request, survey_result_id, question_index=0):
             
             return HttpResponse(status=400)
 
+    # Calculate question navigation indexes
+    if question_index - 1 < 0: 
+        prev_question_index = 0
+    else: 
+        prev_question_index = question_index - 1
+    
+    if question_index + 1 > len(questions): 
+        next_question_index = len(questions) 
+    else: 
+        next_question_index = question_index + 1
+
     return render(request, "answer_survey.html", {
         "question": question,
         "question_index": question_index,
         "total": len(questions),
         "survey_result_id": survey_result.id,
+        "prev_question_index": prev_question_index,
+        "next_question_index": next_question_index,
     })
 
 

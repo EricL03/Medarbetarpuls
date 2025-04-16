@@ -58,8 +58,21 @@
           <button type="submit">Nästa</button>
         </div>
       </form>
+
       <div>
         <p>{{ question_index|add:1 }} / {{ total }}</p>
+      </div>
+      <div>
+        <a
+          href="{% url 'answer_survey' survey_result_id prev_question_index %}"
+        >
+          &lt;
+        </a>
+        <a
+          href="{% url 'answer_survey' survey_result_id next_question_index %}"
+        >
+          &lt;
+        </a>
       </div>
     </div>
   </body>
