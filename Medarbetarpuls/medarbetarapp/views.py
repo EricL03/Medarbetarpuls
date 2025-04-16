@@ -1005,7 +1005,11 @@ def survey_result_view(request, survey_id):
 def survey_status_view(request):
     user = request.user
     published_count = user.published_surveys.count()
-    return render(request, "survey_status.html", {"published_surveys": user.published_surveys, "current_time": timezone.now(), "published_count": published_count})
+
+    # Order the surveys by deadline date (old before young)
+    published_surveys_ordered = user.published_surveys.all().order_by('-deadline')
+
+    return render(request, "survey_status.html", {"published_surveys": published_surveys_ordered, "current_time": timezone.now(), "published_count": published_count})
 
 
 @login_required
