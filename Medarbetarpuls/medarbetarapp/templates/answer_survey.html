@@ -55,7 +55,12 @@
         {% endfor %} {% endif %}
 
         <div>
+          {% if question_index|add:1 == total %}
+          <button type="submit">Skicka in svar</button>
+          <input type="hidden" name="submit_answers" value="1" />
+          {% else %}
           <button type="submit">Nästa</button>
+          {% endif %}
         </div>
       </form>
 
@@ -71,7 +76,7 @@
         <a
           href="{% url 'answer_survey' survey_result_id next_question_index %}"
         >
-          &lt;
+          &gt;
         </a>
       </div>
     </div>

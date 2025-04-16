@@ -184,21 +184,33 @@ def analysis_view(request):
 def answer_survey_view(request, survey_result_id, question_index=0):
     survey_result = get_object_or_404(SurveyResult, pk=survey_result_id, user=request.user)
     questions = survey_result.published_survey.questions.all()
-
-    if question_index >= len(questions):
-        # All questions answered, redirect somewhere else
-        survey_result.is_answered = True
-        # This survey has now been answered by another user
-        survey_result.published_survey.collected_answer_count += 1 
-        survey_result.published_survey.save()
-        survey_result.save()
-        return redirect("unanswered_surveys") 
+    
+    # Calculate question navigation indexes
+    if question_index - 1 < 0: 
+        prev_question_index = 0
+    else: 
+        prev_question_index = question_index - 1
+    
+    if question_index + 1 >= len(questions): 
+        next_question_index = len(questions) - 1 
+    else: 
+        next_question_index = question_index + 1
 
     question = questions[question_index]
 
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             question_format = request.POST.get("question_format")
+            submit_answers = request.POST.get("submit_answers")
+
+            if submit_answers is not None: 
+                # All questions answered, redirect somewhere else
+                survey_result.is_answered = True
+                # This survey has now been answered by another user
+                survey_result.published_survey.collected_answer_count += 1 
+                survey_result.published_survey.save()
+                survey_result.save()
+                return HttpResponse(headers={"HX-Redirect": "/unanswered-surveys/"})  
 
             if question_format is not None:
                 answer: models.Answer = models.Answer() 
@@ -224,16 +236,6 @@ def answer_survey_view(request, survey_result_id, question_index=0):
             
             return HttpResponse(status=400)
 
-    # Calculate question navigation indexes
-    if question_index - 1 < 0: 
-        prev_question_index = 0
-    else: 
-        prev_question_index = question_index - 1
-    
-    if question_index + 1 > len(questions): 
-        next_question_index = len(questions) 
-    else: 
-        next_question_index = question_index + 1
 
     return render(request, "answer_survey.html", {
         "question": question,
