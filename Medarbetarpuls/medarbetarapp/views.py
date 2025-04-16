@@ -561,7 +561,8 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
 
             # Privacy checkboxes (can have multiple selected)
             privacy_choices = request.POST.getlist('privacy')  # returns list like ['anonymous', 'public']
-            is_anonymous: bool = 'anonymous' in privacy_choices  
+            # is_anonymous: bool = 'anonymous' in privacy_choices  
+            is_anonymous: bool = True
             is_public: bool = 'public' in privacy_choices       
 
             # Survey name
