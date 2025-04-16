@@ -335,11 +335,12 @@ button:hover {
 .grid-container {
   display: flex;
   width: 100%;
-  max-width: 800px;
+  max-width: 1000px;
   margin-top: 5%;
   flex-wrap: wrap;
   justify-content: center;
   gap: 20px;
+  max-height: 80vh; /* Limit height */
 }
 
 /* Items within the grid dose not scale at the moment */
@@ -347,7 +348,7 @@ button:hover {
   position: relative;
   width: calc((100% / 3) - 40px);
   min-width: 220px;
-  max-width: 250px;
+  max-width: 300px;
   aspect-ratio: 1 / 1;
   background-color: white;
   border: 1px solid #ddd;
@@ -394,6 +395,47 @@ button:hover {
 .icon-img:hover {
   transform: scale(1.15);
   /* Slightly enlarge on hover */
+}
+
+.tooltip {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #007bff;
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+.icon-wrapper {
+  position: relative;
+  width: 30px;
+  height: 30px;
+}
+
+.icon-wrapper img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .grid-item>* {
