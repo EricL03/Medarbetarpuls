@@ -527,6 +527,7 @@ def edit_question_view(request, survey_id: int, question_format: models.Question
         HttpResponse: Redirects to create_survey or renders edit_question_view  
     """
     user: models.CustomUser = request.user
+    options = None # Use later to show options
     
     # Get the survey from given id
     survey_temp: models.SurveyTemplate = user.survey_templates.filter(id=survey_id).first()
@@ -554,11 +555,14 @@ def edit_question_view(request, survey_id: int, question_format: models.Question
 
             # Add testcase for multiplechoice questions
             if question_format == models.QuestionFormat.MULTIPLE_CHOICE: 
-                new_items = ["Option 1", "Option 2", "Option 3", "Option 4"]
+                options = request.POST.getlist('options')
+                for option in options:
+                    if not option:
+                        options.remove(option)
                 # This is kinda fucked and can maybe be re-written better
                 question.multiple_choice_question = models.MultipleChoiceQuestion(question_format=question_format)
                 question.multiple_choice_question.save()
-                question.multiple_choice_question.options.extend(new_items)
+                question.multiple_choice_question.options.extend(options)
                 question.multiple_choice_question.save()
                 question.save()
 
@@ -572,13 +576,14 @@ def edit_question_view(request, survey_id: int, question_format: models.Question
 
             return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id)})  
 
-
     # Checks if there is a specific question text to be displayed
     question_text: str | None = None 
     if question_id is not None: 
         question_text = models.Question.objects.filter(id=question_id).first().question
+        if models.Question.objects.filter(id=question_id).first().multiple_choice_question:
+            options = models.Question.objects.filter(id=question_id).first().multiple_choice_question.options
 
-    return render(request, "edit_question.html", {"survey_temp": survey_temp, "question_format": question_format, "question_id": question_id, "question_text": question_text})
+    return render(request, "edit_question.html", {"survey_temp": survey_temp, "question_format": question_format, "question_id": question_id, "question_text": question_text, "options": options})
 
 
 def publish_survey(request, survey_id: int) -> HttpResponse: 
