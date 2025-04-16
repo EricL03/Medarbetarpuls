@@ -1,5 +1,6 @@
 from . import models
 import platform
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
@@ -65,6 +66,11 @@ def create_acc(request) -> HttpResponse:
             email = request.POST.get("email")
             password = request.POST.get("password")
             from_settings = request.POST.get('from_settings') == 'true'
+            org = find_organization_by_email(email=email)
+            if org is None:
+                logger.error("This email is not authorized for registration.")
+                return HttpResponse(status=400)
+
             code = 123456 # make random later, just test now
             cache.set(f'verify_code_{email}', code, timeout=300)
             send_mail(
@@ -113,15 +119,36 @@ def add_employee_view(request):
         email = request.POST.get("email")
         team = request.POST.get("team")
         user = request.user
-
-        if user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
+        editGroup = request.POST.get("edit_employee")
+        editName = request.POST.get("new_employee_group")
+        editUserMail = request.POST.get("employee")
+        if(editGroup == "true"):
+            org = user.admin
+            if models.EmployeeGroup.objects.filter(name=editName).exists():
+                    group = models.EmployeeGroup.objects.get(name=editName)
+            else:
+                #create new employee group
+                group = models.EmployeeGroup(name=editName, organization=org)
+                group.save()
+            editUser = models.CustomUser.objects.get(email=editUserMail)
+            editUser.employee_groups.add(group)
+            user.survey_groups.add(group)
+        elif user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
             org = user.admin
 
             existing_user = models.CustomUser.objects.filter(email=email).first()
             if existing_user:
                 if not existing_user.is_active:
-                    existing_user.is_active = True
-                    existing_user.save()
+                    if models.EmployeeGroup.objects.filter(name=team).exists():
+                        group = models.EmployeeGroup.objects.get(name=team)
+                    else:
+                        #create new employee group
+                        group = models.EmployeeGroup(name=team, organization=org)
+                        group.save()
+                    email_instance = models.EmailList(email=email, org=org)
+                    email_instance.save()
+                    email_instance.employee_groups.add(group)
+                    user.survey_groups.add(group)
                 else:
                     logger.error("Existing user already have an active account")
                     pass
@@ -137,6 +164,7 @@ def add_employee_view(request):
                 email_instance = models.EmailList(email=email, org=org)
                 email_instance.save()
                 email_instance.employee_groups.add(group)
+                user.survey_groups.add(group)
             return HttpResponse(status=204)  # maybe should render back to my_org?
 
     return render(
@@ -153,13 +181,16 @@ def analysis_view(request):
 
 @login_required
 def answer_survey_view(request, survey_result_id, question_index=0):
-    survey = get_object_or_404(SurveyResult, pk=survey_result_id, user=request.user)
-    questions = survey.published_survey.questions.all()
+    survey_result = get_object_or_404(SurveyResult, pk=survey_result_id, user=request.user)
+    questions = survey_result.published_survey.questions.all()
 
     if question_index >= len(questions):
         # All questions answered, redirect somewhere else
-        survey.is_answered = True
-        survey.save()
+        survey_result.is_answered = True
+        # This survey has now been answered by another user
+        survey_result.published_survey.collected_answer_count += 1 
+        survey_result.published_survey.save()
+        survey_result.save()
         return redirect("start_user")  # or a summary page
 
     question = questions[question_index]
@@ -167,26 +198,26 @@ def answer_survey_view(request, survey_result_id, question_index=0):
     if request.method == "POST":
         if "slider" in request.POST:
             # Returns the object with Boolean 'created', which says if a new object was created
-            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, slider_answer=request.POST.get("slider"))
+            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, slider_answer=request.POST.get("slider"))
 
         elif "text" in request.POST:
-            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, free_text_answer=request.POST.get("text"))
+            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, free_text_answer=request.POST.get("text"))
         
         elif "yesno" in request.POST:
-            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, yes_no_answer=request.POST.get("yesno"))
+            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, yes_no_answer=request.POST.get("yesno"))
         
         elif "multiplechoice" in request.POST:
-            answer, created = models.Answer.objects.get_or_create(survey=survey, question=question, multiple_choice_answer=request.POST.get("multiplechoice"))
+            answer, created = models.Answer.objects.get_or_create(survey=survey_result, question=question, multiple_choice_answer=request.POST.get("multiplechoice"))
             
         answer.is_answered = True
         answer.save()
-        return redirect("answer_survey", survey_result_id=survey.id, question_index=question_index + 1)
+        return redirect("answer_survey", survey_result_id=survey_result.id, question_index=question_index + 1)
 
     return render(request, "answer_survey.html", {
         "question": question,
         "question_index": question_index,
         "total": len(questions),
-        "survey_result_id": survey.id,
+        "survey_result_id": survey_result.id,
     })
 
 @csrf_exempt
@@ -219,8 +250,13 @@ def authentication_acc_view(request):
             cache.delete(f'verify_code_{email}')
             
             existing_user = models.CustomUser.objects.filter(email=email).first()
-            if existing_user and str(from_settings)=='true': #and coming from settings page
+            if existing_user and existing_user.is_active == False: #and coming from settings page
                 # Should they be able to reset name and password???
+                org = find_organization_by_email(email)
+                if org is None:
+                    logger.error("This email is not authorized for registration.")
+                    return HttpResponse(status=400)
+                existing_user.is_active = True
                 existing_user.name = name
                 existing_user.set_password(password)
                 existing_user.save()
@@ -460,6 +496,11 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
     if survey_temp is None:
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
+    
+    # Redirect to publish survey
+    if request.method == "GET":
+        if request.headers.get("HX-Request"):
+            return HttpResponse(headers={"HX-Redirect": "/create-survey/" + str(survey_id) + "?trigger_popup=true"})  
 
     return render(request, "create_survey.html", {"survey_temp": survey_temp})
 
@@ -538,7 +579,8 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
 
             # Privacy checkboxes (can have multiple selected)
             privacy_choices = request.POST.getlist('privacy')  # returns list like ['anonymous', 'public']
-            is_anonymous: bool = 'anonymous' in privacy_choices  
+            # is_anonymous: bool = 'anonymous' in privacy_choices  
+            is_anonymous: bool = True
             is_public: bool = 'public' in privacy_choices       
 
             # Survey name
@@ -593,7 +635,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 )
 
             # Create a Survey to be send to employess
-            survey: models.Survey = models.Survey(name=survey_name, creator=user, deadline=deadline, sending_date=sending_date, is_viewable=is_public) 
+            survey: models.Survey = models.Survey(name=survey_name, creator=user, deadline=deadline, sending_date=sending_date, is_viewable=is_public, is_anonymous=is_anonymous) 
             survey.save()
             survey.employee_groups.add(employee_group)
             survey.save()
@@ -657,6 +699,7 @@ def my_org_view(request):
             print("removing ", employee_to_remove)
             employee_to_remove.is_active = False
             employee_to_remove.save()
+            models.EmailList.objects.filter(email=employee_to_remove.email).delete()
         return redirect("my_org")
     # Retrieve all employee groups associated with this organization
     employee_groups = models.EmployeeGroup.objects.filter(organization=organization)
@@ -665,15 +708,32 @@ def my_org_view(request):
     employees = models.CustomUser.objects.filter(
         employee_groups__in=employee_groups
     ).distinct()
-    return render(
-        request,
-        "my_org.html",
-        {
-            "user": request.user,
+
+     # Fånga sökterm
+    search_query = request.GET.get("search", "")
+    if search_query:
+        employees = employees.filter(
+            Q(name__icontains=search_query) |
+            Q(email__icontains=search_query)
+        )
+
+     # Kolla om detta är en HTMX-request
+    if "HX-Request" in request.headers:
+        # Returnera bara tabell-rader
+        return render(request, "my_org_table.html", {
             "employees": employees,
-            "pagetitle": f"Din organisation<br>{organization.name}",
-        },
-    )
+        })
+    else:
+        return render(
+            request,
+            "my_org.html",
+            {
+                "user": request.user,
+                "employees": employees,
+                "pagetitle": f"Din organisation<br>{organization.name}",
+                "search_query": search_query,
+            },
+        )
 
 
 @login_required
@@ -703,16 +763,16 @@ def delete_survey_template(request, survey_id: int) -> HttpResponse:
         if request.headers.get("HX-Request"):
             survey_temp = get_object_or_404(models.SurveyTemplate, id=survey_id, creator=request.user)
             survey_temp.delete()
-            return HttpResponse(headers={"HX-Redirect": "/my-surveys/"})  
+            return HttpResponse(headers={"HX-Redirect": "/templates_and_drafts/"})  
 
     return HttpResponse(status=400)
 
 
 @csrf_protect
 @login_required 
-def my_surveys_view(request, search_str: str | None = None) -> HttpResponse:
+def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse: 
     """
-    Displays the my surveys page with all created survey templates. 
+    Displays the survey templates and drafts page with all created survey templates. 
     Also gives functionality for searching for specific surveys via 
     their name. 
 
@@ -751,11 +811,17 @@ def my_surveys_view(request, search_str: str | None = None) -> HttpResponse:
             search_str_input: str = request.POST.get("search-bar")
 
             if search_str_input is None: 
-                return HttpResponse(headers={"HX-Redirect": "/my-surveys/"})  
+                return HttpResponse(headers={"HX-Redirect": "/templates_and_drafts/"})  
             else: 
-                return HttpResponse(headers={"HX-Redirect": "/my-surveys/" + search_str_input})  
+                return HttpResponse(headers={"HX-Redirect": "/templates_and_drafts/" + search_str_input})  
+    
+    return render(request, "templates_and_drafts.html", {"survey_templates": survey_templates})
 
-    return render(request, "my_surveys.html", {"survey_templates": survey_templates})
+
+
+@login_required 
+def my_surveys_view(request):
+    return render(request, "my_surveys.html")
 
 
 def settings_admin_view(request):
@@ -943,20 +1009,42 @@ def start_user_view(request):
 
 
 def survey_result_view(request, survey_id):
-    survey_result = SurveyResult.objects.filter(id=survey_id).first()
+    survey = models.Survey.objects.filter(id=survey_id).first()
+    # Retrieve all survey results of this survey
+    survey_results = survey.survey_results
+    questions = survey.questions.all()
+    result = {} # Map every question to its answer statistics here
 
-    if survey_result is not None:
-        # Check if the survey is accessible to the user
-        if survey_result.user != request.user:
-            survey_result = None
+    #TODO: some analysis here before sending to survey_result?
+    
+    for question in questions:
+        if question.question_format == models.QuestionFormat.MULTIPLE_CHOICE:
+            pass
+        elif question.question_format == models.QuestionFormat.YES_NO:
+            pass
+        elif question.question_format == models.QuestionFormat.TEXT:
+            pass
+        elif question.question_format == models.QuestionFormat.SLIDER:
+            pass
+
+
+    if survey_results is None:
+        # This survey has no answers (should not even be displayed to the user then)
+        return HttpResponse(400)
 
     # Proceed to render the survey results
-    return render(request, "survey_result.html", {"survey_result": survey_result})
+    return render(request, "survey_result.html", {"survey_result": result})
 
 
 @login_required
 def survey_status_view(request):
-    return render(request, "survey_status.html")
+    user = request.user
+    published_count = user.published_surveys.count()
+
+    # Order the surveys by deadline date (old before young)
+    published_surveys_ordered = user.published_surveys.all().order_by('-deadline')
+
+    return render(request, "survey_status.html", {"published_surveys": published_surveys_ordered, "current_time": timezone.now(), "published_count": published_count})
 
 
 @login_required
@@ -964,6 +1052,7 @@ def unanswered_surveys_view(request):
     user = request.user  # Assuming the user is authenticated
     unanswered_count = user.count_unanswered_surveys()
     unanswered_surveys = user.get_unanswered_surveys()
+    current_time = timezone.now()
     return render(
         request,
         "unanswered_surveys.html",
@@ -971,6 +1060,7 @@ def unanswered_surveys_view(request):
             "unanswered_count": unanswered_count,
             "unanswered_surveys": unanswered_surveys,
             "pagetitle": "Obesvarade enkäter",
+            "current_time": current_time
         },
     )
 
