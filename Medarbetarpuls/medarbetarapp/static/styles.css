@@ -439,7 +439,7 @@ button:hover {
   display: block;
 }
 
-.grid-item>* {
+.grid-item > * {
   overflow: hidden;
   /* Prevent overflow in child elements */
   flex-grow: 1;
@@ -654,6 +654,7 @@ button:hover {
   padding: 20px;
   border-radius: 10px;
   text-align: center;
+  max-height: 90%;
   width: 400px;
   position: relative;
   /* So the close button can be positioned relative to this */
@@ -1098,4 +1099,19 @@ th {
   min-height: 1.5em;
   color: red;
   margin-bottom: 1em;
+}
+
+.options-container {
+  max-height: 180px; /* or whatever fits your design */
+  overflow-y: auto;
+  padding-right: 5px; /* optional: room for scrollbar */
+}
+
+.option-input {
+  margin: 5px 0;
+  width: 500px;
+}
+
+.option-input input {
+  height: 30px;
 }
