@@ -552,6 +552,16 @@ def edit_question_view(request, survey_id: int, question_format: models.Question
             question.question_format = question_format 
             question.save()
 
+            # Add testcase for multiplechoice questions
+            if question_format == models.QuestionFormat.MULTIPLE_CHOICE: 
+                new_items = ["Option 1", "Option 2", "Option 3", "Option 4"]
+                # This is kinda fucked and can maybe be re-written better
+                question.multiple_choice_question = models.MultipleChoiceQuestion(question_format=question_format)
+                question.multiple_choice_question.save()
+                question.multiple_choice_question.options.extend(new_items)
+                question.multiple_choice_question.save()
+                question.save()
+
             # Add question text
             question.question = request.POST.get("question")
             question.save()
