@@ -10,10 +10,19 @@
   </head>
   <body>
     <div class="create-container">
+      {% if question_index|add:1 == total %}
+      <form
+        hx-post="{% url 'answer_survey' survey_result_id=survey_result_id question_index=question_index %}"
+        hx-trigger="submit"
+        hx-confirm="{{total_answers}} av {{total}} frågor besvarade, är du säker på att du vill skicka in svaren?"
+      >
+      {% else %}
       <form
         hx-post="{% url 'answer_survey' survey_result_id=survey_result_id question_index=question_index %}"
         hx-trigger="submit"
       >
+      {% endif %}
+        <!-- prettier-ignore -->
         {% csrf_token %}
         <h2>{{ question.question }}</h2>
 

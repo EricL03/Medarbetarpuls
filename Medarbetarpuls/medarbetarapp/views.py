@@ -255,7 +255,8 @@ def answer_survey_view(request, survey_result_id, question_index=0):
             
             return HttpResponse(status=400)
 
-
+    # This is added so a "double" loop can be used to go through 
+    # which boxes should be checked
     if question.multiple_choice_question is not None: 
         zipped = zip(question.multiple_choice_question.options, answer.multiple_choice_answer)
     else: 
@@ -265,6 +266,7 @@ def answer_survey_view(request, survey_result_id, question_index=0):
         "question": question,
         "question_index": question_index,
         "total": len(questions),
+        "total_answers": len(answers),
         "survey_result_id": survey_result.id,
         "prev_question_index": prev_question_index,
         "next_question_index": next_question_index,
