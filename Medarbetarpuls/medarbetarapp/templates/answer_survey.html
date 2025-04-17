@@ -54,8 +54,10 @@
         <label>
           {% if yes_no_answer %}
           <input type="radio" name="yesno" value="False" required />
-          {% else %}
+          {% elif yes_no_answer == False %}
           <input type="radio" name="yesno" value="False" checked required />
+          {% else %}
+          <input type="radio" name="yesno" value="False" required />
           {% endif %} Nej
         </label>
 
@@ -78,6 +80,13 @@
         <br />
         {% endfor %} {% endif %}
 
+        <div style="margin-top: 15px;">
+          <label>
+            Har du någon annan kommentar?
+            <input type="text" name="comment" value="{{ comment }}" />
+          </label>
+        </div>
+
         <div>
           {% if question_index|add:1 == total %}
           <button type="submit">Skicka in svar</button>
@@ -94,11 +103,13 @@
       <div>
         <a
           href="{% url 'answer_survey' survey_result_id prev_question_index %}"
+          style="margin-right: 80px; font-size: 2.5rem;"
         >
           &lt;
         </a>
         <a
           href="{% url 'answer_survey' survey_result_id next_question_index %}"
+          style="font-size: 2.5rem;"
         >
           &gt;
         </a>

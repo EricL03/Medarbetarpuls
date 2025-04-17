@@ -210,7 +210,7 @@ def answer_survey_view(request, survey_result_id, question_index=0):
             if question_format == "slider": 
                 answer = models.Answer(survey=survey_result, question=question, slider_answer=5.0)
             elif question_format == "text": 
-                answer = models.Answer(survey=survey_result, question=question, free_text_answer="")
+                answer = models.Answer(survey=survey_result, question=question)
             elif question_format == "yesno": 
                 answer = models.Answer(survey=survey_result, question=question)
             elif question_format == "multiplechoice": 
@@ -230,14 +230,17 @@ def answer_survey_view(request, survey_result_id, question_index=0):
                 if question_format == "slider": 
                     answer.slider_answer = request.POST.get("slider") 
                 elif question_format == "text": 
-                    answer.free_text_answer=request.POST.get("text")
+                    answer.free_text_answer = request.POST.get("text")
                 elif question_format == "yesno": 
-                    answer.yes_no_answer=request.POST.get("yesno")
+                    answer.yes_no_answer = request.POST.get("yesno")
                 elif question_format == "multiplechoice": 
                     selected = request.POST.getlist("multiplechoice")
                     all_options = question.multiple_choice_question.options 
                     bool_list = [opt in selected for opt in all_options]
                     answer.multiple_choice_answer = bool_list
+
+                # Also save the potential comment
+                answer.comment = request.POST.get("comment")
 
                 answer.is_answered = True
                 answer.save()
@@ -258,15 +261,28 @@ def answer_survey_view(request, survey_result_id, question_index=0):
     # This is added so a "double" loop can be used to go through 
     # which boxes should be checked
     if question.multiple_choice_question is not None: 
-        zipped = zip(question.multiple_choice_question.options, answer.multiple_choice_answer)
+        # Edge case where no answer yet exists, but we still 
+        # want to display the options...
+        if not answer.multiple_choice_answer: 
+            zipped = zip(question.multiple_choice_question.options, [False, False, False, False])
+        else: 
+            zipped = zip(question.multiple_choice_question.options, answer.multiple_choice_answer)
     else: 
         zipped = None
+
+    # Calculate amount of "answered" answers
+    # Start at 1 because the last question always gets a saved answer
+    # that is not counted
+    total_answers = 1
+    for ans in answers: 
+        if ans.is_answered:  
+            total_answers += 1
 
     return render(request, "answer_survey.html", {
         "question": question,
         "question_index": question_index,
         "total": len(questions),
-        "total_answers": len(answers),
+        "total_answers": total_answers, 
         "survey_result_id": survey_result.id,
         "prev_question_index": prev_question_index,
         "next_question_index": next_question_index,
@@ -274,6 +290,7 @@ def answer_survey_view(request, survey_result_id, question_index=0):
         "text_answer": answer.free_text_answer, 
         "yes_no_answer": answer.yes_no_answer,
         "multiple_choice_pairs": zipped,
+        "comment": answer.comment,
     })
 
 
