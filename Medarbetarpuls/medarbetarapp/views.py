@@ -181,40 +181,40 @@ def analysis_view(request):
 
 @login_required
 @csrf_protect
-def answer_survey_view(request, survey_result_id, question_index=0):
-    user = request.user
-    survey_result = get_object_or_404(SurveyResult, pk=survey_result_id, user=user)
-    questions = survey_result.published_survey.questions.all()
-    answers = survey_result.answers.all()
-    answer = models.Answer()
+def answer_survey_view(request, survey_result_id: int, question_index: int = 0) -> HttpResponse:
+    user: models.CustomUser = request.user
+    survey_result: models.SurveyResult = get_object_or_404(SurveyResult, pk=survey_result_id, user=user)
+    questions: list[models.Question] = survey_result.published_survey.questions.all()
+    answers: list[models.Answer] = survey_result.answers.all()
+    answer: models.Answer = models.Answer()
     
     # Calculate question navigation indexes
     if question_index - 1 < 0: 
-        prev_question_index = 0
+        prev_question_index: int = 0
     else: 
-        prev_question_index = question_index - 1
+        prev_question_index: int = question_index - 1
     
     if question_index + 1 >= len(questions): 
-        next_question_index = len(questions) - 1 
+        next_question_index: int = len(questions) - 1 
     else: 
-        next_question_index = question_index + 1
+        next_question_index: int = question_index + 1
 
-    question = questions[question_index]
+    question: models.Question = questions[question_index]
 
     # Create a new answer if none exists for this question 
     if question_index >= len(answers): 
-        question_format = question.question_format
+        question_format: models.QuestionFormat = question.question_format
         if question_format is not None:
-            answer: models.Answer = models.Answer() 
-
-            if question_format == "slider": 
+            if question_format == models.QuestionFormat.SLIDER: 
                 answer = models.Answer(survey=survey_result, question=question, slider_answer=5.0)
-            elif question_format == "text": 
+            elif question_format == models.QuestionFormat.TEXT: 
                 answer = models.Answer(survey=survey_result, question=question)
-            elif question_format == "yesno": 
+            elif question_format == models.QuestionFormat.YES_NO: 
                 answer = models.Answer(survey=survey_result, question=question)
-            elif question_format == "multiplechoice": 
+            elif question_format == models.QuestionFormat.MULTIPLE_CHOICE: 
                 answer = models.Answer(survey=survey_result, question=question)
+            else: 
+                return HttpResponse(status=400)
 
             answer.save()
     # Otherwise get the existing question 
@@ -223,8 +223,8 @@ def answer_survey_view(request, survey_result_id, question_index=0):
 
     if request.method == "POST":
         if request.headers.get("HX-Request"):
-            question_format = request.POST.get("question_format")
-            submit_answers = request.POST.get("submit_answers")
+            question_format: models.QuestionFormat = request.POST.get("question_format")
+            submit_answers: str = request.POST.get("submit_answers")
 
             if question_format is not None:
                 if question_format == "slider": 
@@ -234,9 +234,9 @@ def answer_survey_view(request, survey_result_id, question_index=0):
                 elif question_format == "yesno": 
                     answer.yes_no_answer = request.POST.get("yesno")
                 elif question_format == "multiplechoice": 
-                    selected = request.POST.getlist("multiplechoice")
-                    all_options = question.multiple_choice_question.options 
-                    bool_list = [opt in selected for opt in all_options]
+                    selected: list[str] = request.POST.getlist("multiplechoice")
+                    all_options: list[str] = question.multiple_choice_question.options 
+                    bool_list: list[bool] = [opt in selected for opt in all_options]
                     answer.multiple_choice_answer = bool_list
 
                 # Also save the potential comment
@@ -245,7 +245,7 @@ def answer_survey_view(request, survey_result_id, question_index=0):
                 answer.is_answered = True
                 answer.save()
             
-                if submit_answers is not None: 
+                if submit_answers == "1": 
                     # All questions answered, redirect somewhere else
                     survey_result.is_answered = True
                     # This survey has now been answered by another user
@@ -273,7 +273,7 @@ def answer_survey_view(request, survey_result_id, question_index=0):
     # Calculate amount of "answered" answers
     # Start at 1 because the last question always gets a saved answer
     # that is not counted
-    total_answers = 1
+    total_answers: int = 1
     for ans in answers: 
         if ans.is_answered:  
             total_answers += 1
