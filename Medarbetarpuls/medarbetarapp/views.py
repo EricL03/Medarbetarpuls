@@ -23,33 +23,32 @@ logger = logging.getLogger(__name__)
 
 @csrf_protect
 def create_acc(request):
-    
-    if request.headers.get("HX-Request"):
-        print("HX-Request")
-        return HttpResponse(
-            headers={"HX-Redirect": "/create_acc/"}
-        )  # Redirects in HTMX
-    
-    if request.method == "GET":
-        print("GETTttttttttttt")
-        # Rendera vyn för att skapa ett konto
-        return render(request, "create_acc.html")
-    
+    """
+    Initiates account creation by saving user data to session, sending a verification code via email,
+    and redirecting to the authentication page (supports both HTMX and standard requests).
 
-    elif request.method == "POST":
+    Args:
+        request: The HTTP request containing name, email, password, and optional from_settings flag.
+
+    Returns:
+        HttpResponse: For POST, sends an HX-Redirect header or standard redirect to "/authentication-acc/";
+        for GET, redirects or renders "create_acc.html"; or 400 on error.
+    """
+
+    if request.method == "POST":
         name = request.POST.get("name")
         email = request.POST.get("email")
         password = request.POST.get("password")
         from_settings = request.POST.get("from_settings") == "true"
-        
+
         org = find_organization_by_email(email=email)
         if org is None:
             logger.error("This email is not authorized for registration.")
             return HttpResponse(status=400)
-        
-        code = 123456  
+
+        code = 123456   # make random later, just test now
         cache.set(f"verify_code_{email}", code, timeout=300)
-        
+
         send_mail(
             subject="Your Verification Code",
             message=f"Your verification code is: {code}",
@@ -57,23 +56,28 @@ def create_acc(request):
             recipient_list=[email],
             fail_silently=False,
         )
-        
+
         # Save potential user account data in session
         request.session["user_data"] = {
             "name": name,
             "password": password,
             "from_settings": from_settings,
         }
-        #  Save the mail where the two factor code is sent
+        # Save the mail where the two factor code is sent
         request.session["email_two_factor_code"] = email
-        
+
+        # Redirect till autentiseringssidan
         if request.headers.get("HX-Request"):
             return HttpResponse(headers={"HX-Redirect": "/authentication-acc/"})
         else:
             return redirect("/authentication-acc/")
-        
-    # Bad request if no expression
-    return HttpResponse(status=400)
+
+    else:
+        # Handles GET-request: Renders create-acc page
+        if request.headers.get("HX-Request"):
+            return HttpResponse(headers={"HX-Redirect": "/create_acc/"})
+        else:
+            return render(request, "create_acc.html")
 
 
 @login_required
@@ -369,60 +373,64 @@ def create_question(request, survey_id: int) -> HttpResponse:
                    "QuestionFormat": models.QuestionFormat,
                    })
 
-def create_org_redirect(request):
-    if request.headers.get("HX-Request"):
-        return HttpResponse(
-            headers={"HX-Redirect": "/create_org_view/"}
-        )  # Redirects in HTMX
-
-    return redirect("/create_org_view/")  # Normal Django redirect for non-HTMX requests
-
-def create_org_view(request):
-    return render(request, "create_org.html")
-
 @csrf_protect
 def create_org(request) -> HttpResponse:
     """
-    Saves potential account information in django 
-    session from fetched input, it sends an email 
-    to the mail that has been fetched. 
-    Then redirect to authentication-org to 
-    authenticate and potentially create admin account.
+    Initiates organization creation by generating
+    a verification code, sending it via email, 
+    saving form data in the session, and redirecting
+    to the authentication page
+    (supports HTMX and standard requests).
 
     Args:
-        request: The input text from the org_name, name, email and password fields
+        request: The HTTP request containing org_name, name, email, and password.
 
     Returns:
-        HttpResponse: Redirects to authentication page, otherwise error message 400
+        HttpResponse: For POST, sends HX-Redirect header or standard redirect to "/authentication-org/"; 
+        for GET, sends HX-Redirect header or renders "create_org.html".
     """
+    
     if request.method == "POST":
+        #Get data from the forum
+        org_name = request.POST.get("org_name")
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+
+
+        code = 123456 # make random later, just test now
+        cache.set(f'verify_code_{email}', code, timeout=300)
+
+        #Send email with the code to the user
+        send_mail(
+            subject='Your Verification Code',
+            message=f'Your verification code is: {code}',
+            from_email='medarbetarpuls@gmail.com',
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+        # Save potential user account data in session
+        request.session['user_org_data'] = {
+            'org_name': org_name,
+            'name': name,
+            'password': password,
+        }
+        # Save the mail where the two factor code is sent
+        request.session['email_two_factor_code_org'] = email
+
+        # Redirect to authentication
         if request.headers.get("HX-Request"):
-            org_name = request.POST.get("org_name")
-            name = request.POST.get("name")
-            email = request.POST.get("email")
-            password = request.POST.get("password")
-            code = 123456 # make random later, just test now
-            cache.set(f'verify_code_{email}', code, timeout=300)
-            send_mail(
-                subject='Your Verification Code',
-                message=f'Your verification code is: {code}',
-                from_email='medarbetarpuls@gmail.com',
-                recipient_list=[email],
-                fail_silently=False,
-            )
-            # Save potential user account data in session
-            request.session['user_org_data'] = {
-                'org_name': org_name,
-                'name': name,
-                'password': password,
-            }
-
-            # Save the mail where the two factor code is sent
-            request.session['email_two_factor_code_org'] = email
-
-            return HttpResponse(headers={"HX-Redirect": "/authentication-org/"})  # Redirect to authentication account page
-        
-    return HttpResponse(status=400)  # Bad request if no expression
+            return HttpResponse(headers={"HX-Redirect": "/authentication-org/"})
+        return redirect("/authentication-org/")
+    
+    else:
+        # GET-request: render or redirect to create_org
+        if request.headers.get("HX-Request"):
+            return HttpResponse(headers={"HX-Redirect": "/create_org/"})
+        return render(request, "create_org.html")
+    
+    #maybe implement error 400??
 
 
 @csrf_protect
