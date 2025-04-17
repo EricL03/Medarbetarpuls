@@ -361,3 +361,20 @@
     border-radius: 50%;
     z-index: 3;
 }
+
+.answer-survey-container {
+    flex-direction: column;     
+    align-items: center;        
+    height: 100vh;           
+    background-color: var(--soft_blue);
+    position: relative;         /* Allows child elements (like icons or sliders) to be absolutely positioned */
+}
+
+.options-container {
+    max-height: 180px; /* or whatever fits your design */
+    overflow-y: auto;
+    padding-right: 5px; /* optional: room for scrollbar */
+}
+  
+  
+  
