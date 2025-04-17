@@ -25,31 +25,46 @@
           min="0"
           max="10"
           step="0.1"
+          value="{{ slider_answer }}"
           required
         />
 
         {% elif question.question_format == "text" %}
         <input type="hidden" name="question_format" value="text" />
-        <input type="text" name="text" required />
+        <input type="text" name="text" value="{{ text_answer }}" required />
 
         {% elif question.question_format == "yesno" %}
         <input type="hidden" name="question_format" value="yesno" />
         <label>
+          {% if yes_no_answer %}
+          <input type="radio" name="yesno" value="True" checked required />
+          {% else %}
           <input type="radio" name="yesno" value="True" required />
-          Ja
+          {% endif %} Ja
         </label>
         <label>
+          {% if yes_no_answer %}
           <input type="radio" name="yesno" value="False" required />
-          Nej
+          {% else %}
+          <input type="radio" name="yesno" value="False" checked required />
+          {% endif %} Nej
         </label>
 
         {% elif question.question_format == "multiplechoice" %}
         <input type="hidden" name="question_format" value="multiplechoice" />
         <!-- prettier-ignore -->
-        {% for option in question.multiple_choice_question.options %}
+        {% for option, is_selected in multiple_choice_pairs %}
         <label>
+          {% if is_selected %}
+          <input
+            type="checkbox"
+            name="multiplechoice"
+            value="{{ option }}"
+            checked
+          />
+          {% else %}
           <input type="checkbox" name="multiplechoice" value="{{ option }}" />
-          {{ option }}
+          {% endif %} {{ option }}
         </label>
         <br />
         {% endfor %} {% endif %}

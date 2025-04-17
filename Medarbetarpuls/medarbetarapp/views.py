@@ -237,7 +237,7 @@ def answer_survey_view(request, survey_result_id, question_index=0):
                     selected = request.POST.getlist("multiplechoice")
                     all_options = question.multiple_choice_question.options 
                     bool_list = [opt in selected for opt in all_options]
-                    answer.multiple_choice_answer.extend(bool_list)
+                    answer.multiple_choice_answer = bool_list
 
                 answer.is_answered = True
                 answer.save()
@@ -256,6 +256,11 @@ def answer_survey_view(request, survey_result_id, question_index=0):
             return HttpResponse(status=400)
 
 
+    if question.multiple_choice_question is not None: 
+        zipped = zip(question.multiple_choice_question.options, answer.multiple_choice_answer)
+    else: 
+        zipped = None
+
     return render(request, "answer_survey.html", {
         "question": question,
         "question_index": question_index,
@@ -263,6 +268,10 @@ def answer_survey_view(request, survey_result_id, question_index=0):
         "survey_result_id": survey_result.id,
         "prev_question_index": prev_question_index,
         "next_question_index": next_question_index,
+        "slider_answer": answer.slider_answer,
+        "text_answer": answer.free_text_answer, 
+        "yes_no_answer": answer.yes_no_answer,
+        "multiple_choice_pairs": zipped,
     })
 
 
