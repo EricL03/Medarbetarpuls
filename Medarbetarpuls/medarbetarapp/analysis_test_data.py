@@ -249,11 +249,15 @@ survey_responders = createUsers(UserRole.SURVEY_RESPONDER, 4)
 
 surveys = createSurveys(6, survey_creator)  # max 12 surveys
 
-# question_enps = createQuestions(1, QuestionFormat.SLIDER, QuestionType.ENPS)
+question_enps = createQuestions(1, QuestionFormat.SLIDER, QuestionType.ENPS, surveys[0])
 question_mc = createQuestions(
     1, QuestionFormat.MULTIPLE_CHOICE, QuestionType.REOCCURRING, surveys[0]
 )
-# question_yn = createQuestions(1, QuestionFormat.YES_NO, QuestionType.REOCCURRING)
+
+question_yn = createQuestions(
+    1, QuestionFormat.YES_NO, QuestionType.REOCCURRING, surveys[0]
+)
+all_questions = question_mc + question_enps + question_yn
 
 for s in surveys:
     for q in question_mc:
@@ -264,5 +268,5 @@ for s in surveys:
     for r in survey_responders:
         survey_result = createSurveyUserResult(1, s, r)
         for sr in survey_result:
-            for q in question_mc:
+            for q in all_questions:
                 createAnswers(1, sr, q)

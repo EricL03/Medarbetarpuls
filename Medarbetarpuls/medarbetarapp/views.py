@@ -1183,8 +1183,9 @@ def chart_view(request):
     SURVEY_ID = 3  # Choose which survey to show here
 
     analysisHandler = AnalysisHandler()
-    question_txt = "Did you take enough breaks throughout the day?"
+
     context = analysisHandler.survey_result_summary(SURVEY_ID)
+    print(context)
     return render(request, "analysis.html", context)
 
 
