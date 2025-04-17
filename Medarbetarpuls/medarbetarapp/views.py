@@ -182,6 +182,20 @@ def analysis_view(request):
 @login_required
 @csrf_protect
 def answer_survey_view(request, survey_result_id: int, question_index: int = 0) -> HttpResponse:
+    """
+    Makes it possible for the user to answer all questions of a survey. 
+    Page is navigated using its question index which is then used to 
+    save and display a unique Answer object for each Question. 
+
+    Args:
+        request: The input from the various answer fields 
+        survey_result_id (int): The id of the SurveyResult being answered
+        question_index (int): The index of the question which should be displayed 
+
+    Returns:
+        HttpResponse: Redirects to next or previous question, then unanswered surveys 
+        page after survey completion, otherwise status 400 on errors
+    """
     user: models.CustomUser = request.user
     survey_result: models.SurveyResult = get_object_or_404(SurveyResult, pk=survey_result_id, user=user)
     questions: list[models.Question] = survey_result.published_survey.questions.all()
@@ -226,6 +240,7 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
             question_format: models.QuestionFormat = request.POST.get("question_format")
             submit_answers: str = request.POST.get("submit_answers")
 
+            # Save the format specific answer
             if question_format is not None:
                 if question_format == "slider": 
                     answer.slider_answer = request.POST.get("slider") 
@@ -245,15 +260,17 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
                 answer.is_answered = True
                 answer.save()
             
+                # All questions answered, submit answers and redirect
                 if submit_answers == "1": 
-                    # All questions answered, redirect somewhere else
                     survey_result.is_answered = True
-                    # This survey has now been answered by another user
                     survey_result.published_survey.collected_answer_count += 1 
                     survey_result.published_survey.save()
                     survey_result.save()
+
+                    # Redirect to unanswered surveys page after completion
                     return HttpResponse(headers={"HX-Redirect": "/unanswered-surveys/"})  
                 
+                # Redirect to next question
                 return HttpResponse(headers={"HX-Redirect": "/survey/" + str(survey_result.id) + "/question/" + str(question_index+1)})  
             
             return HttpResponse(status=400)
