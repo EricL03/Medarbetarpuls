@@ -3,7 +3,7 @@ import platform
 from . import models
 from django.db.models import Q
 from collections import Counter
-from .models import SurveyResult
+from .models import SurveyUserResult
 from django.utils import timezone
 from django.db.models import Count
 from django.core.cache import cache
@@ -248,6 +248,24 @@ def answer_survey_view(request, survey_result_id, question_index=0):
             "survey_result_id": survey_result.id,
         },
     )
+
+@csrf_exempt
+def resend_authentication_code_acc(request):
+    if request.method == "POST":
+        email = request.session.get("email_two_factor_code")
+        code = 654321 # make random later, just test now
+        cache.set(f'verify_code_{email}', code, timeout=300)
+
+        #Send email with the code to the user
+        send_mail(
+            subject='Your Verification Code',
+            message=f'Your verification code is: {code}',
+            from_email='medarbetarpuls@gmail.com',
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        return HttpResponse("Sent")
+
 
 
 @csrf_exempt
