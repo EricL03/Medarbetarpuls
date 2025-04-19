@@ -187,7 +187,7 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
         page after survey completion, otherwise status 400 on errors
     """
     user: models.CustomUser = request.user
-    survey_result: models.SurveyResult = get_object_or_404(SurveyResult, pk=survey_result_id, user=user)
+    survey_result: models.SurveyUserResult = get_object_or_404(SurveyUserResult, pk=survey_result_id, user=user)
     questions: list[models.Question] = survey_result.published_survey.questions.all()
     answers: list[models.Answer] = survey_result.answers.all()
     answer: models.Answer = models.Answer()

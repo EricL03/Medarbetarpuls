@@ -10,7 +10,6 @@
   </head>
   <body>
     <div class="answer-survey-container">
-      <div class="create-container">
         {% if question_index|add:1 == total %}
         <form
           hx-post="{% url 'answer_survey' survey_result_id=survey_result_id question_index=question_index %}"
@@ -28,17 +27,26 @@
           <h2>{{ question.question }}</h2>
   
           {% if question.question_format == "slider" %}
-          <input type="hidden" name="question_format" value="slider" />
-          <input
-            type="range"
-            name="slider"
-            min="0"
-            max="10"
-            step="0.1"
-            value="{{ slider_answer }}"
-            required
-          />
-  
+            <div class="vertical-slider-container">
+              <input type="hidden" name="question_format" value="slider" />
+              <input
+                type="range"
+                name="slider"
+                min="0"
+                max="10"
+                step="0.1"
+                value="{{ slider_answer }}"
+                class="vertical-slider"
+                required
+              />
+               <!-- Smiley overlay -->
+              <img
+              id="smiley-icon"
+              src="{% static 'images/smiley-neutral.png' %}"
+              style="position: absolute; width: 50px; height: 50px;"
+              />
+            </div>
+          
           {% elif question.question_format == "text" %}
           <input type="hidden" name="question_format" value="text" />
           <input type="text" name="text" value="{{ text_answer }}" required />
@@ -80,42 +88,99 @@
           </label>
           <br />
           {% endfor %} {% endif %}
-  
-          <div style="margin-top: 15px;">
-            <label>
-              Har du någon annan kommentar?
-              <input type="text" name="comment" value="{{ comment }}" />
-            </label>
+
+          <!-- Comment popup -->
+          <div class="question-form comment" id="comment-popup" style="display: none">
+              <input
+                type="text"
+                id="comment"
+                name="comment"
+                {% if comment and comment != "None" %}
+                value="{{ comment }}"
+                {% else %}
+                placeholder="Kommentar"
+                {% endif %}
+              />
           </div>
-  
+
+          <!-- Button for when all questions are answered-->
           <div>
             {% if question_index|add:1 == total %}
-            <button type="submit">Skicka in svar</button>
+            <button type="submit" class="answer-survey-button">Skicka in svar</button>
             <input type="hidden" name="submit_answers" value="1" />
-            {% else %}
-            <button type="submit">Nästa</button>
             {% endif %}
           </div>
         </form>
-  
-        <div>
-          <p>{{ question_index|add:1 }} / {{ total }}</p>
+
+      <!-- Comment button -->
+          <div class="bottom-actions">
+            <a href="#"  onclick="openCloseComment()" title="Kommentera">
+              <img
+                src="{% static 'images/comment.png' %}"
+                alt="Comment"
+                class="image-button action-icon"
+              />
+            </a>
         </div>
-        <div>
-          <a
-            href="{% url 'answer_survey' survey_result_id prev_question_index %}"
-            style="margin-right: 80px; font-size: 2.5rem;"
-          >
-            &lt;
-          </a>
-          <a
-            href="{% url 'answer_survey' survey_result_id next_question_index %}"
-            style="font-size: 2.5rem;"
-          >
-            &gt;
-          </a>
-        </div>
+
+        <!-- Arrows (left & right) -->
+      <div class="navigation-arrows">
+        <a href="{% url 'answer_survey' survey_result_id prev_question_index %}" class="arrow">&lt;</a>
+        <span class="question-counter">{{ question_index|add:1 }} / {{ total }}</span>
+        <a href="{% url 'answer_survey' survey_result_id next_question_index %}" class="arrow">&gt;</a>
       </div>
     </div> 
+    <script>
+      // for the slider
+      document.addEventListener("DOMContentLoaded", () => {
+      const slider = document.querySelector(".vertical-slider");
+      const smiley = document.getElementById("smiley-icon");
+
+      const updateSliderVisuals = () => {
+        const value = parseFloat(slider.value);
+        const max = parseFloat(slider.max);
+        const percentage = (value / max) * 100;
+
+        // Update gradient fill
+        slider.style.background = `linear-gradient(to right, #297CC9 0%, #58C5F4 ${percentage}%, #eee ${percentage}%, #eee 100%)`;
+
+        // Update smiley image
+        let smileyURL = '/static/images/smiley-neutral.png';
+        if (value < 2) smileyURL = '/static/images/smiley-sad.png';
+        else if (value < 5) smileyURL = '/static/images/smiley-meh.png';
+        else if (value == 5) smileyURL ='/static/images/smiley-neutral.png';
+        else if (value < 8) smileyURL = '/static/images/smiley-happy.png';
+        else smileyURL = '/static/images/smiley-superhappy.png';
+
+        smiley.src = smileyURL;
+
+        // 💡 Vertical positioning
+      const sliderRect = slider.getBoundingClientRect();
+      const containerRect = slider.parentElement.getBoundingClientRect();
+      //TODO: make the smiley slide with the gauge
+      const smileyTop = slider.offsetTop + ((1 - value / max) * slider.offsetHeight) - 25; // 25 = half the smiley height
+      const smileyLeft = slider.offsetLeft + slider.offsetWidth / 2 - 25; // center it
+
+      smiley.style.top = `${smileyTop}px`;
+      smiley.style.left = `${smileyLeft}px`;
+      };
+
+      slider.addEventListener("input", updateSliderVisuals);
+      window.addEventListener("resize", updateSliderVisuals);
+      updateSliderVisuals(); // Initialize
+    });
+
+
+      function openCloseComment() { // Open and close the comment popup
+        if (document.getElementById("comment-popup").style.display == "none"){
+          document.getElementById("comment-popup").style.display = "flex";
+        }
+        else{
+          document.getElementById("comment-popup").style.display = "none";
+        }      
+      }
+      
+
+    </script>
   </body>
 </html>
