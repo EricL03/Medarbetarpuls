@@ -7,6 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fråga {{ question_index|add:1 }} / {{ total }}</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}" />
+    <!-- For animations-->
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+    />
+    <!-- Confetti animation-->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   </head>
   <body>
     <div class="answer-survey-container">
@@ -25,7 +32,8 @@
           <!-- prettier-ignore -->
           {% csrf_token %}
           <h2>{{ question.question }}</h2>
-  
+
+          <!-- Slider question -->
           {% if question.question_format == "slider" %}
             <div class="vertical-slider-container">
               <input type="hidden" name="question_format" value="slider" />
@@ -39,55 +47,58 @@
                 class="vertical-slider"
                 required
               />
-               <!-- Smiley overlay -->
+              <!-- Smiley in slider -->
               <img
               id="smiley-icon"
               src="{% static 'images/smiley-neutral.png' %}"
-              style="position: absolute; width: 50px; height: 50px;"
+              class="animate__animated"
               />
             </div>
           
+          <!-- Text question -->
           {% elif question.question_format == "text" %}
-          <input type="hidden" name="question_format" value="text" />
-          <input type="text" name="text" value="{{ text_answer }}" required />
-  
+            <input type="hidden" name="question_format" value="text" />
+            <input type="text" name="text" value="{{ text_answer }}" required />
+          
+          <!-- Yes/No question (thumbs up/down) -->
           {% elif question.question_format == "yesno" %}
-          <input type="hidden" name="question_format" value="yesno" />
+            <input type="hidden" name="question_format" value="yesno" />
+            <label>
+              {% if yes_no_answer %}
+              <input type="radio" name="yesno" value="True" checked required />
+              {% else %}
+              <input type="radio" name="yesno" value="True" required />
+              {% endif %} Ja
+            </label>
           <label>
             {% if yes_no_answer %}
-            <input type="radio" name="yesno" value="True" checked required />
-            {% else %}
-            <input type="radio" name="yesno" value="True" required />
-            {% endif %} Ja
+              <input type="radio" name="yesno" value="False" required />
+              {% elif yes_no_answer == False %}
+              <input type="radio" name="yesno" value="False" checked required />
+              {% else %}
+              <input type="radio" name="yesno" value="False" required />
+              {% endif %} Nej
           </label>
-          <label>
-            {% if yes_no_answer %}
-            <input type="radio" name="yesno" value="False" required />
-            {% elif yes_no_answer == False %}
-            <input type="radio" name="yesno" value="False" checked required />
-            {% else %}
-            <input type="radio" name="yesno" value="False" required />
-            {% endif %} Nej
-          </label>
-  
+
+          <!-- Multiple choice question -->
           {% elif question.question_format == "multiplechoice" %}
-          <input type="hidden" name="question_format" value="multiplechoice" />
-          <!-- prettier-ignore -->
-          {% for option, is_selected in multiple_choice_pairs %}
-          <label>
-            {% if is_selected %}
-            <input
-              type="checkbox"
-              name="multiplechoice"
-              value="{{ option }}"
-              checked
-            />
-            {% else %}
-            <input type="checkbox" name="multiplechoice" value="{{ option }}" />
-            {% endif %} {{ option }}
-          </label>
-          <br />
-          {% endfor %} {% endif %}
+            <input type="hidden" name="question_format" value="multiplechoice" />
+            <!-- prettier-ignore -->
+            {% for option, is_selected in multiple_choice_pairs %}
+            <label>
+              {% if is_selected %}
+              <input
+                type="checkbox"
+                name="multiplechoice"
+                value="{{ option }}"
+                checked
+              />
+              {% else %}
+              <input type="checkbox" name="multiplechoice" value="{{ option }}" />
+              {% endif %} {{ option }}
+            </label>
+            <br />
+            {% endfor %} {% endif %}
 
           <!-- Comment popup -->
           <div class="question-form comment" id="comment-popup" style="display: none">
@@ -127,16 +138,20 @@
       <div class="navigation-arrows">
         <a href="{% url 'answer_survey' survey_result_id prev_question_index %}" class="arrow">&lt;</a>
         <span class="question-counter">{{ question_index|add:1 }} / {{ total }}</span>
-        <a href="{% url 'answer_survey' survey_result_id next_question_index %}" class="arrow">&gt;</a>
+        <a href="#" class="arrow" onclick="submitForm()">&gt;</a>
       </div>
     </div> 
-    <script>
-      // for the slider
-      document.addEventListener("DOMContentLoaded", () => {
-      const slider = document.querySelector(".vertical-slider");
-      const smiley = document.getElementById("smiley-icon");
 
-      const updateSliderVisuals = () => {
+    <script>
+        // Script for updating the slider and opening/closing the comment section
+        document.addEventListener("DOMContentLoaded", () => {
+      
+        const slider = document.querySelector(".vertical-slider");
+        const smiley = document.getElementById("smiley-icon");
+        // Remove previous animation classes
+        smiley.classList.remove("animate__bounce", "animate__pulse", "animate__faster", "animate__slower", "animate__fadeIn");
+
+        const updateSliderVisuals = () => {
         const value = parseFloat(slider.value);
         const max = parseFloat(slider.max);
         const percentage = (value / max) * 100;
@@ -144,32 +159,50 @@
         // Update gradient fill
         slider.style.background = `linear-gradient(to right, #297CC9 0%, #58C5F4 ${percentage}%, #eee ${percentage}%, #eee 100%)`;
 
-        // Update smiley image
+        // Update smiley image and apply animation class based on value
         let smileyURL = '/static/images/smiley-neutral.png';
-        if (value < 2) smileyURL = '/static/images/smiley-sad.png';
-        else if (value < 5) smileyURL = '/static/images/smiley-meh.png';
-        else if (value == 5) smileyURL ='/static/images/smiley-neutral.png';
-        else if (value < 8) smileyURL = '/static/images/smiley-happy.png';
-        else smileyURL = '/static/images/smiley-superhappy.png';
+        if (value < 2){
+          smileyURL = '/static/images/smiley-sad.png';
+          smiley.classList.add("animate__animated", "animate__bounce", "animate__slower");
+        }
+        else if (value < 5) {
+          smileyURL = '/static/images/smiley-meh.png';
+          smiley.classList.add("animate__animated", "animate__pulse");
+        }
+        else if (value == 5) {
+          smileyURL ='/static/images/smiley-neutral.png';
+        }
+        else if (value < 8) {
+          smileyURL = '/static/images/smiley-happy.png';
+          smiley.classList.add("animate__animated", "animate__pulse");
+        }
+        else if (value < 9.9) {
+          smileyURL = '/static/images/smiley-superhappy.png';
+          smiley.classList.add("animate__animated", "animate__pulse", "animate__faster");
+        }
+        else {
+          smileyURL = '/static/images/smiley-superhappy.png';
+          // Trigger confetti
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+          });        
+        }
 
         smiley.src = smileyURL;
+        // slider.clientWidth returns the slider's total width (height when rotated)
+        const smileyTop = (slider.offsetTop +  slider.clientWidth/2) + (1 - (value / max) *  slider.clientWidth) - 15 ; // 15 made it look the best
+        const smileyLeft = slider.offsetLeft + slider.offsetWidth / 2 - 25; // center it (25 half of the smiley width)
 
-        // 💡 Vertical positioning
-      const sliderRect = slider.getBoundingClientRect();
-      const containerRect = slider.parentElement.getBoundingClientRect();
-      //TODO: make the smiley slide with the gauge
-      const smileyTop = slider.offsetTop + ((1 - value / max) * slider.offsetHeight) - 25; // 25 = half the smiley height
-      const smileyLeft = slider.offsetLeft + slider.offsetWidth / 2 - 25; // center it
+        smiley.style.top = `${smileyTop}px`;
+        smiley.style.left = `${smileyLeft}px`;
+        };
 
-      smiley.style.top = `${smileyTop}px`;
-      smiley.style.left = `${smileyLeft}px`;
-      };
-
-      slider.addEventListener("input", updateSliderVisuals);
-      window.addEventListener("resize", updateSliderVisuals);
-      updateSliderVisuals(); // Initialize
-    });
-
+        slider.addEventListener("input", updateSliderVisuals);
+        window.addEventListener("resize", updateSliderVisuals);
+        updateSliderVisuals(); // Initialize
+      });
 
       function openCloseComment() { // Open and close the comment popup
         if (document.getElementById("comment-popup").style.display == "none"){
@@ -179,8 +212,10 @@
           document.getElementById("comment-popup").style.display = "none";
         }      
       }
-      
 
+      function submitForm() {
+        document.querySelector("form").requestSubmit(); // Triggers HTMX's hx-post
+      }
     </script>
   </body>
 </html>
