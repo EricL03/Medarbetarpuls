@@ -219,7 +219,7 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
                 answer = models.Answer(survey=survey_result, question=question)
             else: 
                 return HttpResponse(status=400)
-
+                       
             answer.save()
     # Otherwise get the existing question 
     else: 
@@ -246,7 +246,6 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
 
                 # Also save the potential comment
                 answer.comment = request.POST.get("comment")
-
                 answer.is_answered = True
                 answer.save()
             

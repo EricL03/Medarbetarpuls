@@ -381,7 +381,7 @@
 }
 
 .options-container {
-  max-height: 180px; /* or whatever fits your design */
+  max-height: 180px; 
   overflow-y: auto;
   padding-right: 5px; /* optional: room for scrollbar */
 }
@@ -422,6 +422,18 @@
 
 .yesno-container input[type="radio"]:checked + .yesno-img {
   /* This says: “When a radio button is checked, apply styles to the img immediately following it.” */
-  filter: drop-shadow(0 0 40px rgba(255, 255, 255, 0.8));
+  filter: drop-shadow(0 0 30px rgba(255, 191, 16, 0.7));
   transition: filter 0.3s ease;
+}
+
+.multiple-choice-container{
+    display: flex;
+    margin: 100px auto 0 auto; 
+    overflow-x: scroll;
+    overflow-y: scroll;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 800px;
+    height: 400px;
+    padding-right: 0.5rem; 
 }

@@ -94,27 +94,31 @@
               </label>
             </div>
             
-
+            
           <!-- Multiple choice question -->
           {% elif question.question_format == "multiplechoice" %}
-            <input type="hidden" name="question_format" value="multiplechoice" />
-            <!-- prettier-ignore -->
+          <input type="hidden" name="question_format" value="multiplechoice" />
+          <div class="multiple-choice-container">
             {% for option, is_selected in multiple_choice_pairs %}
-            <label>
-              {% if is_selected %}
-              <input
-                type="checkbox"
-                name="multiplechoice"
-                value="{{ option }}"
-                checked
-              />
-              {% else %}
-              <input type="checkbox" name="multiplechoice" value="{{ option }}" />
-              {% endif %} {{ option }}
-            </label>
-            <br />
-            {% endfor %} {% endif %}
+              <label class="multiple-input">
+                <input
+                  type="checkbox"
+                  name="multiplechoice"
+                  value="{{ option }}"
+                  {% if is_selected %}checked{% endif %}
+                />
+                <span class="choice-label">{{ option }}</span>
+                <img
+                  class="checkbox-img animate__animated"
+                  src="{% static 'images/checkbox-unchecked.png' %}"
+                  alt="checkbox"
+                />
+              </label>
+            {% endfor %}
+          </div>
+          {% endif %}
 
+            
           <!-- Comment popup -->
           <div class="question-form comment" id="comment-popup" style="display: none">
               <input
@@ -156,14 +160,14 @@
         <a href="#" class="arrow" onclick="submitForm()">&gt;</a>
       </div>
     </div> 
-
     <script>
-        // Script for updating the slider and opening/closing the comment section
+        // Script for animations and opening/closing the comment section
         document.addEventListener("DOMContentLoaded", () => {
       
         const slider = document.querySelector(".vertical-slider");
         const smiley = document.getElementById("smiley-icon");
         const yesnoImages = document.querySelectorAll(".yesno-img");
+        const multiplechoice_input = document.querySelectorAll(".multiple-input input[type='checkbox']");
       
         const updateSliderVisuals = () => {
           // Remove previous animation classes
@@ -226,9 +230,31 @@
           });
         });
 
+        
+
+        multiplechoice_input.forEach((checkbox) => {
+          const img = checkbox.parentElement.querySelector(".checkbox-img");
+          const parentOption = checkbox.closest(".multiple-input"); // The container element
+
+          const updateImage = () => {
+            img.src = checkbox.checked
+              ? "/static/images/checkbox-checked.png" // if checkbox.checked is True
+              : "/static/images/checkbox-unchecked.png"; // False
+
+              parentOption.classList.remove("animate__animated", "animate__pulse", "animate__faster");
+              void parentOption.offsetWidth; // force reflow
+              parentOption.classList.add("animate__animated", "animate__pulse", "animate__faster");
+          };
+          updateImage();
+          
+          // When the checkbox is clicked
+          checkbox.addEventListener("change", updateImage);
+        });
+
         slider.addEventListener("input", updateSliderVisuals);
         window.addEventListener("resize", updateSliderVisuals);
         updateSliderVisuals(); // Initialize
+        
       });
 
       function openCloseComment() { // Open and close the comment popup
