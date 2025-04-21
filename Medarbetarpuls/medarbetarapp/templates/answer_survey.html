@@ -62,23 +62,38 @@
           
           <!-- Yes/No question (thumbs up/down) -->
           {% elif question.question_format == "yesno" %}
-            <input type="hidden" name="question_format" value="yesno" />
-            <label>
+            <div class="yesno-container">
+              <input type="hidden" name="question_format" value="yesno" />
+              <label>
+                {% if yes_no_answer %}
+                <input type="radio" name="yesno" value="True" checked required />
+                {% else %}
+                <input type="radio" name="yesno" value="True" required />
+                {% endif %}
+                <!-- Thumbs up -->
+                <img
+                src="{% static 'images/thumbs-up.png' %}"
+                alt="Ja"
+                class="yesno-img animate__animated"
+                >
+              </label>
+              <label>
               {% if yes_no_answer %}
-              <input type="radio" name="yesno" value="True" checked required />
-              {% else %}
-              <input type="radio" name="yesno" value="True" required />
-              {% endif %} Ja
-            </label>
-          <label>
-            {% if yes_no_answer %}
-              <input type="radio" name="yesno" value="False" required />
-              {% elif yes_no_answer == False %}
-              <input type="radio" name="yesno" value="False" checked required />
-              {% else %}
-              <input type="radio" name="yesno" value="False" required />
-              {% endif %} Nej
-          </label>
+                <input type="radio" name="yesno" value="False" required />
+                {% elif yes_no_answer == False %}
+                <input type="radio" name="yesno" value="False" checked required />
+                {% else %}
+                <input type="radio" name="yesno" value="False" required />
+                {% endif %}
+                <!-- Thumbs down -->
+                <img
+                src="{% static 'images/thumbs-down.png' %}"
+                alt="Nej"
+                class="yesno-img animate__animated"
+                >
+              </label>
+            </div>
+            
 
           <!-- Multiple choice question -->
           {% elif question.question_format == "multiplechoice" %}
@@ -148,56 +163,68 @@
       
         const slider = document.querySelector(".vertical-slider");
         const smiley = document.getElementById("smiley-icon");
-        // Remove previous animation classes
-        smiley.classList.remove("animate__bounce", "animate__pulse", "animate__faster", "animate__slower", "animate__fadeIn");
-
+        const yesnoImages = document.querySelectorAll(".yesno-img");
+      
         const updateSliderVisuals = () => {
-        const value = parseFloat(slider.value);
-        const max = parseFloat(slider.max);
-        const percentage = (value / max) * 100;
+          // Remove previous animation classes
+          smiley.classList.remove("animate__faster", "animate__slower", "animate__heartBeat");
+          const value = parseFloat(slider.value);
+          const max = parseFloat(slider.max);
+          const percentage = (value / max) * 100;
 
-        // Update gradient fill
-        slider.style.background = `linear-gradient(to right, #297CC9 0%, #58C5F4 ${percentage}%, #eee ${percentage}%, #eee 100%)`;
+          // Update gradient fill
+          slider.style.background = `linear-gradient(to right, #297CC9 0%, #58C5F4 ${percentage}%, #eee ${percentage}%, #eee 100%)`;
 
-        // Update smiley image and apply animation class based on value
-        let smileyURL = '/static/images/smiley-neutral.png';
-        if (value < 2){
-          smileyURL = '/static/images/smiley-sad.png';
-          smiley.classList.add("animate__animated", "animate__bounce", "animate__slower");
-        }
-        else if (value < 5) {
-          smileyURL = '/static/images/smiley-meh.png';
-          smiley.classList.add("animate__animated", "animate__pulse");
-        }
-        else if (value == 5) {
-          smileyURL ='/static/images/smiley-neutral.png';
-        }
-        else if (value < 8) {
-          smileyURL = '/static/images/smiley-happy.png';
-          smiley.classList.add("animate__animated", "animate__pulse");
-        }
-        else if (value < 9.9) {
-          smileyURL = '/static/images/smiley-superhappy.png';
-          smiley.classList.add("animate__animated", "animate__pulse", "animate__faster");
-        }
-        else {
-          smileyURL = '/static/images/smiley-superhappy.png';
-          // Trigger confetti
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-          });        
-        }
+          // Update smiley image and apply animation class based on value
+          let smileyURL = '/static/images/smiley-neutral.png';
+          if (value < 2){
+            smileyURL = '/static/images/smiley-sad.png';
+            smiley.classList.add("animate__animated", "animate__heartBeat", "animate__slower");
+          }
+          else if (value < 4.5) {
+            smileyURL = '/static/images/smiley-meh.png';
+            smiley.classList.add("animate__animated", "animate__heartBeat");
+          }
+          else if (value < 5.5) {
+            smileyURL ='/static/images/smiley-neutral.png';
+          }
+          else if (value < 8) {
+            smileyURL = '/static/images/smiley-happy.png';
+            smiley.classList.add("animate__animated", "animate__heartBeat");
+          }
+          else if (value < 9.9) {
+            smileyURL = '/static/images/smiley-superhappy.png';
+            smiley.classList.add("animate__animated", "animate__heartBeat", "animate__faster");
+          }
+          else {
+            smileyURL = '/static/images/smiley-superhappy.png';
+            // Trigger confetti
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+            });        
+          }
 
-        smiley.src = smileyURL;
-        // slider.clientWidth returns the slider's total width (height when rotated)
-        const smileyTop = (slider.offsetTop +  slider.clientWidth/2) + (1 - (value / max) *  slider.clientWidth) - 15 ; // 15 made it look the best
-        const smileyLeft = slider.offsetLeft + slider.offsetWidth / 2 - 25; // center it (25 half of the smiley width)
+          smiley.src = smileyURL;
+          // slider.clientWidth returns the slider's total width (height when rotated)
+          const smileyTop = (slider.offsetTop +  slider.clientWidth/2) + (1 - (value / max) *  slider.clientWidth) - 15 ; // 15 made it look the best
+          const smileyLeft = slider.offsetLeft + slider.offsetWidth / 2 - 25; // center it (25 half of the smiley width)
 
-        smiley.style.top = `${smileyTop}px`;
-        smiley.style.left = `${smileyLeft}px`;
+          smiley.style.top = `${smileyTop}px`;
+          smiley.style.left = `${smileyLeft}px`;
         };
+
+        // For yes/no-questions
+        yesnoImages.forEach(img => {
+          img.addEventListener("click", () => {
+            // Remove previous animation classes
+            img.classList.remove("animate__animated", "animate__rubberBand");           
+            void img.offsetWidth; // Force reflow to restart animation
+            // Add animation again
+            img.classList.add("animate__animated", "animate__rubberBand");
+          });
+        });
 
         slider.addEventListener("input", updateSliderVisuals);
         window.addEventListener("resize", updateSliderVisuals);
