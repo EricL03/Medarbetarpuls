@@ -31,6 +31,7 @@
         {% endif %}
           <!-- prettier-ignore -->
           {% csrf_token %}
+          <input type="hidden" name="action_type" id="actionType" value="" />
           <h2>{{ question.question }}</h2>
 
           <!-- Slider question -->
@@ -165,9 +166,9 @@
 
         <!-- Arrows (left & right) -->
       <div class="navigation-arrows">
-        <a href="{% url 'answer_survey' survey_result_id prev_question_index %}" class="arrow">&lt;</a>
+        <a href="#" class="arrow" onclick="submitForm('previous')">&lt;</a>
         <span class="question-counter">{{ question_index|add:1 }} / {{ total }}</span>
-        <a href="#" class="arrow" onclick="submitForm()">&gt;</a>
+        <a href="#" class="arrow" onclick="submitForm('next')">&gt;</a>
       </div>
     </div> 
     <script>
@@ -276,7 +277,8 @@
         }      
       }
 
-      function submitForm() {
+      function submitForm(action) {
+        document.getElementById('actionType').value = action;
         document.querySelector("form").requestSubmit(); // Triggers HTMX's hx-post
       }
     </script>
