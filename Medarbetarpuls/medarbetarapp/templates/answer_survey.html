@@ -142,7 +142,7 @@
           <!-- Button for when all questions are answered-->
           <div>
             {% if question_index|add:1 == total %}
-            <button type="submit" onclick="document.getElementById('submit_answers').value='submit'" data-requires-confirm="true" class="answer-survey-button">Skicka in svar</button>
+            <button type="submit" onclick="document.getElementById('submit_answers').value='submit'" class="answer-survey-button">Skicka in svar</button>
             {% endif %}
           </div>
         </form>
@@ -169,7 +169,7 @@
     <script>
         // Script for animations and opening/closing the comment section
         document.addEventListener("DOMContentLoaded", () => {
-      
+          
         const slider = document.querySelector(".vertical-slider");
         const smiley = document.getElementById("smiley-icon");
         const yesnoImages = document.querySelectorAll(".yesno-img");
@@ -278,26 +278,17 @@
         document.querySelector("form").requestSubmit(); // Triggers HTMX's hx-post
       }
 
-      function confirmIfFinal() {
+      document.body.addEventListener('htmx:configRequest', function (evt) {
         const source = document.getElementById('submit_answers').value;
 
         if (source === "submit") {
-          return confirm("{{ total_answers }} av {{ total }} frågor besvarade, är du säker på att du vill skicka in svaren?");
+          const shouldSubmit = confirm("{{ total_answers }} av {{ total }} frågor besvarade, är du säker på att du vill skicka in svaren?");
+          console.log("User confirmed?", shouldSubmit);
+          if (!shouldSubmit) {
+            evt.preventDefault(); // 🛑 Cancel the HTMX request
+          }
         }
-        return true;
-      }
-      
-      document.body.addEventListener('htmx:beforeRequest', function (evt) {
-      const triggerElement = evt.detail.elt;
-
-      // Only show confirm if element has the data flag
-      if (triggerElement.dataset.requiresConfirm === "true") {
-        const confirmed = confirm("{{ total_answers }} av {{ total }} frågor besvarade, är du säker på att du vill skicka in svaren?");
-        if (!confirmed) {
-          evt.preventDefault(); // 🛑 Cancel the submission
-        }
-      }
-    });
+      });
     </script>
   </body>
 </html>
