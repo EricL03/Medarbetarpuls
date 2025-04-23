@@ -17,21 +17,13 @@
   </head>
   <body>
     <div class="answer-survey-container">
-        {% if question_index|add:1 == total %}
-        <form
-          hx-post="{% url 'answer_survey' survey_result_id=survey_result_id question_index=question_index %}"
-          hx-trigger="submit"
-          hx-confirm="{{total_answers}} av {{total}} frågor besvarade, är du säker på att du vill skicka in svaren?"
-        >
-        {% else %}
         <form
           hx-post="{% url 'answer_survey' survey_result_id=survey_result_id question_index=question_index %}"
           hx-trigger="submit"
         >
-        {% endif %}
-          <!-- prettier-ignore -->
           {% csrf_token %}
           <input type="hidden" name="action_type" id="actionType" value="" />
+          <input type="hidden" id="submit_answers" name="submit_answers" value="" />
           <h2>{{ question.question }}</h2>
 
           <!-- Slider question -->
@@ -62,10 +54,13 @@
             <div class="popup-content textquestion">
               <input type="hidden" name="question_format" value="text" />
               <textarea name="text"
+              <!-- prettier-ignore -->
               {% if text_answer and text_answer != "None" %}
               value="{{ text_answer }}"
+              <!-- prettier-ignore -->
               {% else %}
               placeholder="Ditt svar..."
+              <!-- prettier-ignore -->
               {% endif %}required></textarea>
             </div>
           </div>
@@ -147,14 +142,13 @@
           <!-- Button for when all questions are answered-->
           <div>
             {% if question_index|add:1 == total %}
-            <button type="submit" class="answer-survey-button">Skicka in svar</button>
-            <input type="hidden" name="submit_answers" value="1" />
+            <button type="submit" onclick="document.getElementById('submit_answers').value='submit'" data-requires-confirm="true" class="answer-survey-button">Skicka in svar</button>
             {% endif %}
           </div>
         </form>
 
       <!-- Comment button -->
-          <div class="bottom-actions">
+        <div class="bottom-actions">
             <a href="#"  onclick="openCloseComment()" title="Kommentera">
               <img
                 src="{% static 'images/comment.png' %}"
@@ -171,6 +165,7 @@
         <a href="#" class="arrow" onclick="submitForm('next')">&gt;</a>
       </div>
     </div> 
+
     <script>
         // Script for animations and opening/closing the comment section
         document.addEventListener("DOMContentLoaded", () => {
@@ -279,8 +274,30 @@
 
       function submitForm(action) {
         document.getElementById('actionType').value = action;
+        document.getElementById('submit_answers').value = "navigate";
         document.querySelector("form").requestSubmit(); // Triggers HTMX's hx-post
       }
+
+      function confirmIfFinal() {
+        const source = document.getElementById('submit_answers').value;
+
+        if (source === "submit") {
+          return confirm("{{ total_answers }} av {{ total }} frågor besvarade, är du säker på att du vill skicka in svaren?");
+        }
+        return true;
+      }
+      
+      document.body.addEventListener('htmx:beforeRequest', function (evt) {
+      const triggerElement = evt.detail.elt;
+
+      // Only show confirm if element has the data flag
+      if (triggerElement.dataset.requiresConfirm === "true") {
+        const confirmed = confirm("{{ total_answers }} av {{ total }} frågor besvarade, är du säker på att du vill skicka in svaren?");
+        if (!confirmed) {
+          evt.preventDefault(); // 🛑 Cancel the submission
+        }
+      }
+    });
     </script>
   </body>
 </html>

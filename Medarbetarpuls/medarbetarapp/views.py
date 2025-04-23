@@ -249,7 +249,7 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
                 answer.save()
             
                 # All questions answered, submit answers and redirect
-                if submit_answers == "1": 
+                if submit_answers == "submit": 
                     survey_result.is_answered = True
                     survey_result.published_survey.collected_answer_count += 1 
                     survey_result.published_survey.save()
