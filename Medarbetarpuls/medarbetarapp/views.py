@@ -155,7 +155,7 @@ def add_employee_view(request):
                 email_instance.save()
                 email_instance.employee_groups.add(group)
                 user.survey_groups.add(group)
-            return HttpResponse(status=204)  # maybe should render back to my_org?
+            return HttpResponse(status=204)
 
     return render(
         request,

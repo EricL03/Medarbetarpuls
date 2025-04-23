@@ -41,8 +41,9 @@
               <tr>
                 <th>Namn</th>
                 <th>Mejladress</th>
-                <th>Grupp</th>
+                <th>Medarbetargrupp</th>
                 <th>Roll</th>
+                <th>Enkätgrupp</th>
                 <th></th>
                 <th></th>
                 <!-- Empty column for removal symbol -->
@@ -57,7 +58,12 @@
                   {% for group in employee.employee_groups.all %} {{ group.name}}{% if not forloop.last %}, {% endif %} {% endfor %}
                 </td>
                 <td>{{employee.user_role}}</td>
-
+                {% if employee.user_role == "surveycreator" %}
+                <td>{{employee.survey_groups}}</td>
+                {% else %}
+                <td>Fel roll</td>
+                {% endif %}
+                
                 <td>
                   <!-- Delete employee popup -->
                   <div
