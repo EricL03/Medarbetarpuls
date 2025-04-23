@@ -285,7 +285,7 @@
           const shouldSubmit = confirm("{{ total_answers }} av {{ total }} frågor besvarade, är du säker på att du vill skicka in svaren?");
           console.log("User confirmed?", shouldSubmit);
           if (!shouldSubmit) {
-            evt.preventDefault(); // 🛑 Cancel the HTMX request
+            evt.preventDefault();
           }
         }
       });
