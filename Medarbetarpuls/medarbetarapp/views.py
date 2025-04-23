@@ -45,10 +45,15 @@ def create_acc(request):
         password = request.POST.get("password")
         from_settings = request.POST.get("from_settings") == "true"
 
+        user = models.CustomUser.objects.filter(email=email).exists()
+        if user: 
+            # There already exists an user with this email
+            return HttpResponse("Det existerar redan en användare med denna mejladress", status=400)
+
         org = find_organization_by_email(email=email)
-        if org is None:
+        if not org:
             logger.error("This email is not authorized for registration.")
-            return HttpResponse(status=400)
+            return HttpResponse("Denna mejladress tillhör ej någon organisation", status=400)
 
         code = 123456   # make random later, just test now
         cache.set(f"verify_code_{email}", code, timeout=300)
@@ -506,7 +511,7 @@ def create_org(request) -> HttpResponse:
 
     Returns:
         HttpResponse: For POST, sends HX-Redirect header or standard redirect to "/authentication-org/"; 
-        for GET, sends HX-Redirect header or renders "create_org.html".
+        for GET, sends HX-Redirect header or renders "create_org.html". If this organization/admin account already exists, return error responese 400.
     """
     
     if request.method == "POST":
@@ -516,14 +521,18 @@ def create_org(request) -> HttpResponse:
         email = request.POST.get("email")
         password = request.POST.get("password")
 
-
         code = 123456 # make random later, just test now
         cache.set(f'verify_code_{email}', code, timeout=300)
 
+        user = models.CustomUser.objects.filter(email=email).exists()
+        if user: 
+            # There already exists an user with this email
+            return HttpResponse("Det existerar redan en användare med denna mejladress", status=400)
+            
         #Send email with the code to the user
         send_mail(
-            subject='Your Verification Code',
-            message=f'Your verification code is: {code}',
+            subject='Din verifieringskod',
+            message=f'Din verifieringskod är: {code}',
             from_email='medarbetarpuls@gmail.com',
             recipient_list=[email],
             fail_silently=False,
@@ -549,7 +558,6 @@ def create_org(request) -> HttpResponse:
             return HttpResponse(headers={"HX-Redirect": "/create_org/"})
         return render(request, "create_org.html")
     
-    #maybe implement error 400??
 
 
 @csrf_protect
@@ -1338,6 +1346,10 @@ def unanswered_surveys_view(request):
     )
 
 def find_organization_by_email(email: str) -> models.Organization | None:
+    org = models.EmailList.objects.filter(email=email).exists()
+    if not org:
+        # No organization found
+        return None  
     email_entry = get_object_or_404(models.EmailList, email=email)
     return email_entry.org  # Follow the ForeignKey to Organization
 

@@ -10,8 +10,8 @@
     
   </head>
   <body>
-    <div class="create-container">
-      {% include "topbar.html" with pagetitle=pagetitle %}
+    {% include "topbar.html" with pagetitle=pagetitle %}
+    <div class="create-container">    
       <button
         class="image-button"
         onclick="window.location.href='{% url 'my_org' %}'"
