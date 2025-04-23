@@ -9,21 +9,30 @@
     <link rel="stylesheet" href="{% static 'css/main.css' %}" />
   </head>
   <body>
-    {% include "topbar.html" with pagetitle=pagetitle %}
-    <div class="start-container">
+    <div class="main-container">
+      {% include "topbar.html" with pagetitle=pagetitle %}
       <div class="grid-container">
         <a href="{% url 'my_org' %}" class="grid-item pink">
-          <div class="icon">👥</div>
+            <img
+            src="{% static 'images/my-org.png' %}"
+            class="start-icon"
+              />
           <h2>Min organisation</h2>
           <p>Se och administrera din organisation</p>
         </a>
         <a href="{% url 'analysis' %}" class="grid-item green">
-          <div class="icon">📊</div>
+          <img
+          src="{% static 'images/analysis-surveys.png' %}"
+          class="start-icon"
+            />
           <h2>Analys</h2>
           <p>Analysera svar på dina utskickade enkäter</p>
         </a>
         <a href="{% url 'settings_admin' %}" class="grid-item blue">
-          <div class="icon">⚙️</div>
+            <img
+            src="{% static 'images/settings.png' %}"
+            class="start-icon"
+              />
           <h2>Inställningar</h2>
           <p>Dina personliga inställningar</p>
         </a>
