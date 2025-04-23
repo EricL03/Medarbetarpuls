@@ -288,9 +288,9 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
             total_answers += 1
 
     # Sometimes the extra one added at the begining will cause this to 
-    # be bigger than 4, do not wory about it :)
-    if total_answers > 4: 
-        total_answers = 4
+    # be bigger than amount of questions, do not wory about it :)
+    if total_answers > len(questions): 
+        total_answers = len(questions)
 
     return render(request, "answer_survey.html", {
         "question": question,
