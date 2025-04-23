@@ -820,7 +820,14 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             survey.save()
 
             # Copy all questions from the template to the survey
-            survey.questions.set(survey_temp.questions.all())
+            new_questions = []
+            for template_q in survey_temp.questions.all():
+                # clone_for_survey creates a fresh Question instance in the DB
+                new_q = template_q.clone_for_survey(survey)
+                new_questions.append(new_q)
+
+            # Link survey to its copies
+            survey.questions.set(new_questions)
             survey.save()
 
             # Only tries scheduling if we are on linux system!

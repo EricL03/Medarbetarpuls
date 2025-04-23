@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.core.mail import send_mail
 from django.db.models.manager import BaseManager
 from django.contrib.auth.models import (
@@ -339,6 +339,59 @@ class Question(models.Model):
     text_question = models.OneToOneField(
         TextQuestion, on_delete=models.CASCADE, null=True, blank=True
     )
+
+    def clone_for_survey(self, survey: Survey) -> "Question":
+        """
+        Make a deep‐copy of this Question for a new Survey, including
+        M2M links and any OneToOne “child” models.
+        """
+        # Wrap in a transaction so partial copies get rolled back on error
+        with transaction.atomic():
+            # Copy all field values except pk
+            data = {
+                f.name: getattr(self, f.name)
+                for f in self._meta.fields
+                if f.name not in ('id', 'pk')
+            }
+            # Remove any fields referring to child OneToOne we will handle those separately
+            for rel_name in (
+                'slider_question',
+                'multiple_choice_question',
+                'yes_no_question',
+                'text_question',
+            ):
+                data.pop(rel_name, None)
+
+            # Add link to question bank
+            data['bank_question'] = data.get('bank_question') 
+
+            # Create the new Question, pointing at the new survey 
+            new_q = Question.objects.create(**data)
+            # Add link to survey:
+            new_q.connected_surveys.set([survey])
+
+            # Copy each OneToOne “child” model if present:
+            one_to_one_fields = {
+                'slider_question': SliderQuestion,
+                'multiple_choice_question': MultipleChoiceQuestion,
+                'yes_no_question': YesNoQuestion,
+                'text_question': TextQuestion,
+            }
+            for field_name, model_cls in one_to_one_fields.items():
+                child = getattr(self, field_name, None)
+                if child is not None:
+                    # Build child data dict
+                    child_data = {
+                        f.name: getattr(child, f.name)
+                        for f in child._meta.fields
+                        if f.name not in ('id', 'pk', field_name) 
+                    }
+                    # Set the back‐reference to new_q
+                    child_data[field_name.replace('_question','')] = new_q
+                    # Create the cloned child
+                    model_cls.objects.create(**child_data)
+
+            return new_q
 
     @property
     def specific_question(self) -> BaseQuestionDetails | None:
