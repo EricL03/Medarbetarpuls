@@ -42,6 +42,7 @@
                 <th>Namn</th>
                 <th>Mejladress</th>
                 <th>Grupp</th>
+                <th>Roll</th>
                 <th></th>
                 <th></th>
                 <!-- Empty column for removal symbol -->
@@ -55,6 +56,7 @@
                 <td>
                   {% for group in employee.employee_groups.all %} {{ group.name}}{% if not forloop.last %}, {% endif %} {% endfor %}
                 </td>
+                <td>{{ employee.user_role }}</td>
 
                 <td>
                   <!-- Delete employee popup -->
