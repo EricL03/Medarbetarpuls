@@ -273,7 +273,8 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
         # Edge case where no answer yet exists, but we still 
         # want to display the options...
         if not answer.multiple_choice_answer: 
-            zipped = zip(question.multiple_choice_question.options, [False, False, False, False])
+            zipped = zip(question.multiple_choice_question.options, 
+                         [False for _ in question.multiple_choice_question.options])
         else: 
             zipped = zip(question.multiple_choice_question.options, answer.multiple_choice_answer)
     else: 
