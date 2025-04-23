@@ -1,5 +1,6 @@
 import logging
 import platform
+from xmlrpc.client import Boolean
 from . import models
 from django.db.models import Q
 from collections import Counter
@@ -41,6 +42,12 @@ def create_acc(request):
 
     if request.method == "POST":
         name = request.POST.get("name")
+        # Get the name on a nice looking form
+        correct_form_name = correct_name(name)
+        if not correct_form_name:
+            # Did not enter both firstname and lastname
+             return HttpResponse("Vänligen ange ditt namn på formen: Förnamn Efternamn", status=400)
+
         email = request.POST.get("email")
         password = request.POST.get("password")
         from_settings = request.POST.get("from_settings") == "true"
@@ -68,7 +75,7 @@ def create_acc(request):
 
         # Save potential user account data in session
         request.session["user_data"] = {
-            "name": name,
+            "name": correct_form_name,
             "password": password,
             "from_settings": from_settings,
         }
@@ -123,11 +130,11 @@ def add_employee_view(request):
                 editUser = models.CustomUser.objects.get(email=editUserMail)
                 editUser.employee_groups.add(group)
                 user.survey_groups.add(group)
-                return HttpResponse("Successful", status=200)
+                return HttpResponse(f"Lägger till i team {group.name}", status=200)
 
             else: 
                 logger.warning("User does not exist")
-                return HttpResponse("Användaren finns inte", status=400)
+                return HttpResponse("Fel mejladress", status=400)
         elif user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
             org = user.admin
 
@@ -931,16 +938,16 @@ def my_org_view(request):
         employee_groups__in=employee_groups
     ).distinct()
 
-    # Fånga sökterm
+    # Catch search word
     search_query = request.GET.get("search", "")
     if search_query:
         employees = employees.filter(
             Q(name__icontains=search_query) | Q(email__icontains=search_query)
         )
 
-    # Kolla om detta är en HTMX-request
+    # Check if it is a HTMX request
     if "HX-Request" in request.headers:
-        # Returnera bara tabell-rader
+        # Return only table rows
         return render(
             request,
             "my_org_table.html",
@@ -1352,6 +1359,25 @@ def find_organization_by_email(email: str) -> models.Organization | None:
         return None  
     email_entry = get_object_or_404(models.EmailList, email=email)
     return email_entry.org  # Follow the ForeignKey to Organization
+
+def correct_name(name: str) -> Boolean | str:
+    """
+        Checks if the given name is on the correct form
+        firstname lastname, i.e. with a blank space in between,
+        and returns the name on the form Firstname Lastname, or
+        False if the name is not correct.
+    """
+    res = ""
+    # Split on the blank space
+    first_last_name = name.split(' ') 
+    if len(first_last_name) == 1:
+        # No blank space found
+        return False
+    else:
+        # Turn the first character of every name to upper case
+        for name in first_last_name:
+            res += name.capitalize() + " "
+        return res
 
 def chart_view(request):
     SURVEY_ID = 3  # Choose which survey to show here
