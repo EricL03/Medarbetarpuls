@@ -6,7 +6,7 @@
     <script src="https://unpkg.com/htmx.org@1.8.4"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Inställningar</title>
+    <title>Min organisation</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}" />
   </head>
   <body>
@@ -56,7 +56,7 @@
                 <td>
                   {% for group in employee.employee_groups.all %} {{ group.name}}{% if not forloop.last %}, {% endif %} {% endfor %}
                 </td>
-                <td>{{ employee.user_role }}</td>
+                <td>{{employee.user_role}}</td>
 
                 <td>
                   <!-- Delete employee popup -->
