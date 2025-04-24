@@ -83,9 +83,47 @@ def create_acc(request):
         else:
             return render(request, "create_acc.html")
 
+@login_required
+@csrf_protect      
+def edit_employee_view(request):
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            email = request.POST.get("email")
+            user_role = request.POST.get("edit_user_role")
+            employee_group = request.POST.get("new_employee_group")
+            survey_group = request.POST.get("new_survey_group")
+            user = request.user
+            org = user.admin
+            edit_user = models.CustomUser.objects.get(email=email)
+            edit_user.user_role = user_role
+            edit_user.save()
+            if(employee_group):
+                if models.EmployeeGroup.objects.filter(name=employee_group).exists():
+                    group = models.EmployeeGroup.objects.get(name=employee_group)
+                else:
+                    # create new employee group
+                    group = models.EmployeeGroup(name=employee_group, organization=org)
+                    group.save()
+                edit_user.employee_groups.add(group)
+            
+            if(survey_group):
+                if models.EmployeeGroup.objects.filter(name=survey_group).exists():
+                    group = models.EmployeeGroup.objects.get(name=survey_group)
+                else:
+                    # create new employee group and tell the admin that they created
+                    # a new one and that it will be empty
+                    group = models.EmployeeGroup(name=survey_group, organization=org)
+                    group.save()
+                edit_user.survey_groups.add(group)
+
+
+            return HttpResponse(status=200)
+        
+    return HttpResponse(status=400)
+
 
 @login_required
-@csrf_exempt
+@csrf_protect
 def add_employee_view(request):
     """
     Adds the given email to the organization
@@ -103,29 +141,8 @@ def add_employee_view(request):
         email = request.POST.get("email")
         team = request.POST.get("team")
         user = request.user
-        editGroup = request.POST.get("edit_employee")
-        editName = request.POST.get("new_employee_group")
-        editUserMail = request.POST.get("employee")
-        if(editGroup == "true"):
-            if models.EmailList.objects.filter(email=editUserMail).exists():
-                org = user.admin
-                if models.EmployeeGroup.objects.filter(name=editName).exists():
-                        group = models.EmployeeGroup.objects.get(name=editName)
-                else:
-                    #create new employee group
-                    group = models.EmployeeGroup(name=editName, organization=org)
-                    group.save()
-                editUser = models.CustomUser.objects.get(email=editUserMail)
-                editUser.employee_groups.add(group)
-                user.survey_groups.add(group)
-                return HttpResponse("Successful", status=200)
-
-            else: 
-                logger.warning("User does not exist")
-                return HttpResponse("Användaren finns inte", status=400)
-        elif user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
+        if user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
             org = user.admin
-
             existing_user = models.CustomUser.objects.filter(email=email).first()
             if existing_user:
                 if not existing_user.is_active:
@@ -138,7 +155,7 @@ def add_employee_view(request):
                     email_instance = models.EmailList(email=email, org=org)
                     email_instance.save()
                     email_instance.employee_groups.add(group)
-                    user.survey_groups.add(group)
+                    #user.survey_groups.add(group) should not be used anymore 
                 else:
                     logger.error("Existing user already have an active account")
                     pass
@@ -154,7 +171,7 @@ def add_employee_view(request):
                 email_instance = models.EmailList(email=email, org=org)
                 email_instance.save()
                 email_instance.employee_groups.add(group)
-                user.survey_groups.add(group)
+                #user.survey_groups.add(group) should not be used anymore
             return HttpResponse(status=204)
 
     return render(
@@ -305,14 +322,11 @@ def resend_authentication_code_acc(request):
         source = request.POST.get("source")
         email = "not_defined"
         if(source=="from_account"):
-            print("from_account")
             email = request.session.get("email_two_factor_code")
         elif(source=="from_org"):
-            print("from_org")
             email = request.session.get("email_two_factor_code_org")
         if email == "not_defined":
             return HttpResponse("No email defined", 404)
-        print("here")
         code = 654321 # make random later, just test now
         cache.set(f'verify_code_{email}', code, timeout=300)
 
@@ -365,7 +379,14 @@ def authentication_acc_view(request):
                     return HttpResponse(status=400)
                 existing_user.is_active = True
                 existing_user.name = name
+                existing_user.user_role = models.UserRole.SURVEY_RESPONDER
                 existing_user.set_password(password)
+                existing_user.save()
+                # get the email and get the correct employeegroups
+                email_from_list = models.EmailList.objects.get(email=email)
+                group = email_from_list.employee_groups.all()
+                # add group to employee
+                existing_user.employee_groups.add(*group)
                 existing_user.save()
                 return HttpResponse(headers={"HX-Redirect": "/"})
                 # check for basegroup??
@@ -900,16 +921,19 @@ def my_org_view(request):
     organization = request.user.admin
 
     if request.method == "POST":
-        user_id = request.POST.get("user_id")
+        user_email = request.POST.get("delete_user_email")
         if request.user.user_role == models.UserRole.ADMIN:
-            employee_to_remove = models.CustomUser.objects.get(pk=user_id)
+            employee_to_remove = models.CustomUser.objects.get(email=user_email)
             print("removing ", employee_to_remove)
             employee_to_remove.is_active = False
             employee_to_remove.save()
+            employee_to_remove.survey_groups.clear()
+            employee_to_remove.save()
+
             # Get all employee_groups for this employee
             all_groups = employee_to_remove.employee_groups.all()
             # Remove all other groups except "Alla"
-            group_to_keep = models.EmployeeGroup.objects.get(name="Alla")
+            group_to_keep = models.EmployeeGroup.objects.filter(name="Alla").first()
             for group in all_groups:
                 if group != group_to_keep:
                     employee_to_remove.employee_groups.remove(group)
