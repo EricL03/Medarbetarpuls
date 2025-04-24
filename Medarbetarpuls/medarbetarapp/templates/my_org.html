@@ -199,6 +199,14 @@
       errorBox.textContent = message;
       errorBox.style.display = "block";
     } 
+     // Hide error box when user focuses on any input field
+     document.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("focus", () => {
+        if (errorBox) {
+          errorBox.style.display = "none";
+        }
+      });
     });
+  });
   </script>
 </html>

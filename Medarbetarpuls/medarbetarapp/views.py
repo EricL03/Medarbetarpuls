@@ -528,6 +528,11 @@ def create_org(request) -> HttpResponse:
         email = request.POST.get("email")
         password = request.POST.get("password")
 
+        correct_form_name = correct_name(name)
+        if not correct_form_name:
+            # Did not enter both firstname and lastname
+             return HttpResponse("Vänligen ange ditt namn på formen: Förnamn Efternamn", status=400)
+
         code = 123456 # make random later, just test now
         cache.set(f'verify_code_{email}', code, timeout=300)
 
@@ -767,7 +772,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 return render(
                     request,
                     "partials/error_message.html",
-                    {"message": "Felaktig arbetsgrupp vald!"},
+                    {"message": "Felaktig arbetsgrupp vald"},
                 )
 
             # Get the dates
@@ -793,6 +798,9 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             else:
                 sending_date = None
 
+            # Assuming survey deadline is converted to UTC-timezone
+            current_time = timezone.now()
+
             # Ensure dates have been set correctly
             if sending_date and deadline:
                 if deadline <= sending_date:
@@ -801,6 +809,15 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                         "partials/error_message.html",
                         {
                             "message": "Sista svarsdatum måste vara efter publiceringsdatum"
+                        },
+                        status=200,
+                    )
+                if sending_date.date() < current_time.date():
+                    return render(
+                        request,
+                        "partials/error_message.html",
+                        {
+                            "message": "Publiceringsdatum måste vara från och med idag"
                         },
                         status=200,
                     )
@@ -1208,12 +1225,15 @@ def settings_change_name(request):
         HttpResponse: Returns status 204 if all is good, otherwise 400
     """
 
-    # TODO: test user input
     if request.headers.get("HX-Request"):
         new_name = request.POST.get("name")
+        correct_form_name = correct_name(new_name)
+        if not correct_form_name:
+            # Did not enter both firstname and lastname
+             return HttpResponse("Vänligen ange ditt namn på formen: Förnamn Efternamn", status=400)
         email = request.user.email
         user = models.CustomUser.objects.filter(email=email).first()
-        user.name = new_name
+        user.name = correct_form_name
         user.save()
 
     if request.user.admin:
@@ -1306,8 +1326,6 @@ def start_admin_view(request):
 def survey_result_view(request, survey_id):
     survey_results = SurveyUserResult.objects.filter(id=survey_id).first()
 
-    # TODO: some analysis here before sending to survey_result?
-
     if survey_results is None:
         # This survey has no answers (should not even be displayed to the user then)
         return HttpResponse(400)
@@ -1364,19 +1382,21 @@ def correct_name(name: str) -> Boolean | str:
     """
         Checks if the given name is on the correct form
         firstname lastname, i.e. with a blank space in between,
-        and returns the name on the form Firstname Lastname, or
+        and returns the name on the form Firstname Lastname (str), or
         False if the name is not correct.
     """
     res = ""
     # Split on the blank space
     first_last_name = name.split(' ') 
-    if len(first_last_name) == 1:
-        # No blank space found
+    print(first_last_name)
+    if len(first_last_name) == 1 or first_last_name[1] == '':
+        # No blank space found or a blank space not followed by a last name
         return False
     else:
         # Turn the first character of every name to upper case
         for name in first_last_name:
             res += name.capitalize() + " "
+        # Return the name with the correct form
         return res
 
 def chart_view(request):
