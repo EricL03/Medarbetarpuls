@@ -1,5 +1,6 @@
 import logging
 import platform
+from xmlrpc.client import Boolean
 from . import models
 from django.db.models import Q, Max
 from django.utils import timezone
@@ -39,14 +40,27 @@ def create_acc(request):
 
     if request.method == "POST":
         name = request.POST.get("name")
+        # Get the name on a nice looking form
+        correct_form_name = correct_name(name)
+        if not correct_form_name:
+            # Did not enter both firstname and lastname
+             return HttpResponse("Vänligen ange ditt namn på formen: Förnamn Efternamn", status=400)
+
         email = request.POST.get("email")
         password = request.POST.get("password")
         from_settings = request.POST.get("from_settings") == "true"
 
+        user = models.CustomUser.objects.filter(email=email).exists()
+        if user: 
+            active_user = models.CustomUser.objects.get(email=email)
+            if active_user.is_active == True:
+                # There already exists an user with this email
+                return HttpResponse("Det existerar redan en användare med denna mejladress", status=400)
+
         org = find_organization_by_email(email=email)
-        if org is None:
+        if not org:
             logger.error("This email is not authorized for registration.")
-            return HttpResponse(status=400)
+            return HttpResponse("Denna mejladress tillhör ej någon organisation", status=400)
 
         code = 123456   # make random later, just test now
         cache.set(f"verify_code_{email}", code, timeout=300)
@@ -61,7 +75,7 @@ def create_acc(request):
 
         # Save potential user account data in session
         request.session["user_data"] = {
-            "name": name,
+            "name": correct_form_name,
             "password": password,
             "from_settings": from_settings,
         }
@@ -81,9 +95,47 @@ def create_acc(request):
         else:
             return render(request, "create_acc.html")
 
+@login_required
+@csrf_protect      
+def edit_employee_view(request):
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            email = request.POST.get("email")
+            user_role = request.POST.get("edit_user_role")
+            employee_group = request.POST.get("new_employee_group")
+            survey_group = request.POST.get("new_survey_group")
+            user = request.user
+            org = user.admin
+            edit_user = models.CustomUser.objects.get(email=email)
+            edit_user.user_role = user_role
+            edit_user.save()
+            if(employee_group):
+                if models.EmployeeGroup.objects.filter(name=employee_group).exists():
+                    group = models.EmployeeGroup.objects.get(name=employee_group)
+                else:
+                    # create new employee group
+                    group = models.EmployeeGroup(name=employee_group, organization=org)
+                    group.save()
+                edit_user.employee_groups.add(group)
+            
+            if(survey_group):
+                if models.EmployeeGroup.objects.filter(name=survey_group).exists():
+                    group = models.EmployeeGroup.objects.get(name=survey_group)
+                else:
+                    # create new employee group and tell the admin that they created
+                    # a new one and that it will be empty
+                    group = models.EmployeeGroup(name=survey_group, organization=org)
+                    group.save()
+                edit_user.survey_groups.add(group)
+
+
+            return HttpResponse(status=200)
+        
+    return HttpResponse(status=400)
+
 
 @login_required
-@csrf_exempt
+@csrf_protect
 def add_employee_view(request):
     """
     Adds the given email to the organization
@@ -101,29 +153,8 @@ def add_employee_view(request):
         email = request.POST.get("email")
         team = request.POST.get("team")
         user = request.user
-        editGroup = request.POST.get("edit_employee")
-        editName = request.POST.get("new_employee_group")
-        editUserMail = request.POST.get("employee")
-        if(editGroup == "true"):
-            if models.EmailList.objects.filter(email=editUserMail).exists():
-                org = user.admin
-                if models.EmployeeGroup.objects.filter(name=editName).exists():
-                        group = models.EmployeeGroup.objects.get(name=editName)
-                else:
-                    #create new employee group
-                    group = models.EmployeeGroup(name=editName, organization=org)
-                    group.save()
-                editUser = models.CustomUser.objects.get(email=editUserMail)
-                editUser.employee_groups.add(group)
-                user.survey_groups.add(group)
-                return HttpResponse("Successful", status=200)
-
-            else: 
-                logger.warning("User does not exist")
-                return HttpResponse("Användaren finns inte", status=400)
-        elif user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
+        if user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
             org = user.admin
-
             existing_user = models.CustomUser.objects.filter(email=email).first()
             if existing_user:
                 if not existing_user.is_active:
@@ -136,7 +167,7 @@ def add_employee_view(request):
                     email_instance = models.EmailList(email=email, org=org)
                     email_instance.save()
                     email_instance.employee_groups.add(group)
-                    user.survey_groups.add(group)
+                    #user.survey_groups.add(group) should not be used anymore 
                 else:
                     logger.error("Existing user already have an active account")
                     pass
@@ -152,8 +183,8 @@ def add_employee_view(request):
                 email_instance = models.EmailList(email=email, org=org)
                 email_instance.save()
                 email_instance.employee_groups.add(group)
-                user.survey_groups.add(group)
-            return HttpResponse(status=204)  # maybe should render back to my_org?
+                #user.survey_groups.add(group) should not be used anymore
+            return HttpResponse(status=204)
 
     return render(
         request,
@@ -314,14 +345,11 @@ def resend_authentication_code_acc(request):
         source = request.POST.get("source")
         email = "not_defined"
         if(source=="from_account"):
-            print("from_account")
             email = request.session.get("email_two_factor_code")
         elif(source=="from_org"):
-            print("from_org")
             email = request.session.get("email_two_factor_code_org")
         if email == "not_defined":
             return HttpResponse("No email defined", 404)
-        print("here")
         code = 654321 # make random later, just test now
         cache.set(f'verify_code_{email}', code, timeout=300)
 
@@ -374,7 +402,14 @@ def authentication_acc_view(request):
                     return HttpResponse(status=400)
                 existing_user.is_active = True
                 existing_user.name = name
+                existing_user.user_role = models.UserRole.SURVEY_RESPONDER
                 existing_user.set_password(password)
+                existing_user.save()
+                # get the email and get the correct employeegroups
+                email_from_list = models.EmailList.objects.get(email=email)
+                group = email_from_list.employee_groups.all()
+                # add group to employee
+                existing_user.employee_groups.add(*group)
                 existing_user.save()
                 return HttpResponse(headers={"HX-Redirect": "/"})
                 # check for basegroup??
@@ -515,7 +550,7 @@ def create_org(request) -> HttpResponse:
 
     Returns:
         HttpResponse: For POST, sends HX-Redirect header or standard redirect to "/authentication-org/"; 
-        for GET, sends HX-Redirect header or renders "create_org.html".
+        for GET, sends HX-Redirect header or renders "create_org.html". If this organization/admin account already exists, return error responese 400.
     """
     
     if request.method == "POST":
@@ -525,14 +560,23 @@ def create_org(request) -> HttpResponse:
         email = request.POST.get("email")
         password = request.POST.get("password")
 
+        correct_form_name = correct_name(name)
+        if not correct_form_name:
+            # Did not enter both firstname and lastname
+             return HttpResponse("Vänligen ange ditt namn på formen: Förnamn Efternamn", status=400)
 
         code = 123456 # make random later, just test now
         cache.set(f'verify_code_{email}', code, timeout=300)
 
+        user = models.CustomUser.objects.filter(email=email).exists()
+        if user: 
+            # There already exists an user with this email
+            return HttpResponse("Det existerar redan en användare med denna mejladress", status=400)
+            
         #Send email with the code to the user
         send_mail(
-            subject='Your Verification Code',
-            message=f'Your verification code is: {code}',
+            subject='Din verifieringskod',
+            message=f'Din verifieringskod är: {code}',
             from_email='medarbetarpuls@gmail.com',
             recipient_list=[email],
             fail_silently=False,
@@ -558,7 +602,6 @@ def create_org(request) -> HttpResponse:
             return HttpResponse(headers={"HX-Redirect": "/create_org/"})
         return render(request, "create_org.html")
     
-    #maybe implement error 400??
 
 
 @csrf_protect
@@ -844,7 +887,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 return render(
                     request,
                     "partials/error_message.html",
-                    {"message": "Felaktig arbetsgrupp vald!"},
+                    {"message": "Felaktig arbetsgrupp vald"},
                 )
 
             # Get the dates
@@ -870,6 +913,9 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             else:
                 sending_date = None
 
+            # Assuming survey deadline is converted to UTC-timezone
+            current_time = timezone.now()
+
             # Ensure dates have been set correctly
             if sending_date and deadline:
                 if deadline <= sending_date:
@@ -878,6 +924,15 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                         "partials/error_message.html",
                         {
                             "message": "Sista svarsdatum måste vara efter publiceringsdatum"
+                        },
+                        status=200,
+                    )
+                if sending_date.date() < current_time.date():
+                    return render(
+                        request,
+                        "partials/error_message.html",
+                        {
+                            "message": "Publiceringsdatum måste vara från och med idag"
                         },
                         status=200,
                     )
@@ -997,16 +1052,19 @@ def my_org_view(request):
     organization = request.user.admin
 
     if request.method == "POST":
-        user_id = request.POST.get("user_id")
+        user_email = request.POST.get("delete_user_email")
         if request.user.user_role == models.UserRole.ADMIN:
-            employee_to_remove = models.CustomUser.objects.get(pk=user_id)
+            employee_to_remove = models.CustomUser.objects.get(email=user_email)
             print("removing ", employee_to_remove)
             employee_to_remove.is_active = False
             employee_to_remove.save()
+            employee_to_remove.survey_groups.clear()
+            employee_to_remove.save()
+
             # Get all employee_groups for this employee
             all_groups = employee_to_remove.employee_groups.all()
             # Remove all other groups except "Alla"
-            group_to_keep = models.EmployeeGroup.objects.get(name="Alla")
+            group_to_keep = models.EmployeeGroup.objects.filter(name="Alla").first()
             for group in all_groups:
                 if group != group_to_keep:
                     employee_to_remove.employee_groups.remove(group)
@@ -1022,16 +1080,16 @@ def my_org_view(request):
         employee_groups__in=employee_groups
     ).distinct()
 
-    # Fånga sökterm
+    # Catch search word
     search_query = request.GET.get("search", "")
     if search_query:
         employees = employees.filter(
             Q(name__icontains=search_query) | Q(email__icontains=search_query)
         )
 
-    # Kolla om detta är en HTMX-request
+    # Check if it is a HTMX request
     if "HX-Request" in request.headers:
-        # Returnera bara tabell-rader
+        # Return only table rows
         return render(
             request,
             "my_org_table.html",
@@ -1292,12 +1350,15 @@ def settings_change_name(request):
         HttpResponse: Returns status 204 if all is good, otherwise 400
     """
 
-    # TODO: test user input
     if request.headers.get("HX-Request"):
         new_name = request.POST.get("name")
+        correct_form_name = correct_name(new_name)
+        if not correct_form_name:
+            # Did not enter both firstname and lastname
+             return HttpResponse("Vänligen ange ditt namn på formen: Förnamn Efternamn", status=400)
         email = request.user.email
         user = models.CustomUser.objects.filter(email=email).first()
-        user.name = new_name
+        user.name = correct_form_name
         user.save()
 
     if request.user.admin:
@@ -1390,8 +1451,6 @@ def start_admin_view(request):
 def survey_result_view(request, survey_id):
     survey_results = SurveyUserResult.objects.filter(id=survey_id).first()
 
-    # TODO: some analysis here before sending to survey_result?
-
     if survey_results is None:
         # This survey has no answers (should not even be displayed to the user then)
         return HttpResponse(400)
@@ -1437,8 +1496,33 @@ def unanswered_surveys_view(request):
     )
 
 def find_organization_by_email(email: str) -> models.Organization | None:
+    org = models.EmailList.objects.filter(email=email).exists()
+    if not org:
+        # No organization found
+        return None  
     email_entry = get_object_or_404(models.EmailList, email=email)
     return email_entry.org  # Follow the ForeignKey to Organization
+
+def correct_name(name: str) -> Boolean | str:
+    """
+        Checks if the given name is on the correct form
+        firstname lastname, i.e. with a blank space in between,
+        and returns the name on the form Firstname Lastname (str), or
+        False if the name is not correct.
+    """
+    res = ""
+    # Split on the blank space
+    first_last_name = name.split(' ') 
+    print(first_last_name)
+    if len(first_last_name) == 1 or first_last_name[1] == '':
+        # No blank space found or a blank space not followed by a last name
+        return False
+    else:
+        # Turn the first character of every name to upper case
+        for name in first_last_name:
+            res += name.capitalize() + " "
+        # Return the name with the correct form
+        return res
 
 def chart_view(request):
     SURVEY_ID = 3  # Choose which survey to show here
