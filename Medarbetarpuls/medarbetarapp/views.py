@@ -1,7 +1,7 @@
 import logging
 import platform
 from . import models
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.utils import timezone
 from django.db.models import Count
 from django.core.cache import cache
@@ -677,7 +677,20 @@ def edit_question_view(
             if question_id is None:
                 question: models.Question = models.Question()
                 question.save()
-                survey_temp.questions.add(question)
+
+                # Figure out the current max order for this survey
+                current_max = (
+                    models.QuestionOrder.objects
+                    .filter(survey_temp=survey_temp)
+                    .aggregate(m=Max('order'))
+                    .get('m') or 0
+                )
+
+                # The new questions order is one higher
+                next_order = current_max + 1
+
+                # Use through_defaults to set the right order
+                survey_temp.questions.add(question, through_defaults={'order': next_order})
             else:
                 question = survey_temp.questions.filter(id=question_id).first()
 

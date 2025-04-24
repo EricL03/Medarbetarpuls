@@ -321,7 +321,7 @@ class Question(models.Model):
     answers = OneToManyManager["Answer"]
 
     # Relationships to parent classes
-    survey_template = models.ManyToManyField(SurveyTemplate, related_name="questions")
+    survey_template = models.ManyToManyField(SurveyTemplate, related_name="questions", through="QuestionOrder")
     bank_question = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="question_bank", null=True
     )
@@ -484,3 +484,16 @@ class EmailList(models.Model):
 
     def __str__(self) -> str:
         return f"{self.email}"
+
+
+class QuestionOrder(models.Model):
+    survey_temp   = models.ForeignKey(SurveyTemplate, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    order    = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = (("survey_temp", "question"),)
+        ordering = ("order",)
+    
+    def __str__(self) -> str:
+        return f"{self.order}. {self.question}"
