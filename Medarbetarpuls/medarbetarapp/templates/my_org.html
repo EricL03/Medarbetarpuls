@@ -13,7 +13,7 @@
     <div class="main-container">
       {% include "topbar.html" with pagetitle="Min organisation" %}
       <div class="my-org-container">
-        <h1>{{ organization.name }}</h1>
+      <h1>{{ organization.name }}</h1>
 
         <div class="search-container">
         <!-- Form för att trigga sökning via HTMX -->
@@ -118,19 +118,31 @@
                     <a href="#" onclick="openEditUser('{{ employee.email }}','{{ employee.user_role }}')">
                       <span class="edit-icon">✏️</span></a
                     >
+                      {% csrf_token %}
+                      <input
+                        type="hidden"
+                        name="user_id"
+                        value="{{ employee.id }}"
+                      />
+                      <button type="submit" class="delete-button">
+                        Ta bort medarbetaren
+                      </button>
+                    </form>
                   </div>
                 </td>
                   {% endif %}
                 
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <a href="{% url 'add_employee' %}">
-          <button class="button">Lägg till medarbetare</button>
-        </a>
+
+                {% endif %}
+              
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
+      <a href="{% url 'add_employee' %}">
+        <button class="button">Lägg till medarbetare</button>
+      </a>
     </div>
     <!-- Edit user Popup -->
     <div id="edit-user-popup" class="popup-overlay" style="display: none">
@@ -180,7 +192,7 @@
             id="edit_employee"
             value="true"
           />
-          <div id="popup-error" style="color: red; margin-top: 10px;"></div>
+          <div id="popup-error" style="color: red; margin-top: 10px; font-weight: bold;"></div>
           <button
             type="submit">
             Lägg till
@@ -238,6 +250,14 @@
       errorBox.textContent = message;
       errorBox.style.display = "block";
     } 
+     // Hide error box when user focuses on any input field
+     document.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("focus", () => {
+        if (errorBox) {
+          errorBox.style.display = "none";
+        }
+      });
     });
+  });
   </script>
 </html>

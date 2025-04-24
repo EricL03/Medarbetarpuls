@@ -1,8 +1,8 @@
 import logging
 import platform
+from xmlrpc.client import Boolean
 from . import models
 from django.db.models import Q
-from collections import Counter
 from django.utils import timezone
 from django.db.models import Count
 from django.core.cache import cache
@@ -17,7 +17,6 @@ from django.shortcuts import redirect, render
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, When, IntegerField, Value
-from .models import Answer, Question, Survey, SurveyUserResult
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 
@@ -41,14 +40,25 @@ def create_acc(request):
 
     if request.method == "POST":
         name = request.POST.get("name")
+        # Get the name on a nice looking form
+        correct_form_name = correct_name(name)
+        if not correct_form_name:
+            # Did not enter both firstname and lastname
+             return HttpResponse("Vänligen ange ditt namn på formen: Förnamn Efternamn", status=400)
+
         email = request.POST.get("email")
         password = request.POST.get("password")
         from_settings = request.POST.get("from_settings") == "true"
 
+        user = models.CustomUser.objects.filter(email=email).exists()
+        if user: 
+            # There already exists an user with this email
+            return HttpResponse("Det existerar redan en användare med denna mejladress", status=400)
+
         org = find_organization_by_email(email=email)
-        if org is None:
+        if not org:
             logger.error("This email is not authorized for registration.")
-            return HttpResponse(status=400)
+            return HttpResponse("Denna mejladress tillhör ej någon organisation", status=400)
 
         code = 123456   # make random later, just test now
         cache.set(f"verify_code_{email}", code, timeout=300)
@@ -63,7 +73,7 @@ def create_acc(request):
 
         # Save potential user account data in session
         request.session["user_data"] = {
-            "name": name,
+            "name": correct_form_name,
             "password": password,
             "from_settings": from_settings,
         }
@@ -246,6 +256,7 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
         if request.headers.get("HX-Request"):
             question_format: models.QuestionFormat = request.POST.get("question_format")
             submit_answers: str = request.POST.get("submit_answers")
+            action = request.POST.get("action_type")
 
             # Save the format specific answer
             if question_format is not None:
@@ -267,7 +278,7 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
                 answer.save()
             
                 # All questions answered, submit answers and redirect
-                if submit_answers == "1": 
+                if submit_answers == "submit": 
                     survey_result.is_answered = True
                     survey_result.published_survey.collected_answer_count += 1 
                     survey_result.published_survey.save()
@@ -276,8 +287,12 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
                     # Redirect to unanswered surveys page after completion
                     return HttpResponse(headers={"HX-Redirect": "/unanswered-surveys/"})  
                 
-                # Redirect to next question
-                return HttpResponse(headers={"HX-Redirect": "/survey/" + str(survey_result.id) + "/question/" + str(question_index+1)})  
+                if action == "previous":
+                    # Redirect to previous question
+                    return HttpResponse(headers={"HX-Redirect": "/survey/" + str(survey_result.id) + "/question/" + str(prev_question_index)})  
+                elif action == "next":
+                    # Redirect to next question
+                    return HttpResponse(headers={"HX-Redirect": "/survey/" + str(survey_result.id) + "/question/" + str(next_question_index)})  
             
             return HttpResponse(status=400)
 
@@ -287,7 +302,8 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
         # Edge case where no answer yet exists, but we still 
         # want to display the options...
         if not answer.multiple_choice_answer: 
-            zipped = zip(question.multiple_choice_question.options, [False, False, False, False])
+            zipped = zip(question.multiple_choice_question.options, 
+                         [False for _ in question.multiple_choice_question.options])
         else: 
             zipped = zip(question.multiple_choice_question.options, answer.multiple_choice_answer)
     else: 
@@ -300,6 +316,11 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
     for ans in answers: 
         if ans.is_answered:  
             total_answers += 1
+
+    # Sometimes the extra one added at the begining will cause this to 
+    # be bigger than amount of questions, do not wory about it :)
+    if total_answers > len(questions): 
+        total_answers = len(questions)
 
     return render(request, "answer_survey.html", {
         "question": question,
@@ -527,7 +548,7 @@ def create_org(request) -> HttpResponse:
 
     Returns:
         HttpResponse: For POST, sends HX-Redirect header or standard redirect to "/authentication-org/"; 
-        for GET, sends HX-Redirect header or renders "create_org.html".
+        for GET, sends HX-Redirect header or renders "create_org.html". If this organization/admin account already exists, return error responese 400.
     """
     
     if request.method == "POST":
@@ -537,14 +558,23 @@ def create_org(request) -> HttpResponse:
         email = request.POST.get("email")
         password = request.POST.get("password")
 
+        correct_form_name = correct_name(name)
+        if not correct_form_name:
+            # Did not enter both firstname and lastname
+             return HttpResponse("Vänligen ange ditt namn på formen: Förnamn Efternamn", status=400)
 
         code = 123456 # make random later, just test now
         cache.set(f'verify_code_{email}', code, timeout=300)
 
+        user = models.CustomUser.objects.filter(email=email).exists()
+        if user: 
+            # There already exists an user with this email
+            return HttpResponse("Det existerar redan en användare med denna mejladress", status=400)
+            
         #Send email with the code to the user
         send_mail(
-            subject='Your Verification Code',
-            message=f'Your verification code is: {code}',
+            subject='Din verifieringskod',
+            message=f'Din verifieringskod är: {code}',
             from_email='medarbetarpuls@gmail.com',
             recipient_list=[email],
             fail_silently=False,
@@ -570,7 +600,6 @@ def create_org(request) -> HttpResponse:
             return HttpResponse(headers={"HX-Redirect": "/create_org/"})
         return render(request, "create_org.html")
     
-    #maybe implement error 400??
 
 
 @csrf_protect
@@ -773,7 +802,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 return render(
                     request,
                     "partials/error_message.html",
-                    {"message": "Felaktig arbetsgrupp vald!"},
+                    {"message": "Felaktig arbetsgrupp vald"},
                 )
 
             # Get the dates
@@ -799,6 +828,9 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             else:
                 sending_date = None
 
+            # Assuming survey deadline is converted to UTC-timezone
+            current_time = timezone.now()
+
             # Ensure dates have been set correctly
             if sending_date and deadline:
                 if deadline <= sending_date:
@@ -807,6 +839,15 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                         "partials/error_message.html",
                         {
                             "message": "Sista svarsdatum måste vara efter publiceringsdatum"
+                        },
+                        status=200,
+                    )
+                if sending_date.date() < current_time.date():
+                    return render(
+                        request,
+                        "partials/error_message.html",
+                        {
+                            "message": "Publiceringsdatum måste vara från och med idag"
                         },
                         status=200,
                     )
@@ -879,18 +920,16 @@ def login_view(request):
             logger.debug("User %e has role: %e", email, user.user_role)
             if user.is_active:
                 login(request, user)
-                if user.user_role == models.UserRole.ADMIN:
-                    response = HttpResponse()
+                response = HttpResponse(status=200)
+                if user.user_role == models.UserRole.ADMIN: 
                     response["HX-Redirect"] = "/start-admin/"
                     logger.debug("Admin %e successfully logged in.", email)
                     return response
                 elif user.user_role == models.UserRole.SURVEY_RESPONDER: 
-                    response = HttpResponse()
                     response["HX-Redirect"] = "/start-user/"
                     logger.debug("User %e successfully logged in.", email)
                     return response
                 else:
-                    response = HttpResponse()
                     response["HX-Redirect"] = "/start-creator/"
                     logger.debug("User %e successfully logged in.", email)
                     return response
@@ -949,16 +988,16 @@ def my_org_view(request):
         employee_groups__in=employee_groups
     ).distinct()
 
-    # Fånga sökterm
+    # Catch search word
     search_query = request.GET.get("search", "")
     if search_query:
         employees = employees.filter(
             Q(name__icontains=search_query) | Q(email__icontains=search_query)
         )
 
-    # Kolla om detta är en HTMX-request
+    # Check if it is a HTMX request
     if "HX-Request" in request.headers:
-        # Returnera bara tabell-rader
+        # Return only table rows
         return render(
             request,
             "my_org_table.html",
@@ -1219,12 +1258,15 @@ def settings_change_name(request):
         HttpResponse: Returns status 204 if all is good, otherwise 400
     """
 
-    # TODO: test user input
     if request.headers.get("HX-Request"):
         new_name = request.POST.get("name")
+        correct_form_name = correct_name(new_name)
+        if not correct_form_name:
+            # Did not enter both firstname and lastname
+             return HttpResponse("Vänligen ange ditt namn på formen: Förnamn Efternamn", status=400)
         email = request.user.email
         user = models.CustomUser.objects.filter(email=email).first()
-        user.name = new_name
+        user.name = correct_form_name
         user.save()
 
     if request.user.admin:
@@ -1317,8 +1359,6 @@ def start_admin_view(request):
 def survey_result_view(request, survey_id):
     survey_results = SurveyUserResult.objects.filter(id=survey_id).first()
 
-    # TODO: some analysis here before sending to survey_result?
-
     if survey_results is None:
         # This survey has no answers (should not even be displayed to the user then)
         return HttpResponse(400)
@@ -1364,8 +1404,33 @@ def unanswered_surveys_view(request):
     )
 
 def find_organization_by_email(email: str) -> models.Organization | None:
+    org = models.EmailList.objects.filter(email=email).exists()
+    if not org:
+        # No organization found
+        return None  
     email_entry = get_object_or_404(models.EmailList, email=email)
     return email_entry.org  # Follow the ForeignKey to Organization
+
+def correct_name(name: str) -> Boolean | str:
+    """
+        Checks if the given name is on the correct form
+        firstname lastname, i.e. with a blank space in between,
+        and returns the name on the form Firstname Lastname (str), or
+        False if the name is not correct.
+    """
+    res = ""
+    # Split on the blank space
+    first_last_name = name.split(' ') 
+    print(first_last_name)
+    if len(first_last_name) == 1 or first_last_name[1] == '':
+        # No blank space found or a blank space not followed by a last name
+        return False
+    else:
+        # Turn the first character of every name to upper case
+        for name in first_last_name:
+            res += name.capitalize() + " "
+        # Return the name with the correct form
+        return res
 
 def chart_view(request):
     SURVEY_ID = 3  # Choose which survey to show here
