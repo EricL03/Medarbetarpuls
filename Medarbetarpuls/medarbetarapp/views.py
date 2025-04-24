@@ -606,10 +606,12 @@ def move_question_left(request, survey_temp_id, question_id):
         q_order.order, prev.order = prev.order, q_order.order
         q_order.save()
         prev.save()
+    
+    context = {
+        'survey_temp': survey_temp,
+    }
 
-    return HttpResponse(
-        headers={"HX-Redirect": "/create-survey/" + str(survey_temp_id)}
-    )
+    return render(request, 'partials/question-list.html', context)
 
 
 @csrf_protect
@@ -630,9 +632,11 @@ def move_question_right(request, survey_temp_id, question_id):
         q_order.save()
         nxt.save()
 
-    return HttpResponse(
-        headers={"HX-Redirect": "/create-survey/" + str(survey_temp_id)}
-    )
+    context = {
+        'survey_temp': survey_temp,
+    }
+
+    return render(request, 'partials/question-list.html', context)
 
 
 def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:

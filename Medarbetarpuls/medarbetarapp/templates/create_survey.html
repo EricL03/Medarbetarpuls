@@ -24,16 +24,6 @@
       <div class="grid-container" id="question-list">
         <!-- Make all of this dynamic -->
         {% for question in survey_temp.get_ordered_questions %}
-        <form
-          hx-post="{% url 'move_question_left' survey_temp.id question.id %}"
-          hx-trigger="submit"
-          hx-target="#question-list"
-          hx-swap="outerHTML"
-          class="px-2"
-        >
-          {% csrf_token %}
-          <button type="submit">&larr;</button>
-        </form>
         <a
           href="{% url 'edit_question' survey_temp.id question.question_format question.id %}"
           class="grid-item blue"
@@ -58,24 +48,35 @@
           </div>
 
           <div class="question-result">
+            <form
+              hx-post="{% url 'move_question_left' survey_temp.id question.id %}"
+              hx-trigger="submit"
+              hx-target="#question-list"
+              hx-swap="outerHTML"
+              class="px-2"
+            >
+              {% csrf_token %}
+              <button type="submit">&larr;</button>
+            </form>
+
             <img
               src="{% static 'images/' %}{{ question.question_format }}.png"
               alt="{{ question.question_format.label }} image"
               class="question-icon"
             />
+
+            <form
+              hx-post="{% url 'move_question_right' survey_temp.id question.id %}"
+              hx-trigger="submit"
+              hx-target="#question-list"
+              hx-swap="outerHTML"
+              class="px-2"
+            >
+              {% csrf_token %}
+              <button type="submit">&rarr;</button>
+            </form>
           </div>
         </a>
-
-        <form
-          hx-post="{% url 'move_question_right' survey_temp.id question.id %}"
-          hx-trigger="submit"
-          hx-target="#question-list"
-          hx-swap="outerHTML"
-          class="px-2"
-        >
-          {% csrf_token %}
-          <button type="submit">&rarr;</button>
-        </form>
         {% endfor %}
 
         <a
@@ -218,6 +219,17 @@
       </div>
     </div>
     <script>
+      const questions = document.querySelectorAll('.question');
+
+      // When moving questions, add a class to trigger the animation
+      questions.forEach(question => {
+        question.classList.add('move-up');
+
+        // Remove class after animation ends (optional)
+        setTimeout(() => {
+          question.classList.remove('move-up');
+        }, 300);  // Adjust timing to match the transition duration
+
       function openPopup() {
         document.getElementById("publish-popup").style.display = "flex";
       }
