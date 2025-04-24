@@ -589,12 +589,21 @@ def delete_question(request, question_id: int, survey_id: int) -> HttpResponse:
 
 @csrf_protect
 @login_required
-def move_question_left(request, survey_temp_id, question_id):
-    survey_temp = get_object_or_404(models.SurveyTemplate, pk=survey_temp_id)
-    q_order = get_object_or_404(models.QuestionOrder, survey_temp=survey_temp, question_id=question_id)
+def move_question_left(request, survey_temp_id: int, question_id: int) -> HttpResponse:
+    """
+    Moves the selected question to the left if possible
+
+    Args:
+        survey_temp_id (int): The id of the opened survey
+        question_id (int): The id of the clicked question
+    Returns:
+        HttpResponse: Renders a copy of the question-list 
+    """
+    survey_temp: models.SurveyTemplate = get_object_or_404(models.SurveyTemplate, pk=survey_temp_id)
+    q_order: models.QuestionOrder = get_object_or_404(models.QuestionOrder, survey_temp=survey_temp, question_id=question_id)
 
     # Find the immediate predecessor
-    prev = (
+    prev: models.QuestionOrder = (
         models.QuestionOrder.objects
         .filter(survey_temp=survey_temp, order__lt=q_order.order)
         .order_by('-order')
@@ -616,12 +625,21 @@ def move_question_left(request, survey_temp_id, question_id):
 
 @csrf_protect
 @login_required
-def move_question_right(request, survey_temp_id, question_id):
-    survey_temp = get_object_or_404(models.SurveyTemplate, pk=survey_temp_id)
-    q_order = get_object_or_404(models.QuestionOrder, survey_temp=survey_temp, question_id=question_id)
+def move_question_right(request, survey_temp_id: int, question_id: int) -> HttpResponse:
+    """
+    Moves the selected question to the right if possible
+
+    Args:
+        survey_temp_id (int): The id of the opened survey
+        question_id (int): The id of the clicked question
+    Returns:
+        HttpResponse: Renders a copy of the question-list 
+    """
+    survey_temp: models.SurveyTemplate = get_object_or_404(models.SurveyTemplate, pk=survey_temp_id)
+    q_order: models.QuestionOrder = get_object_or_404(models.QuestionOrder, survey_temp=survey_temp, question_id=question_id)
 
     # Find the immediate successor
-    nxt = (
+    nxt: models.QuestionOrder = (
         models.QuestionOrder.objects
         .filter(survey_temp=survey_temp, order__gt=q_order.order)
         .order_by('order')
