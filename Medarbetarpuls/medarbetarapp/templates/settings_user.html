@@ -14,7 +14,7 @@
       <!-- Go back button-->
       <button
         class="image-button"
-        onclick="navigateBack()"
+        onclick="navigateBack('{{user.user_role}}')"
       >
         <img
           src="{% static 'images/go-back-btn.png' %}"
@@ -22,7 +22,7 @@
           class="back-icon"
         />
       </button>
-      
+
       <!-- Change later, if time, so user.profile_pic shows here (or default) -->
       <div class="info-table">
         <div class="table-header">Inloggningsuppgifter</div>
@@ -181,13 +181,18 @@
           document.getElementById("edit-pass-popup").style.display = "none";
       }
 
-      function navigateBack() {
+      function navigateBack(user_role) {
         // The previous URL that linked to this page
         let previousUrl = document.referrer;
         if (previousUrl) {
           if (previousUrl.includes("settings")){
-            // We do not want to go here again since will become a loop then
-            previousUrl = '/start-user/';
+            // Avoid redirecting back to this page to prevent an infinite loop
+            if (user_role == "surveycreator"){
+                previousUrl = '/start-creator/';
+            }               
+            else{
+                previousUrl = '/start-user/';
+            }
           }
           window.location.href = previousUrl;
         } else {

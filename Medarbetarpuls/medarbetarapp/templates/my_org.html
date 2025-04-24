@@ -224,7 +224,7 @@
       let previousUrl = document.referrer;
       if (previousUrl) {
         if (previousUrl.includes("add-employee")){
-          // We do not want to go here again since will become a loop then
+          // Avoid redirecting back to this page to prevent an infinite loop
           previousUrl = '/start-admin/';
         }
         window.location.href = previousUrl;
