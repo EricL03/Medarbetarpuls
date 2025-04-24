@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from celery.schedules import crontab
 import os
 
 
@@ -205,3 +206,13 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
+
+# For scheduling periodic tasks
+CELERY_BEAT_SCHEDULE = {
+    'send_notifications': {
+        'task': 'medarbetarapp.tasks.send_notifications',
+        #'schedule': crontab(hour=0, minute=0, day_of_week='monday'),  # Every Monday at midnight
+        'schedule': crontab(hour=23, minute=55),  
+    },
+    # You can add other periodic tasks here
+}

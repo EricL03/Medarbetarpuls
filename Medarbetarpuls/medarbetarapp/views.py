@@ -950,6 +950,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 creator=user,
                 deadline=deadline,
                 sending_date=sending_date,
+                last_notification=current_time, 
                 is_viewable=is_public,
                 is_anonymous=is_anonymous,
             )

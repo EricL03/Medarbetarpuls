@@ -8,6 +8,7 @@ from django.contrib.auth.models import (
 )
 import logging
 from typing import cast
+from django.utils import timezone
 
 
 logger = logging.getLogger(__name__)
@@ -186,6 +187,7 @@ class Survey(models.Model):
     sending_date = (
         models.DateTimeField()
     )  # stores both date and time (e.g., YYYY-MM-DD HH:MM:SS)
+    last_notification = models.DateTimeField() 
     collected_answer_count = models.IntegerField(default=0)  # pyright: ignore
     published_count = models.IntegerField(default=0)  # pyright: ignore
     is_viewable = models.BooleanField(default=True)  # pyright: ignore
@@ -213,6 +215,7 @@ class Survey(models.Model):
 
         # Saves the amount of users this survey has been sent to
         self.published_count = count
+        self.last_notification = timezone.now() 
         self.save()
 
         # Send email to notify
