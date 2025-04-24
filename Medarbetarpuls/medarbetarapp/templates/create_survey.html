@@ -218,18 +218,8 @@
         </form>
       </div>
     </div>
+
     <script>
-      const questions = document.querySelectorAll('.question');
-
-      // When moving questions, add a class to trigger the animation
-      questions.forEach(question => {
-        question.classList.add('move-up');
-
-        // Remove class after animation ends (optional)
-        setTimeout(() => {
-          question.classList.remove('move-up');
-        }, 300);  // Adjust timing to match the transition duration
-
       function openPopup() {
         document.getElementById("publish-popup").style.display = "flex";
       }
