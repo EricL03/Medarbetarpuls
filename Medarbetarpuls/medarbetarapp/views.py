@@ -587,6 +587,54 @@ def delete_question(request, question_id: int, survey_id: int) -> HttpResponse:
     return HttpResponse(status=400)  # Bad request if no expression
 
 
+@csrf_protect
+@login_required
+def move_question_left(request, survey_temp_id, question_id):
+    survey_temp = get_object_or_404(models.SurveyTemplate, pk=survey_temp_id)
+    q_order = get_object_or_404(models.QuestionOrder, survey_temp=survey_temp, question_id=question_id)
+
+    # Find the immediate predecessor
+    prev = (
+        models.QuestionOrder.objects
+        .filter(survey_temp=survey_temp, order__lt=q_order.order)
+        .order_by('-order')
+        .first()
+    )
+
+    if prev:
+        # swap their order values
+        q_order.order, prev.order = prev.order, q_order.order
+        q_order.save()
+        prev.save()
+
+    return HttpResponse(
+        headers={"HX-Redirect": "/create-survey/" + str(survey_temp_id)}
+    )
+
+
+@csrf_protect
+@login_required
+def move_question_right(request, survey_temp_id, question_id):
+    survey_temp = get_object_or_404(models.SurveyTemplate, pk=survey_temp_id)
+    q_order = get_object_or_404(models.QuestionOrder, survey_temp=survey_temp, question_id=question_id)
+
+    # Find the immediate successor
+    nxt = (
+        models.QuestionOrder.objects
+        .filter(survey_temp=survey_temp, order__gt=q_order.order)
+        .order_by('order')
+        .first()
+    )
+    if nxt:
+        q_order.order, nxt.order = nxt.order, q_order.order
+        q_order.save()
+        nxt.save()
+
+    return HttpResponse(
+        headers={"HX-Redirect": "/create-survey/" + str(survey_temp_id)}
+    )
+
+
 def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
     """
     Creates a survey template. If no survey_id is given, a new
@@ -834,7 +882,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
 
             # Copy all questions from the template to the survey
             new_questions = []
-            for template_q in survey_temp.questions.all():
+            for template_q in survey_temp.get_ordered_questions():
                 # clone_for_survey creates a fresh Question instance in the DB
                 new_q = template_q.clone_for_survey(survey)
                 new_questions.append(new_q)

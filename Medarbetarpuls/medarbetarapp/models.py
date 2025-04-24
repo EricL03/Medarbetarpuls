@@ -245,6 +245,9 @@ class SurveyTemplate(models.Model):
         null=True,
     )
 
+    def get_ordered_questions(self):
+        return self.questions.all().order_by('questionorder__order')
+
     def __str__(self) -> str:
         return f"{self.name} ({self.creator})"
 
