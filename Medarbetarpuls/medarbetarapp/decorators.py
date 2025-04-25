@@ -13,11 +13,11 @@ def allowed_roles(*allowed_roles):
             print("User: ", request.user.user_role,)
             if request.user.user_role not in allowed_roles:
                 if(request.user.user_role == 'admin'):
-                    return redirect('start-admin/')
+                    return redirect('/start-admin/')
                 elif(request.user.user_role == 'surveycreator'):
-                    return redirect('start-creator/')
+                    return redirect('/start-creator/')
                 else:
-                    return redirect('start-user/')
+                    return redirect('/start-user/')
             return view_func(request, *args, **kwargs)
         return _wrapped_view
     return decorator
@@ -29,7 +29,12 @@ def logout_required():
         # what type and how many args that view takes
         def _wrapped_view(request, *args, **kwargs):
             if request.user.is_authenticated:
-                return redirect('start-admin/')  # Redirect to home or another page
+                if(request.user.user_role == 'admin'):
+                    return redirect('/start-admin/')
+                elif(request.user.user_role == 'surveycreator'):
+                    return redirect('/start-creator/')
+                else:
+                    return redirect('/start-user/')
             return view_func(request, *args, **kwargs)
         return _wrapped_view
     return decorator
