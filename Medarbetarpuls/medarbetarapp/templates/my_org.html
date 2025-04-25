@@ -11,12 +11,23 @@
   </head>
   <body>
     <div class="main-container">
-      {% include "topbar.html" with pagetitle="Min organisation" %}
+      {% include "topbar.html" with pagetitle=pagetitle %}
       <div class="my-org-container">
       <h1>{{ organization.name }}</h1>
+      <!-- Go back button-->
+      <button
+        class="image-button"
+        onclick="navigateBack()"
+      >
+        <img
+          src="{% static 'images/go-back-btn.png' %}"
+          alt="Gå Tillbaka"
+          class="back-icon"
+        />
+      </button>
 
         <div class="search-container">
-        <!-- Form för att trigga sökning via HTMX -->
+          <!-- Form för att trigga sökning via HTMX -->
           <form
             id="searchForm"
             hx-get="{% url 'my_org' %}"
@@ -50,7 +61,9 @@
               </tr>
             </thead>
             <tbody id="employeeTable">
-              {% for employee in employees %} {% if employee.is_active %}
+              {% for employee in employees %}
+              <!---->
+              {% if employee.is_active %}
               <tr>
                 <td>{{ employee.name }}</td>
                 <td>{{ employee.email }}</td>
@@ -59,7 +72,13 @@
                     {{ group.name}}{% if not forloop.last %},{% endif %} 
                   {% endfor %}
                 </td>
-                <td>{{employee.user_role}}</td>
+                <td>
+                  {% if employee.user_role == "surveycreator" %}
+                  Enkätskapare
+                  {% else %}
+                  Enkätsvarare
+                  {% endif %}
+                </td>
                 {% if employee.user_role == "surveycreator" %}
                 <td>
                   {% for group in employee.survey_groups.all %}
@@ -67,7 +86,7 @@
                   {% endfor %}
                 </td>
                 {% else %}
-                <td>Fel roll</td>
+                <td>———</td>
                 {% endif %}
                 
                 <td>
@@ -82,8 +101,9 @@
                         Är du säker på att du vill ta bort den här medarbetaren?
                       </h3>
                       <p>
-                        Kontot kommer att raderas, och om personen vill återvända
-                        till organisationen måste du bjuda in hen på nytt.
+                        Kontot kommer att raderas, och om personen vill
+                        återvända till organisationen måste du bjuda in hen på
+                        nytt.
                       </p>
                       <button type="button" onclick="closeConfirmDelete()">
                         Avbryt
@@ -129,7 +149,7 @@
         </table>
       </div>
       <a href="{% url 'add_employee' %}">
-        <button class="button">Lägg till medarbetare</button>
+        <button class="default-button">Lägg till medarbetare</button>
       </a>
     </div>
     <!-- Edit user Popup -->
@@ -161,12 +181,12 @@
           <select
           id="edit_user_role"
           name="edit_user_role">
-            <option value="surveyresponder">EnkätSvarare</option>
-            <option value="surveycreator">EnkätSkapare</option>
+            <option value="surveyresponder">Enkätsvarare</option>
+            <option value="surveycreator">Enkätskapare</option>
           </select>
 
 
-          <label id="new_survey_group_label" for="new_survey_group" style="display: block; margin-top: 10px;">Lägg till ny Utskicksgrupp: </label>
+          <label id="new_survey_group_label" for="new_survey_group" style="display: block; margin-top: 10px;">Lägg till ny utskicksgrupp: </label>
           <input
             type="surveyGroup"
             id="new_survey_group"
@@ -194,17 +214,18 @@
       document.getElementById("edit-user-popup").style.display = "flex";
       document.getElementById("email").value = userEmail
       document.getElementById("edit_user_role").value = userRole
-
-      if(userRole==="surveycreator"){
-        document.getElementById("new_survey_group").style.visibility = "visible"
-        document.getElementById("new_survey_group_label").style.visibility = "visible"
-      }else{
-        document.getElementById("new_survey_group").style.visibility = "hidden"
-        document.getElementById("new_survey_group_label").style.visibility = "hidden"
-      }
-
-
     }
+
+    document.getElementById("edit_user_role").addEventListener("change", function() {
+      const userRole = this.value;
+      if(userRole === "surveycreator") {
+        document.getElementById("new_survey_group").style.display = "block";
+        document.getElementById("new_survey_group_label").style.display = "block";
+      } else {
+        document.getElementById("new_survey_group").style.display = "none";
+        document.getElementById("new_survey_group_label").style.display = "none";
+      }
+    });
 
     function closeEditUser() {
       document.getElementById("edit-user-popup").style.display = "none";
@@ -221,10 +242,10 @@
     }
     // ERROR HANDLING
     document.body.addEventListener("htmx:afterRequest", function (event) {
-    const popup = document.getElementById("edit-user-popup");
-    const errorBox = document.getElementById("popup-error");
+      const popup = document.getElementById("edit-user-popup");
+      const errorBox = document.getElementById("popup-error");
 
-    //if (!popup || !errorBox) return;
+      //if (!popup || !errorBox) return;
 
     if (event.detail.xhr.status === 200) {
       // if success reload the page after a short delay
@@ -247,5 +268,20 @@
       });
     });
   });
+  function navigateBack() {
+      // The previous URL that linked to this page
+      let previousUrl = document.referrer;
+      if (previousUrl) {
+        if (previousUrl.includes("add-employee") || previousUrl.includes("my-org")){
+          // Avoid redirecting back to this page to prevent an infinite loop
+          previousUrl = '/start-admin/';
+        }
+        window.location.href = previousUrl;
+      } else {
+        // Fallback if referrer is empty
+        // This simulates the user pressing the back button
+        window.history.back();
+      }
+    }
   </script>
 </html>

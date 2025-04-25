@@ -10,6 +10,7 @@ import logging
 from typing import cast
 from django.utils import timezone
 
+# from .analysis_handler import AnalysisHandler
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +132,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
 
     # To see how many surveys this user has unanswered
     def count_unanswered_surveys(self):
-        return self.survey_results.filter(is_answered=False).count()
+        return self.survey_results.filter(is_answered=False, published_survey__deadline__gt=timezone.now()).count()
 
     # To see how many surveys this user has answered
     def count_answered_surveys(self):
@@ -139,7 +140,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):  # pyright: ignore
 
     # To get all unanswered surveys for this user
     def get_unanswered_surveys(self):
-        return self.survey_results.filter(is_answered=False)
+        return self.survey_results.filter(is_answered=False, published_survey__deadline__gt=timezone.now())
 
     # To get all answered surveys for this user
     def get_answered_surveys(self):
@@ -195,7 +196,7 @@ class Survey(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.creator})"
-
+    
     def publish_survey(self):
         """
         Publishes the survey to all employees in all
@@ -387,16 +388,6 @@ class Question(models.Model):
                 new_q.multiple_choice_question = mcq
                 new_q.save()  # Link them
 
-            elif self.question_format == QuestionFormat.SLIDER:
-                slider = SliderQuestion.objects.create(
-                    max_interval=self.slider_question.max_interval,
-                    min_interval=self.slider_question.min_interval,
-                    max_text=self.slider_question.max_text,
-                    min_text=self.slider_question.min_text,
-                )
-                new_q.slider_question = slider
-                new_q.save()
-
             return new_q
 
     @property
@@ -446,6 +437,20 @@ class Answer(models.Model):
     )  # Stores a list of booleans
     yes_no_answer = models.BooleanField(null=True, blank=True)  # pyright: ignore
     slider_answer = models.FloatField(null=True, blank=True)
+
+    @property
+    def answer(self):
+        if self.question:
+            if self.question.question_format == QuestionFormat.MULTIPLE_CHOICE:
+                return self.multiple_choice_answer
+            elif self.question.question_format == QuestionFormat.YES_NO:
+                return self.yes_no_answer
+            elif self.question.question_format == QuestionFormat.TEXT:
+                return self.free_text_answer
+            elif self.question.question_format == QuestionFormat.SLIDER:
+                return self.slider_answer
+
+        return None
 
     @property
     def answer_format(self) -> QuestionFormat | None:
