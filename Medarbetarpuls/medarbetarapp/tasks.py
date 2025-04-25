@@ -6,6 +6,10 @@ from django.core.mail import send_mail
 
 @shared_task
 def publish_survey_async(survey_id: int):
+    """
+    This function can be used to schedule publishing 
+    of survey with id survey_id.  
+    """
     from .models import Survey  # Avoid circular import
 
     survey: Survey = Survey.objects.get(id=survey_id)
@@ -14,6 +18,11 @@ def publish_survey_async(survey_id: int):
 
 @shared_task
 def send_notifications(survey_id: int):
+    """
+    This function can be used when scheduling dynamic 
+    notifications for survey with id survey_id. Will 
+    only notify users who have not answered survey.
+    """
     from .models import Survey  # Avoid circular import
     seen_employees = set()
 
@@ -40,6 +49,12 @@ def send_notifications(survey_id: int):
 
 
 def schedule_notification(survey_id: int, reminders: list[str]):
+    """
+    This function can be used to schedule when 
+    notifications should be sent for survey with id 
+    survey_id. Notifications will be scheduled accordning 
+    to days in reminders list.
+    """
     for reminder in reminders: 
         # Onetime notification to be sent in reminder days
         send_notifications.apply_async(
@@ -49,6 +64,10 @@ def schedule_notification(survey_id: int, reminders: list[str]):
 
 
 def result_in_survey(employee, survey_id: int) -> bool: 
+    """
+    Returns if an employee has answered the survey 
+    with id survey_id. 
+    """
     for result in employee.survey_results.all(): 
         survey = result.published_survey 
         if survey.id == survey_id: 
