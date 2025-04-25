@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
-from celery.schedules import crontab
 import os
 
 
@@ -64,6 +63,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "medarbetarapp",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
@@ -179,11 +179,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+USE_TZ = True
+TIME_ZONE = 'Europe/Stockholm'
+CELERY_TIMEZONE = 'Europe/Stockholm'
 
 USE_I18N = True
 
-USE_TZ = True
 
 
 # Default primary key field type
@@ -206,13 +207,3 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-
-# For scheduling periodic tasks
-CELERY_BEAT_SCHEDULE = {
-    'send_notifications': {
-        'task': 'medarbetarapp.tasks.send_notifications',
-        #'schedule': crontab(hour=0, minute=0, day_of_week='monday'),  # Every Monday at midnight
-        'schedule': crontab(hour=23, minute=55),  
-    },
-    # You can add other periodic tasks here
-}

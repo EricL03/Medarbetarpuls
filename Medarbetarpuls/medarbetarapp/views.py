@@ -10,7 +10,7 @@ from datetime import datetime, time
 from django.http import HttpResponse
 from .models import SurveyUserResult
 from django.core.mail import send_mail
-from .tasks import publish_survey_async
+from .tasks import schedule_notification, publish_survey_async
 from django.utils.timezone import make_aware
 from .analysis_handler import AnalysisHandler
 from django.shortcuts import redirect, render
@@ -979,6 +979,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 publish_survey_async.apply_async(
                     args=[survey.id], eta=survey.sending_date
                 )
+                schedule_notification(survey.id)
             else:
                 survey.publish_survey()
 
