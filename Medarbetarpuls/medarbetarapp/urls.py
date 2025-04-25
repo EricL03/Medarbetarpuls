@@ -20,6 +20,7 @@ urlpatterns = [
     path("publish_survey/<int:survey_id>/", views.publish_survey, name="publish_survey"),
     path("delete_survey_template/<int:survey_id>/", views.delete_survey_template, name="delete_survey_template"),
     path("", views.login_view, name="login"),
+    path("logout/", views.logout_view, name="logout"),
     path("my-org/", views.my_org_view, name="my_org"),
     path("my-results/", views.my_results_view, name="my_results"),
     path("my-surveys/", views.my_surveys_view, name="my_surveys"),

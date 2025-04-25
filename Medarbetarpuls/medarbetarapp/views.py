@@ -19,6 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Case, When, IntegerField, Value
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from .decorators import allowed_roles
 
 
 
@@ -136,6 +137,7 @@ def edit_employee_view(request):
 
 @login_required
 @csrf_protect
+@allowed_roles('admin')
 def add_employee_view(request):
     """
     Adds the given email to the organization
@@ -339,7 +341,7 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
         "comment": answer.comment,
     })
 
-@csrf_exempt
+@csrf_protect
 def resend_authentication_code_acc(request):
     if request.method == "POST":
         source = request.POST.get("source")
@@ -365,7 +367,7 @@ def resend_authentication_code_acc(request):
 
 
 
-@csrf_exempt
+@csrf_protect
 def authentication_acc_view(request):
     """
     Creates an account with the user information
@@ -447,7 +449,7 @@ def authentication_acc_view(request):
     return render(request, "authentication_acc.html")
 
 
-@csrf_exempt
+@csrf_protect
 def authentication_org_view(request):
     """
     Creates an admin account and an organisation
@@ -944,6 +946,17 @@ def login_view(request):
 
     return render(request, "login.html")
 
+@csrf_protect
+@login_required
+def logout_view(request):
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            logout(request)
+            request.session.flush()  # Make sure session is cleared
+            response = HttpResponse(status=200) 
+            response['HX-Redirect'] = '/'
+            return response
+    return HttpResponse(status=400)
 
 @csrf_protect
 @login_required
@@ -1205,6 +1218,7 @@ def settings_admin_view(request):
 
 @login_required
 @csrf_protect
+@allowed_roles('surveycreator', 'surveyresponder')
 def settings_user_view(request):
     """
     Deletes the user account after password verification.
