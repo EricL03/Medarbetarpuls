@@ -73,7 +73,8 @@
                 <div class="tag">{{ group.name}}
                    {% if group.name != "Alla" %}
                    <button 
-                    class="delete-button"         
+                    class="delete-button"
+                    style= "width: 2px; height: 2px;"         
                     hx-post="/remove-employee-from-employee-group/"
                     hx-trigger="click"
                     hx-swap="none" 
@@ -84,6 +85,17 @@
                     {% endif %}
                     </div>
                   {% endfor %}
+                  <button 
+                    class="button"  
+                    style = "width: 16px; height: 32px; background-color: gray;"       
+                    hx-post="/edit-employee-FIXXXXXXXXXXXXXXXX/"
+                    hx-trigger="click"
+                    hx-swap="none" 
+                    hx-vals=
+                    '{"email": "{{ employee.email }}",
+                     "group": "{{group.name}}",
+                     "csrfmiddlewaretoken": "{{ csrf_token }}"}'>+</button>
+
                 </td>
                 <td>{{employee.user_role}}</td>
                 {% if employee.user_role == "surveycreator" %}
@@ -91,7 +103,8 @@
                   {% for group in employee.survey_groups.all %}
                   <div class="tag">{{ group.name}}
                     <button 
-                     class="delete-button"         
+                     class="delete-button"    
+                     style= "width: 2px; height: 2px;"      
                      hx-post="/remove-employee-from-survey-group/"
                      hx-trigger="click"
                      hx-swap="none" 
@@ -101,6 +114,17 @@
                       "csrfmiddlewaretoken": "{{ csrf_token }}"}'>x</button>
                      </div>
                   {% endfor %}
+
+                  <button 
+                    class="button"  
+                    style = "width: 16px; height: 32px; background-color: gray;"       
+                    hx-post="/edit-employee-FIXXXXXXXXXXXXXXXX/"
+                    hx-trigger="click"
+                    hx-swap="none" 
+                    hx-vals=
+                    '{"email": "{{ employee.email }}",
+                     "group": "{{group.name}}",
+                     "csrfmiddlewaretoken": "{{ csrf_token }}"}'>+</button>
                 </td>
                 {% else %}
                 <td>———</td>
