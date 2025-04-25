@@ -17,9 +17,9 @@ from django.shortcuts import redirect, render
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, When, IntegerField, Value
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-from .decorators import allowed_roles
+from .decorators import allowed_roles, logout_required
 
 
 
@@ -97,7 +97,8 @@ def create_acc(request):
             return render(request, "create_acc.html")
 
 @login_required
-@csrf_protect      
+@csrf_protect   
+@allowed_roles('admin')
 def edit_employee_view(request):
     if request.method == "POST":
         if request.headers.get("HX-Request"):
@@ -196,12 +197,14 @@ def add_employee_view(request):
 
 
 @login_required
+@allowed_roles('admin','surveycreator')
 def analysis_view(request):
     return render(request, "analysis.html")
 
 
 @login_required
 @csrf_protect
+@allowed_roles('surveycreator','surveyresponder')
 def answer_survey_view(request, survey_result_id: int, question_index: int = 0) -> HttpResponse:
     """
     Makes it possible for the user to answer all questions of a survey. 
@@ -509,6 +512,8 @@ def authentication_org_view(request):
 
     return render(request, "authentication_org.html")
 
+@login_required
+@allowed_roles('surveycreator')
 def create_question(request, survey_id: int) -> HttpResponse: 
     """
     Makes it possible to create a question with predefined formats.
@@ -607,6 +612,8 @@ def create_org(request) -> HttpResponse:
 
 
 @csrf_protect
+@login_required
+@allowed_roles('surveycreator')
 def delete_question(request, question_id: int, survey_id: int) -> HttpResponse:
     """
     Makes it possible to delete a specific question from
@@ -631,7 +638,8 @@ def delete_question(request, question_id: int, survey_id: int) -> HttpResponse:
 
     return HttpResponse(status=400)  # Bad request if no expression
 
-
+@login_required
+@allowed_roles('surveycreator')
 def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
     """
     Creates a survey template. If no survey_id is given, a new
@@ -685,7 +693,8 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
 
     return render(request, "create_survey.html", {"survey_temp": survey_temp})
 
-
+@login_required
+@allowed_roles('surveycreator')
 def edit_question_view(
     request,
     survey_id: int,
@@ -768,7 +777,8 @@ def edit_question_view(
 
     return render(request, "edit_question.html", {"survey_temp": survey_temp, "question_format": question_format, "question_id": question_id, "question_text": question_text, "options": options})
 
-
+@login_required
+@allowed_roles('surveycreator')
 def publish_survey(request, survey_id: int) -> HttpResponse:
     if request.method == "POST":
         if request.headers.get("HX-Request"):
@@ -896,7 +906,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
 
     return HttpResponse(status=400)
 
-
+@logout_required()
 def login_view(request):
     """
     Authenticates the user and logs them in.
@@ -948,6 +958,7 @@ def login_view(request):
 
 @csrf_protect
 @login_required
+@allowed_roles('admin','surveycreator','surveyresponder')
 def logout_view(request):
     if request.method == "POST":
         if request.headers.get("HX-Request"):
@@ -960,6 +971,7 @@ def logout_view(request):
 
 @csrf_protect
 @login_required
+@allowed_roles('admin')
 def my_org_view(request):
     """
     Displays the organization's employee list and processes employee removal.
@@ -1034,6 +1046,7 @@ def my_org_view(request):
 
 
 @login_required
+@allowed_roles('surveycreator','surveyresponder')
 def my_results_view(request):
     """
     Displays the logged-in user's survey results.
@@ -1067,6 +1080,7 @@ def my_results_view(request):
 
 
 @csrf_protect
+@allowed_roles('surveycreator')
 def delete_survey_template(request, survey_id: int) -> HttpResponse:
     """
     Deletes a survey template via HTMX.
@@ -1092,6 +1106,7 @@ def delete_survey_template(request, survey_id: int) -> HttpResponse:
 
 @csrf_protect
 @login_required
+@allowed_roles('surveycreator')
 def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse:
     """
     Displays the survey templates and drafts page with all created survey templates.
@@ -1150,7 +1165,7 @@ def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse
 def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
-
+@allowed_roles('admin')
 def settings_admin_view(request):
     """
     Transfers admin rights to a new admin user.
@@ -1255,6 +1270,7 @@ def settings_user_view(request):
 
 
 @login_required
+@allowed_roles('surveycreator')
 def start_creator_view(request):
     return render(
         request, "start_creator.html", {"pagetitle": f"Välkommen<br>{request.user.name}"}
@@ -1263,6 +1279,7 @@ def start_creator_view(request):
 
 @login_required
 @csrf_protect
+@allowed_roles('admin','surveycreator','surveyresponder')
 def settings_change_name(request):
     """
     Changes the name of a CustomUser
@@ -1309,6 +1326,7 @@ def settings_change_name(request):
 
 @login_required
 @csrf_protect
+@allowed_roles('admin','surveycreator','surveyresponder')
 def settings_change_pass(request):
     """
     Changes the password of a CustomUser
@@ -1360,18 +1378,20 @@ def settings_change_pass(request):
 
 
 @login_required
+@allowed_roles('surveyresponder')
 def start_user_view(request):
     return render(
         request, "start_user.html", {"pagetitle": f"Välkommen<br>{request.user.name}"}
     )
 
 @login_required
+@allowed_roles('admin')
 def start_admin_view(request):
     return render(
         request, "start_admin.html", {"pagetitle": f"Välkommen<br>{request.user.name}"}
     )
 
-
+@allowed_roles('surveycreator','surveyresponder')
 def survey_result_view(request, survey_id):
     survey_results = SurveyUserResult.objects.filter(id=survey_id).first()
 
@@ -1384,6 +1404,7 @@ def survey_result_view(request, survey_id):
 
 
 @login_required
+@allowed_roles('surveycreator')
 def survey_status_view(request):
     user = request.user
     published_count = user.published_surveys.count()
@@ -1403,6 +1424,7 @@ def survey_status_view(request):
 
 
 @login_required
+@allowed_roles('surveycreator','surveyresponder')
 def unanswered_surveys_view(request):
     user = request.user  # Assuming the user is authenticated
     unanswered_count = user.count_unanswered_surveys()
@@ -1448,6 +1470,8 @@ def correct_name(name: str) -> Boolean | str:
         # Return the name with the correct form
         return res
 
+@login_required
+@allowed_roles('admin','surveycreator')
 def chart_view(request):
     SURVEY_ID = 3  # Choose which survey to show here
 
