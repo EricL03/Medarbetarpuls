@@ -4,6 +4,7 @@ from django.core.mail import send_mail
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 import json
 
+
 @shared_task
 def publish_survey_async(survey_id: int):
     from .models import Survey  # Avoid circular import
@@ -22,7 +23,7 @@ def send_notifications(survey_id: int):
 
     for group in survey.employee_groups.all():
         for employee in group.employees.all():
-            if employee.id not in seen_employees:
+            if employee.id not in seen_employees and not result_in_survey(employee, survey_id):
                 seen_employees.add(employee)
 
     # Update with new last_notification time
@@ -42,7 +43,7 @@ def send_notifications(survey_id: int):
 def schedule_notification(survey_id: int):
     # Create or get the schedule 
     schedule, _ = CrontabSchedule.objects.get_or_create(
-        minute='5',
+        minute='*',
         hour='10',
         day_of_week='*',  
         timezone='Europe/Stockholm',  
@@ -61,3 +62,12 @@ def schedule_notification(survey_id: int):
             'enabled': True,
         }
     )
+
+
+def result_in_survey(employee, survey_id: int) -> bool: 
+    for result in employee.survey_results.all(): 
+        survey = result.published_survey 
+        if survey.id == survey_id: 
+            return result.is_answered  
+
+    return False
