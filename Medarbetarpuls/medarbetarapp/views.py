@@ -1324,7 +1324,7 @@ def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
 @csrf_protect
-def remove_employee_from_group_view(request):
+def remove_employee_from_employee_group_view(request):
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             email = request.POST.get("email")
@@ -1332,6 +1332,18 @@ def remove_employee_from_group_view(request):
             user = models.CustomUser.objects.get(email=email)
             group_to_remove = models.EmployeeGroup.objects.filter(name=group).first()
             user.employee_groups.remove(group_to_remove)
+            return HttpResponse(status=200)
+    return HttpResponse(status=400)
+
+@csrf_protect
+def remove_employee_from_survey_group_view(request):
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            email = request.POST.get("email")
+            group = request.POST.get("group")
+            user = models.CustomUser.objects.get(email=email)
+            group_to_remove = models.EmployeeGroup.objects.filter(name=group).first()
+            user.survey_groups.remove(group_to_remove)
             return HttpResponse(status=200)
     return HttpResponse(status=400)
 

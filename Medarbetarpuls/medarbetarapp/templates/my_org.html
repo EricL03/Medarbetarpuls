@@ -74,7 +74,7 @@
                    {% if group.name != "Alla" %}
                    <button 
                     class="delete-button"         
-                    hx-post="/remove-employee-from-group/"
+                    hx-post="/remove-employee-from-employee-group/"
                     hx-trigger="click"
                     hx-swap="none" 
                     hx-vals=
@@ -89,7 +89,17 @@
                 {% if employee.user_role == "surveycreator" %}
                 <td>
                   {% for group in employee.survey_groups.all %}
-                    {{ group.name}}{% if not forloop.last %},{% endif %}
+                  <div class="tag">{{ group.name}}
+                    <button 
+                     class="delete-button"         
+                     hx-post="/remove-employee-from-survey-group/"
+                     hx-trigger="click"
+                     hx-swap="none" 
+                     hx-vals=
+                     '{"email": "{{ employee.email }}",
+                      "group": "{{group.name}}",
+                      "csrfmiddlewaretoken": "{{ csrf_token }}"}'>x</button>
+                     </div>
                   {% endfor %}
                 </td>
                 {% else %}

@@ -10,7 +10,8 @@ urlpatterns = [
         views.answer_survey_view,
         name="answer_survey",
     ),
-    path("remove-employee-from-group/", views.remove_employee_from_group_view, name="remove_employee_from_group"),
+    path("remove-employee-from-employee-group/", views.remove_employee_from_employee_group_view, name="remove_employee_from_employee_group"),
+    path("remove-employee-from-survey-group/",views.remove_employee_from_survey_group_view, name="remove_employee_from_survey_group"),
     path(
         "authentication-acc/", views.authentication_acc_view, name="authentication_acc"
     ),
