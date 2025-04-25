@@ -1,9 +1,9 @@
 import logging
 import platform
-from xmlrpc.client import Boolean
 from . import models
 from django.db.models import Q
 from django.utils import timezone
+from xmlrpc.client import Boolean
 from django.db.models import Count
 from django.core.cache import cache
 from datetime import datetime, time
@@ -15,11 +15,11 @@ from django.utils.timezone import make_aware
 from .analysis_handler import AnalysisHandler
 from django.shortcuts import redirect, render
 from django.shortcuts import get_object_or_404
+from django.views.decorators.csrf import csrf_protect
+from .decorators import allowed_roles, logout_required
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, When, IntegerField, Value
-from django.views.decorators.csrf import csrf_protect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-from .decorators import allowed_roles, logout_required
 
 
 
