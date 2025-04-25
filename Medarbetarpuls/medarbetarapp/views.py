@@ -894,6 +894,9 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             publish_date: str = request.POST.get("publish-date")
             end_date: str = request.POST.get("end-date")
 
+            # This will give you the days when reminders should be sent, e.g. ['3', '7', '14']
+            reminders: list[str] = request.POST.getlist("reminders[]")
+
             # Make the dates timezone aware to keep django from complaining
             if end_date:
                 naive_deadline = datetime.combine(
