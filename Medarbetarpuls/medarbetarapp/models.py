@@ -376,26 +376,26 @@ class Question(models.Model):
             # Add link to survey:
             new_q.connected_surveys.set([survey])
 
-            # Copy each OneToOne “child” model if present:
-            one_to_one_fields = {
-                'slider_question': SliderQuestion,
-                'multiple_choice_question': MultipleChoiceQuestion,
-                'yes_no_question': YesNoQuestion,
-                'text_question': TextQuestion,
-            }
-            for field_name, model_cls in one_to_one_fields.items():
-                child = getattr(self, field_name, None)
-                if child is not None:
-                    # Build child data dict
-                    child_data = {
-                        f.name: getattr(child, f.name)
-                        for f in child._meta.fields
-                        if f.name not in ('id', 'pk', field_name) 
-                    }
-                    # Set the back‐reference to new_q
-                    child_data[field_name.replace('_question','')] = new_q
-                    # Create the cloned child
-                    model_cls.objects.create(**child_data)
+            # First, save the new Question so it has an ID
+            new_q.save()
+
+            # Then create and assign the specific child object based on the format
+            if self.question_format == QuestionFormat.MULTIPLE_CHOICE:
+                mcq = MultipleChoiceQuestion.objects.create(
+                    options=self.multiple_choice_question.options
+                )
+                new_q.multiple_choice_question = mcq
+                new_q.save()  # Link them
+
+            elif self.question_format == QuestionFormat.SLIDER:
+                slider = SliderQuestion.objects.create(
+                    max_interval=self.slider_question.max_interval,
+                    min_interval=self.slider_question.min_interval,
+                    max_text=self.slider_question.max_text,
+                    min_text=self.slider_question.min_text,
+                )
+                new_q.slider_question = slider
+                new_q.save()
 
             return new_q
 
