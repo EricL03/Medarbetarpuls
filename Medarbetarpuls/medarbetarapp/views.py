@@ -822,7 +822,7 @@ def my_org_view(request):
         user_id = request.POST.get("user_id")
         if request.user.user_role == models.UserRole.ADMIN:
             employee_to_remove = models.CustomUser.objects.get(pk=user_id)
-            print("removing ", employee_to_remove)
+            logger.info("removing %s", employee_to_remove)
             employee_to_remove.is_active = False
             employee_to_remove.save()
             # Get all employee_groups for this employee
@@ -1170,7 +1170,7 @@ def settings_change_pass(request):
             user.save()
             # Use this to keep the session alive (avoid being logged out immediately)
             update_session_auth_hash(request, user)
-            print("saved new password")
+            logger.info("saved new password")
         elif not user:
             return HttpResponse("Fel lösenord", status=400)
         else:
@@ -1272,9 +1272,6 @@ def chart_view(request):
     analysisHandler = AnalysisHandler()
     context: dict = {}
 
-    print("HIFDSLDUFGH", group_id)
-    print(list(EmployeeGroup.objects.all())[0].id)
-    print("REQUEST", request.GET)
     context["time_periods"] = [
         ("senaste", "sen"),
         ("1 mån", "1m"),
@@ -1315,13 +1312,11 @@ def chart_view(request):
 
     context["deadline"] = summary["survey"].deadline.strftime("%Y-%m-%d")
     context["amount"] = summary["survey"].collected_answer_count
-    print("HEJEJEJEJEJEEJ")
     context.update(
         analysisHandler.get_participation_metrics(
             summary["survey"], summary["employee_group"]
         )
     )
-    print(context)
     return render(request, "analysis.html", context)
 
 
