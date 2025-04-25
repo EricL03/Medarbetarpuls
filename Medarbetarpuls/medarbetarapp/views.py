@@ -1323,6 +1323,18 @@ def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse
 def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
+@csrf_protect
+def remove_employee_from_group_view(request):
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            email = request.POST.get("email")
+            group = request.POST.get("group")
+            user = models.CustomUser.objects.get(email=email)
+            group_to_remove = models.EmployeeGroup.objects.filter(name=group).first()
+            user.employee_groups.remove(group_to_remove)
+            return HttpResponse(status=200)
+    return HttpResponse(status=400)
+
 @allowed_roles('admin')
 def settings_admin_view(request):
     """

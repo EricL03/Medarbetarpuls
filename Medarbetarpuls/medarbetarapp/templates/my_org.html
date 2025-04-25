@@ -69,7 +69,20 @@
                 <td>{{ employee.email }}</td>
                 <td>
                   {% for group in employee.employee_groups.all %}
-                    {{ group.name}}{% if not forloop.last %},{% endif %} 
+                  <!-- Add htmx post request to remove employee group from that user-->
+                <div class="tag">{{ group.name}}
+                   {% if group.name != "Alla" %}
+                   <button 
+                    class="delete-button"         
+                    hx-post="/remove-employee-from-group/"
+                    hx-trigger="click"
+                    hx-swap="none" 
+                    hx-vals=
+                    '{"email": "{{ employee.email }}",
+                     "group": "{{group.name}}",
+                     "csrfmiddlewaretoken": "{{ csrf_token }}"}'>x</button>
+                    {% endif %}
+                    </div>
                   {% endfor %}
                 </td>
                 <td>{{employee.user_role}}</td>

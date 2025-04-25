@@ -10,6 +10,7 @@ urlpatterns = [
         views.answer_survey_view,
         name="answer_survey",
     ),
+    path("remove-employee-from-group/", views.remove_employee_from_group_view, name="remove_employee_from_group"),
     path(
         "authentication-acc/", views.authentication_acc_view, name="authentication_acc"
     ),
