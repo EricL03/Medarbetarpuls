@@ -821,15 +821,15 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                         },
                         status=200,
                     )
-                if sending_date.date() < current_time.date():
-                    return render(
-                        request,
-                        "partials/error_message.html",
-                        {
-                            "message": "Publiceringsdatum måste vara från och med idag"
-                        },
-                        status=200,
-                    )
+                # if sending_date.date() < current_time.date():
+                #     return render(
+                #         request,
+                #         "partials/error_message.html",
+                #         {
+                #             "message": "Publiceringsdatum måste vara från och med idag"
+                #         },
+                #         status=200,
+                #     )
             else:
                 return render(
                     request,
@@ -1216,8 +1216,18 @@ def settings_user_view(request):
 
 @login_required
 def start_creator_view(request):
+    user = request.user  # Assuming the user is authenticated
+    unanswered_count = user.count_unanswered_surveys()
+    unanswered_surveys = user.get_unanswered_surveys()
+    current_time = timezone.now()
     return render(
-        request, "start_creator.html", {"pagetitle": f"Välkommen<br>{request.user.name}"}
+        request, "start_creator.html", 
+        {
+            "pagetitle": f"Välkommen<br>{request.user.name}",
+            "unanswered_count": unanswered_count,
+            "unanswered_surveys": unanswered_surveys,
+            "current_time": current_time,
+        },
     )  # Fix so only works if the user is actually an admin
 
 
@@ -1321,8 +1331,18 @@ def settings_change_pass(request):
 
 @login_required
 def start_user_view(request):
+    user = request.user  # Assuming the user is authenticated
+    unanswered_count = user.count_unanswered_surveys()
+    unanswered_surveys = user.get_unanswered_surveys()
+    current_time = timezone.now()
     return render(
-        request, "start_user.html", {"pagetitle": f"Välkommen<br>{request.user.name}"}
+        request, "start_user.html", 
+        {
+            "pagetitle": f"Välkommen<br>{request.user.name}",
+            "unanswered_count": unanswered_count,
+            "unanswered_surveys": unanswered_surveys,
+            "current_time": current_time,
+         }
     )
 
 @login_required
