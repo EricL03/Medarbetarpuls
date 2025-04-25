@@ -1299,6 +1299,7 @@ def chart_view(request):
 
     for i in summary["summaries"]:
         if i["question"].question_type == QuestionType.ENPS:
+            enps_question = i["question"]
             context.update(i)
             break
 
@@ -1312,11 +1313,26 @@ def chart_view(request):
 
     context["deadline"] = summary["survey"].deadline.strftime("%Y-%m-%d")
     context["amount"] = summary["survey"].collected_answer_count
+
     context.update(
         analysisHandler.get_participation_metrics(
             summary["survey"], summary["employee_group"]
         )
     )
+
+    filtered_surveys = analysisHandler.get_filtered_surveys(
+        "2024-10-01", "2026-10-01", group
+    )
+    trends = analysisHandler.get_question_trend(
+        enps_question, list(filtered_surveys), group
+    )
+    print(trends)
+    deadlines = [entry["deadline"] for entry in trends]
+    enps_scores = [entry["summary"]["enpsScore"] for entry in trends]
+
+    context["lineLabels"] = deadlines
+    context["lineData"] = enps_scores
+
     return render(request, "analysis.html", context)
 
 
