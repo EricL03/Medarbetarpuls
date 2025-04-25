@@ -979,7 +979,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 publish_survey_async.apply_async(
                     args=[survey.id], eta=survey.sending_date
                 )
-                schedule_notification(survey.id)
+                schedule_notification(survey.id, reminders)
             else:
                 survey.publish_survey()
 

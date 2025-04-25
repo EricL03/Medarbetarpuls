@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.utils import timezone
+from datetime import timedelta
 from django.core.mail import send_mail
 from django_celery_beat.models import PeriodicTask, CrontabSchedule
 import json
@@ -40,28 +41,36 @@ def send_notifications(survey_id: int):
     )
 
 
-def schedule_notification(survey_id: int):
-    # Create or get the schedule 
-    schedule, _ = CrontabSchedule.objects.get_or_create(
-        minute='*',
-        hour='10',
-        day_of_week='*',  
-        timezone='Europe/Stockholm',  
-    )
+def schedule_notification(survey_id: int, reminders: list[str]):
+    for reminder in reminders: 
+        if reminder == "3": 
+            # Onetime notification to be sent in 3 days
+            send_notifications.apply_async(
+                args=[survey_id],
+                eta=timezone.now() + timedelta(days=3)
+            )
+        elif reminder == "7": 
+            # Schedules a reminder for every monday morning
+            schedule, _ = CrontabSchedule.objects.get_or_create(
+                minute='0',
+                hour='8',
+                day_of_week='1',  
+                timezone='Europe/Stockholm',  
+            )
 
-    # Create a unique name for the task
-    task_name = f"send_notifications_survey_{survey_id}"
+            # Create a unique name for the task
+            task_name = f"send_notifications_survey_{survey_id}"
 
-    # Add the task
-    PeriodicTask.objects.update_or_create(
-        name=task_name,
-        defaults={
-            'task': 'medarbetarapp.tasks.send_notifications',
-            'crontab': schedule,
-            'args': json.dumps([survey_id]),
-            'enabled': True,
-        }
-    )
+            # Add the task
+            PeriodicTask.objects.update_or_create(
+                name=task_name,
+                defaults={
+                    'task': 'medarbetarapp.tasks.send_notifications',
+                    'crontab': schedule,
+                    'args': json.dumps([survey_id]),
+                    'enabled': True,
+                }
+            )
 
 
 def result_in_survey(employee, survey_id: int) -> bool: 
