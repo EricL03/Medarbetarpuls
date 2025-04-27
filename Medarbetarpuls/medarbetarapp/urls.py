@@ -20,6 +20,8 @@ urlpatterns = [
         views.resend_authentication_code_acc,
         name="resend_authentication_code_acc",
     ),
+    path("edit-survey-group/", views.edit_survey_group_view, name="edit_survey_group"),
+    path("edit-employee-group/", views.edit_employee_group_view, name="edit_employee_group"),
     path(
         "authentication-org/", views.authentication_org_view, name="authentication_org"
     ),
