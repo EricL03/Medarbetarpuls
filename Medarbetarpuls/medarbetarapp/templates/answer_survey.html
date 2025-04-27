@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="sv">
   <head>
     {% load static %}
@@ -32,15 +32,15 @@
         <h2>{{ question.question }}</h2>
         <!-- Go back button-->
         <button
-        class="image-button"
-        onclick="window.location.href='{% url 'unanswered_surveys' %}'"
+          class="image-button"
+          onclick="window.location.href='{% url 'unanswered_surveys' %}'"
         >
-        <img
-          src="{% static 'images/go-back-btn.png' %}"
-          alt="Gå Tillbaka"
-          class="back-icon"
-        />
-      </button>
+          <img
+            src="{% static 'images/go-back-btn.png' %}"
+            alt="Gå Tillbaka"
+            class="back-icon"
+          />
+        </button>
 
         <!-- Slider question -->
         {% if question.question_format == "slider" %}
@@ -207,7 +207,7 @@
         const smiley = document.getElementById("smiley-icon");
         const yesnoImages = document.querySelectorAll(".yesno-img");
         const multiplechoice_input = document.querySelectorAll(
-          ".multiple-input input[type='checkbox']",
+          ".multiple-input input[type='checkbox']"
         );
 
         const updateSliderVisuals = () => {
@@ -215,7 +215,7 @@
           smiley.classList.remove(
             "animate__faster",
             "animate__slower",
-            "animate__heartBeat",
+            "animate__heartBeat"
           );
           const value = parseFloat(slider.value);
           const max = parseFloat(slider.max);
@@ -231,7 +231,7 @@
             smiley.classList.add(
               "animate__animated",
               "animate__heartBeat",
-              "animate__slower",
+              "animate__slower"
             );
           } else if (value < 4.5) {
             smileyURL = "/static/images/smiley-meh.png";
@@ -246,7 +246,7 @@
             smiley.classList.add(
               "animate__animated",
               "animate__heartBeat",
-              "animate__faster",
+              "animate__faster"
             );
           } else {
             smileyURL = "/static/images/smiley-superhappy.png";
@@ -294,13 +294,13 @@
             parentOption.classList.remove(
               "animate__animated",
               "animate__pulse",
-              "animate__faster",
+              "animate__faster"
             );
             void parentOption.offsetWidth; // force reflow
             parentOption.classList.add(
               "animate__animated",
               "animate__pulse",
-              "animate__faster",
+              "animate__faster"
             );
           };
           updateImage();
@@ -334,7 +334,7 @@
 
         if (source === "submit") {
           const shouldSubmit = confirm(
-            "{{ total_answers }} av {{ total }} frågor besvarade, är du säker på att du vill skicka in svaren?",
+            "{{ total_answers }} av {{ total }} frågor besvarade, är du säker på att du vill skicka in svaren?"
           );
           console.log("User confirmed?", shouldSubmit);
           if (!shouldSubmit) {

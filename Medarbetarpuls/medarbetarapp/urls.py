@@ -5,11 +5,15 @@ urlpatterns = [
     path("add-employee/", views.add_employee_view, name="add_employee"),
     path("edit-employee/", views.edit_employee_view, name="edit_employee"),
     path("analysis/", views.chart_view, name="analysis"),
+<<<<<<< HEAD
     path(
         "survey/<int:survey_result_id>/question/<int:question_index>/",
         views.answer_survey_view,
         name="answer_survey",
     ),
+=======
+    path("survey/<int:survey_result_id>/question/<int:question_index>/", views.answer_survey_view, name="answer_survey"),
+>>>>>>> origin/main
     path(
         "authentication-acc/", views.authentication_acc_view, name="authentication_acc"
     ),
