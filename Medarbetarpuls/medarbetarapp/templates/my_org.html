@@ -91,7 +91,13 @@
                     >+</button>
 
                 </td>
-                <td>{{employee.user_role}}</td>
+                <td>
+                  {% if employee.user_role == "surveycreator" %}
+                  Enkätskapare
+                  {% else %}
+                  Enkätsvarare
+                  {% endif %}
+                </td>
                 {% if employee.user_role == "surveycreator" %}
                 <td>
                   {% for group in employee.survey_groups.all %}
@@ -179,7 +185,7 @@
         </table>
       </div>
       <a href="{% url 'add_employee' %}">
-        <button class="button">Lägg till medarbetare</button>
+        <button class="default-button">Lägg till medarbetare</button>
       </a>
     </div>
     <!-- Edit user Popup -->
@@ -204,8 +210,8 @@
           <select
           id="edit_user_role"
           name="edit_user_role">
-            <option value="surveyresponder">EnkätSvarare</option>
-            <option value="surveycreator">EnkätSkapare</option>
+            <option value="surveyresponder">Enkätsvarare</option>
+            <option value="surveycreator">Enkätskapare</option>
           </select>
 
           <input
@@ -317,17 +323,18 @@
       document.getElementById("edit-user-popup").style.display = "flex";
       document.getElementById("email").value = userEmail
       document.getElementById("edit_user_role").value = userRole
-
-      if(userRole==="surveycreator"){
-        document.getElementById("new_survey_group").style.visibility = "visible"
-        document.getElementById("new_survey_group_label").style.visibility = "visible"
-      }else{
-        document.getElementById("new_survey_group").style.visibility = "hidden"
-        document.getElementById("new_survey_group_label").style.visibility = "hidden"
-      }
-
-
     }
+
+    document.getElementById("edit_user_role").addEventListener("change", function() {
+      const userRole = this.value;
+      if(userRole === "surveycreator") {
+        document.getElementById("new_survey_group").style.display = "block";
+        document.getElementById("new_survey_group_label").style.display = "block";
+      } else {
+        document.getElementById("new_survey_group").style.display = "none";
+        document.getElementById("new_survey_group_label").style.display = "none";
+      }
+    });
 
     function closeEditUser() {
       document.getElementById("edit-user-popup").style.display = "none";
@@ -374,7 +381,7 @@
       // The previous URL that linked to this page
       let previousUrl = document.referrer;
       if (previousUrl) {
-        if (previousUrl.includes("add-employee")){
+        if (previousUrl.includes("add-employee") || previousUrl.includes("my-org")){
           // Avoid redirecting back to this page to prevent an infinite loop
           previousUrl = '/start-admin/';
         }

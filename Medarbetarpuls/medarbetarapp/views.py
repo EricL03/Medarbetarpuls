@@ -8,9 +8,9 @@ from django.db.models import Count
 from django.core.cache import cache
 from datetime import datetime, time
 from django.http import HttpResponse
-from .models import SurveyUserResult
+from .models import QuestionType, SurveyUserResult
 from django.core.mail import send_mail
-from .tasks import publish_survey_async
+from .tasks import schedule_notification, publish_survey_async
 from django.utils.timezone import make_aware
 from .analysis_handler import AnalysisHandler
 from django.shortcuts import redirect, render
@@ -187,7 +187,27 @@ def add_employee_view(request):
         email = request.POST.get("email")
         team = request.POST.get("team")
         user = request.user
-        if user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
+        editGroup = request.POST.get("edit_employee")
+        editName = request.POST.get("new_employee_group")
+        editUserMail = request.POST.get("employee")
+        if editGroup == "true":
+            if models.EmailList.objects.filter(email=editUserMail).exists():
+                org = user.admin
+                if models.EmployeeGroup.objects.filter(name=editName).exists():
+                    group = models.EmployeeGroup.objects.get(name=editName)
+                else:
+                    # create new employee group
+                    group = models.EmployeeGroup(name=editName, organization=org)
+                    group.save()
+                editUser = models.CustomUser.objects.get(email=editUserMail)
+                editUser.employee_groups.add(group)
+                user.survey_groups.add(group)
+                return HttpResponse("Successful", status=200)
+
+            else:
+                logger.warning("User does not exist")
+                return HttpResponse("Användaren finns inte", status=400)
+        elif user.user_role == models.UserRole.ADMIN and hasattr(user, "admin"):
             org = user.admin
             existing_user = models.CustomUser.objects.filter(email=email).first()
             if existing_user:
@@ -258,6 +278,10 @@ def answer_survey_view(request, survey_result_id: int, question_index: int = 0) 
     questions: list[models.Question] = survey_result.published_survey.questions.all()
     answers: list[models.Answer] = survey_result.answers.all()
     answer: models.Answer = models.Answer()
+    survey_result = get_object_or_404(
+        SurveyUserResult, pk=survey_result_id, user=request.user
+    )
+    questions = survey_result.published_survey.questions.all()
 
     # Calculate question navigation indexes
     if question_index - 1 < 0:
@@ -462,7 +486,7 @@ def authentication_acc_view(request):
                 org = find_organization_by_email(email)
                 if org is None:
                     logger.error("This email is not authorized for registration.")
-                    return HttpResponse(status=400)
+                    return HttpResponse("Denna mejladress tillhör ej någon organisation", status=400)
                 existing_user.is_active = True
                 existing_user.name = name
                 existing_user.user_role = models.UserRole.SURVEY_RESPONDER
@@ -474,14 +498,14 @@ def authentication_acc_view(request):
                 # add group to employee
                 existing_user.employee_groups.add(*group)
                 existing_user.save()
-                return HttpResponse(headers={"HX-Redirect": "/"})
+                return HttpResponse("Konto skapat. Nu kan du logga in.", status=200)
                 # check for basegroup??
             else:
                 # Check that email is registrated to an org
                 org = find_organization_by_email(email)
                 if org is None:
                     logger.error("This email is not authorized for registration.")
-                    return HttpResponse(status=400)
+                    return HttpResponse("Denna mejladress tillhör ej någon organisation", status=400)
                 # Create user
                 new_user = models.CustomUser.objects.create_user(email, name, password)
                 # get the email and get the correct employeegroups
@@ -502,11 +526,11 @@ def authentication_acc_view(request):
                     )
                     return HttpResponse(status=400)
 
-                return HttpResponse(headers={"HX-Redirect": "/"})
+                return HttpResponse("Konto skapat. Nu kan du logga in.", status=200)
         else:
             logger.error("Wrong authentication code")
-            return HttpResponse(status=400)
-
+            return HttpResponse("Felaktig kod", status=400)
+    
     return render(request, "authentication_acc.html")
 
 
@@ -563,10 +587,10 @@ def authentication_org_view(request):
             base_group.managers.add(admin_account)
             base_group.save()
 
-            return HttpResponse(headers={"HX-Redirect": "/"})
+            return HttpResponse("Konto skapat. Nu kan du logga in.", status=200)
         else:
             logger.error("Wrong authentication code")
-            return HttpResponse(status=400)
+            return HttpResponse("Felaktig kod", status=400)
 
     return render(request, "authentication_org.html")
 
@@ -994,12 +1018,15 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 return render(
                     request,
                     "partials/error_message.html",
-                    {"message": "Felaktig arbetsgrupp vald"},
+                    {"message": "Felaktig arbetsgrupp vald"}, status=400
                 )
 
             # Get the dates
             publish_date: str = request.POST.get("publish-date")
             end_date: str = request.POST.get("end-date")
+
+            # This will give you the days when reminders should be sent, e.g. ['3', '7', '14']
+            reminders: list[str] = request.POST.getlist("reminders[]")
 
             # Make the dates timezone aware to keep django from complaining
             if end_date:
@@ -1032,21 +1059,21 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                         {
                             "message": "Sista svarsdatum måste vara efter publiceringsdatum"
                         },
-                        status=200,
+                        status=400,
                     )
                 if sending_date.date() < current_time.date():
                     return render(
                         request,
                         "partials/error_message.html",
                         {"message": "Publiceringsdatum måste vara från och med idag"},
-                        status=200,
+                        status=400,
                     )
             else:
                 return render(
                     request,
                     "partials/error_message.html",
                     {"message": "Publiceringsdatum och sista svarsdatum måste anges"},
-                    status=200,
+                    status=400,
                 )
 
             # Create a Survey to be send to employess
@@ -1055,6 +1082,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 creator=user,
                 deadline=deadline,
                 sending_date=sending_date,
+                last_notification=current_time, 
                 is_viewable=is_public,
                 is_anonymous=is_anonymous,
             )
@@ -1080,11 +1108,15 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 publish_survey_async.apply_async(
                     args=[survey.id], eta=survey.sending_date
                 )
+                schedule_notification(survey.id, reminders)
             else:
                 survey.publish_survey()
 
-            return HttpResponse(
-                headers={"HX-Redirect": "/create-survey/" + str(survey_id)}
+            return render(
+                request,
+                    "partials/error_message.html",
+                    {"message": "Enkäten har nu publicerats"},
+                    status=200,
             )
 
     return HttpResponse(status=400)
@@ -1258,6 +1290,7 @@ def my_results_view(request):
             "answered_surveys": answered_surveys,
             "current_time": current_time,
             "pagetitle": "Resultat på besvarade enkäter",
+            "user_role": user.user_role
         },
     )
 
@@ -1537,7 +1570,7 @@ def settings_change_name(request):
                 "user": request.user,
                 "organization": request.user.admin,
                 "pagetitle": "Inställningar",
-            },
+            }, status=200
         )
     else:
         return render(
@@ -1547,7 +1580,7 @@ def settings_change_name(request):
                 "user": request.user,
                 "organization": request.user.admin,
                 "pagetitle": "Inställningar",
-            },
+            }, status=200
         )
 
 
@@ -1576,7 +1609,7 @@ def settings_change_pass(request):
             user.save()
             # Use this to keep the session alive (avoid being logged out immediately)
             update_session_auth_hash(request, user)
-            print("saved new password")
+            logger.info("saved new password")
         elif not user:
             return HttpResponse("Fel lösenord", status=400)
         else:
@@ -1652,7 +1685,7 @@ def survey_result_view(request, survey_id):
     else:
         answers = None
 
-    summary_context = analysis_handler.survey_result_summary(survey.id, answers)
+    summary_context = analysis_handler.get_survey_summary(survey.id, answers)
 
     if survey_results is None:
         # This survey has no answers (should not even be displayed to the user then)
@@ -1738,11 +1771,71 @@ def correct_name(name: str) -> Boolean | str:
 @login_required
 @allowed_roles('admin','surveycreator')
 def chart_view(request):
-    SURVEY_ID = 3  # Choose which survey to show here
-
+    group_id = request.GET.get("group_id")
     analysisHandler = AnalysisHandler()
-    question_txt = "Did you take enough breaks throughout the day?"
-    context = analysisHandler.survey_result_summary(SURVEY_ID)
+    context: dict = {}
+
+    context["time_periods"] = [
+        ("senaste", "sen"),
+        ("1 mån", "1m"),
+        ("3 mån", "3m"),
+        ("6 mån", "6m"),
+        ("1 år", "1y"),
+    ]
+    if not group_id:
+        return render(request, "analysis.html", context)
+
+    group = get_object_or_404(models.EmployeeGroup, id=group_id)
+
+    surveys = analysisHandler.get_surveys_for_group(group)
+
+    if not surveys.exists():
+        context["message"] = "Gruppen har inga enkäter ännu."
+        return render(request, "analysis.html", context)
+
+    survey = surveys.latest("sending_date")  # behöver fixas
+
+    summary = analysisHandler.get_survey_summary(
+        survey_id=survey.id,
+        employee_group=group,
+    )
+
+    for i in summary["summaries"]:
+        if i["question"].question_type == QuestionType.ENPS:
+            enps_question = i["question"]
+            context.update(i)
+            break
+
+    # if not context:
+    #   context["message"] = "Ingen eNPS-fråga i den här enkäten."
+    #  return render(request, "analysis.html", context)
+
+    context["deadline"] = summary["survey"].deadline.strftime(
+        "%Y-%m-%d"
+    )  # maybe move this row to get_survey_summary
+
+    context["deadline"] = summary["survey"].deadline.strftime("%Y-%m-%d")
+    context["amount"] = summary["survey"].collected_answer_count
+
+    context.update(
+        analysisHandler.get_participation_metrics(
+            summary["survey"], summary["employee_group"]
+        )
+    )
+
+    filtered_surveys = analysisHandler.get_filtered_surveys(
+        "2024-10-01", "2026-10-01", group
+    )
+    trends = analysisHandler.get_question_trend(
+        enps_question, list(filtered_surveys), group
+    )
+    print(trends)
+    deadlines = [entry["deadline"] for entry in trends]
+    enps_scores = [entry["summary"]["enpsScore"] for entry in trends]
+
+    context["lineLabels"] = deadlines
+    context["lineData"] = enps_scores
+
     return render(request, "analysis.html", context)
 
 
