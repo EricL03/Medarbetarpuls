@@ -1,8 +1,9 @@
 from . import models
 
 STANDARD_QUESTIONS = [
-    ["What is your organization's mission?", models.QuestionFormat.TEXT],
-    ["What are your core values?", models.QuestionFormat.YES_NO],
-    ["What is your organization's vision?", models.QuestionFormat.MULTIPLE_CHOICE, ["Option1", "Option2", "Option3"]],
-    ["What are your main goals?", models.QuestionFormat.SLIDER, [1, 10]],
+    ["ENPS: Rekommendera Arbetsgivare","Hur sannolikt är det att du skulle rekommendera din arbetsgivare till andra?", models.QuestionFormat.SLIDER, models.QuestionType.ENPS, [1, 10]],
+    ["Nuvarande arbetsroll", "Vad är din nuvarande arbetsroll?", models.QuestionFormat.TEXT, models.QuestionType.BUILTIN],
+    ["Nuvarande arbetsbelastning", "Hur nöjd är du med din nuvarande arbetsbelastning?", models.QuestionFormat.SLIDER, models.QuestionType.BUILTIN, [1, 10]],
+    ["Feedback på arbete", "Hur ofta får du feedback på ditt arbete?", models.QuestionFormat.MULTIPLE_CHOICE, models.QuestionType.BUILTIN, ["Aldrig", "Sällan", "Ibland", "Ofta", "Alltid"]],
+    ["Största utmaningar i arbetet","Vad är din största utmaning i ditt arbete?", models.QuestionFormat.TEXT, models.QuestionType.BUILTIN],
 ]

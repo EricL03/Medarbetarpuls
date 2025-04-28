@@ -537,29 +537,40 @@ def authentication_org_view(request):
 
             # Create and add standard questions to the question bank
             for question_data in STANDARD_QUESTIONS:
-                question_format = question_data[1]
-                options = question_data[2] if len(question_data) > 2 else None  # Check if options are provided
+                question_format = question_data[2]
+                options = question_data[4] if len(question_data) > 4 else None  # Check if options are provided
 
                 
                 question: models.Question = models.Question()
 
-                question.question = question_data[0]
+                question.question_title = question_data[0]
+                question.question = question_data[1]
                 question.bank_question = org
                 question.question_format = question_format
-                question.question_type = models.QuestionType.BUILTIN
-                question.save()
-                print(f"Created question '{question_data[0]}' with format '{question_format}'")  # Placeholder
-
+                question.question_type = question_data[3]
+    
                 if question_format == models.QuestionFormat.MULTIPLE_CHOICE and options:
-                    for option in options:
-                        # Placeholder:
-                        print(f"Creating option '{option}' for question '{question_data[0]}'")  # Replace with actual logic
-
+                    multiple_choice_question = models.MultipleChoiceQuestion(
+                        question_format=question_format,
+                        options = question_data[4],
+                    )
+                    question.multiple_choice_question = multiple_choice_question
+                    question.multiple_choice_question.save()
+                    question.save()
+           
                 elif question_format == models.QuestionFormat.SLIDER and options:
-                    # Placeholder:
-                    print(f"Slider question '{question_data[0]}' with range: {options}")  # Replace with actual logic
+                    slider_question = models.SliderQuestion(
+                        question_format=question_format,
+                        min_interval= 0,
+                        max_interval= 10,
+                        min_text="Test",
+                        max_text="Test2",
+                    )
+                    question.slider_question = slider_question
+                    question.slider_question.save()
+                    question.save()
 
-
+                question.save()
             return HttpResponse(headers={"HX-Redirect": "/"})
         else:
             logger.error("Wrong authentication code")
@@ -586,7 +597,6 @@ def create_question(request, survey_id: int) -> HttpResponse:
     ).first()
     organization: models.Organization = user.admin
     organization_questions: models.Question = organization.question_bank.all()
-    print(organization_questions)
     if survey_temp is None:
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
@@ -855,6 +865,8 @@ def edit_question_view(
     user: models.CustomUser = request.user
     options = None  # Use later to show options
 
+    bank_question = user.admin.question_bank.filter(id=question_id).exists()
+
     # Get the survey from given id
     survey_temp: models.SurveyTemplate = user.survey_templates.filter(
         id=survey_id
@@ -968,6 +980,7 @@ def edit_question_view(
             "question_id": question_id,
             "question_text": question_text,
             "options": options,
+            "bank_question": bank_question,
         },
     )
 

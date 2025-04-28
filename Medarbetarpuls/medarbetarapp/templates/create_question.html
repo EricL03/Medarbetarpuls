@@ -44,7 +44,7 @@
               alt="{{ question.question_format }} image"
               class="question-icon"
             />
-            <p>{{ question.question }}</p>
+            <p>{{ question.question_title }}</p>
             <a
               href="{% url 'edit_question' survey_temp.id question.question_format question.id%}"
             >
