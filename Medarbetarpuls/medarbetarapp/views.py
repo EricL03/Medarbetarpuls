@@ -2,9 +2,9 @@ import logging
 import platform
 from xmlrpc.client import Boolean
 from . import models
-from django.db.models import Q, Max
+from django.db.models import Q, Max, Count
 from django.utils import timezone
-from django.db.models import Count
+from django.db import transaction
 from django.core.cache import cache
 from datetime import datetime, time
 from django.http import HttpResponse
@@ -19,6 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Case, When, IntegerField, Value
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from .standard_questions import STANDARD_QUESTIONS
 
 
 logger = logging.getLogger(__name__)
@@ -534,6 +535,31 @@ def authentication_org_view(request):
             base_group.managers.add(admin_account)
             base_group.save()
 
+            # Create and add standard questions to the question bank
+            for question_data in STANDARD_QUESTIONS:
+                question_format = question_data[1]
+                options = question_data[2] if len(question_data) > 2 else None  # Check if options are provided
+
+                
+                question: models.Question = models.Question()
+
+                question.question = question_data[0]
+                question.bank_question = org
+                question.question_format = question_format
+                question.question_type = models.QuestionType.BUILTIN
+                question.save()
+                print(f"Created question '{question_data[0]}' with format '{question_format}'")  # Placeholder
+
+                if question_format == models.QuestionFormat.MULTIPLE_CHOICE and options:
+                    for option in options:
+                        # Placeholder:
+                        print(f"Creating option '{option}' for question '{question_data[0]}'")  # Replace with actual logic
+
+                elif question_format == models.QuestionFormat.SLIDER and options:
+                    # Placeholder:
+                    print(f"Slider question '{question_data[0]}' with range: {options}")  # Replace with actual logic
+
+
             return HttpResponse(headers={"HX-Redirect": "/"})
         else:
             logger.error("Wrong authentication code")
@@ -558,6 +584,9 @@ def create_question(request, survey_id: int) -> HttpResponse:
     survey_temp: models.SurveyTemplate = user.survey_templates.filter(
         id=survey_id
     ).first()
+    organization: models.Organization = user.admin
+    organization_questions: models.Question = organization.question_bank.all()
+    print(organization_questions)
     if survey_temp is None:
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
@@ -567,6 +596,7 @@ def create_question(request, survey_id: int) -> HttpResponse:
         "create_question.html",
         {
             "survey_temp": survey_temp,
+            "organization_questions": organization_questions,
             "QuestionFormat": models.QuestionFormat,
         },
     )
@@ -857,6 +887,25 @@ def edit_question_view(
                 )
             else:
                 question = survey_temp.questions.filter(id=question_id).first()
+
+            if question is None:
+                question = user.admin.question_bank.filter(id=question_id).first()
+                
+                current_max = (
+                    models.QuestionOrder.objects.filter(survey_temp=survey_temp)
+                    .aggregate(m=Max("order"))
+                    .get("m")
+                    or 0
+                )
+                # The new questions order is one higher
+                next_order = current_max + 1
+
+                # Use through_defaults to set the right order
+                survey_temp.questions.add(
+                    question, through_defaults={"order": next_order}
+                )
+                # Handle the case where the question does not exist
+                
 
             # Check for valid question format
             if question_format not in [
