@@ -1232,10 +1232,12 @@ def login_view(request):
 def logout_view(request):
     if request.method == "POST":
         if request.headers.get("HX-Request"):
+            print("here")
             logout(request)
             request.session.flush()  # Make sure session is cleared
             response = HttpResponse(status=200) 
             response['HX-Redirect'] = '/'
+            print("also here")
             return response
     return HttpResponse(status=400)
 
