@@ -1431,6 +1431,58 @@ def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse
         request, "templates_and_drafts.html", {"survey_templates": survey_templates}
     )
 
+@csrf_protect
+@login_required
+@allowed_roles('admin')
+def organization_templates(request, search_str: str | None = None) -> HttpResponse:
+
+    organization = request.user.admin
+    survey_templates = organization.survey_template_bank.all()
+    question_templates = organization.question_bank.all()
+
+
+    # # Annotate and filter templates with 0 questions
+    # empty_templates: models.SurveyTemplate = request.user.survey_templates.annotate(
+    #     num_questions=Count("questions")
+    # ).filter(num_questions=0)
+
+    # # Delete them
+    # empty_templates.delete()
+
+    # if search_str is None:
+    #     # Order templates by last time edited
+    #     survey_templates = request.user.survey_templates.all().order_by("-last_edited")
+    # else:
+    #     # Order templates by search bar input relevance
+    #     survey_templates = request.user.survey_templates.annotate(
+    #         relevance=Case(
+    #             When(name__iexact=search_str, then=Value(3)),  # exact match
+    #             When(name__istartswith=search_str, then=Value(2)),  # startswith
+    #             When(name__icontains=search_str, then=Value(1)),  # somewhere inside
+    #             default=Value(0),
+    #             output_field=IntegerField(),
+    #         )
+    #     ).order_by("-relevance", "-last_edited")
+
+    # Post request for when search button is pressed
+    if request.method == "POST":
+        if request.headers.get("HX-Request"):
+            search_str_input: str = request.POST.get("search-bar")
+
+            if search_str_input is None:
+                return HttpResponse(headers={"HX-Redirect": "/organization_templates/"})
+            else:
+                return HttpResponse(
+                    headers={"HX-Redirect": "/organization_templates/" + search_str_input}
+                )
+
+    return render(
+        request, "organization_templates.html", 
+        {
+            "survey_templates": survey_templates,
+            "question_templates" : question_templates,}
+    )
+
 
 @login_required
 def my_surveys_view(request):

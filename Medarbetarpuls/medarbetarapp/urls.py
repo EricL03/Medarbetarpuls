@@ -84,6 +84,14 @@ urlpatterns = [
         views.templates_and_drafts,
         name="templates_and_drafts",
     ),
+    path(
+        "organization_templates/", views.organization_templates, name="organization_templates"
+    ),
+    path(
+        "organization_templates/<str:search_str>/",
+        views.organization_templates,
+        name="organization_templates",
+    ),
     path("settings-admin/", views.settings_admin_view, name="settings_admin"),
     path("settings-name/", views.settings_change_name, name="settings_name"),
     path("settings-pass/", views.settings_change_pass, name="settings_pass"),
