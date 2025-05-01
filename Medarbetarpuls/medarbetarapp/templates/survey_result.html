@@ -82,16 +82,16 @@
 
                   <td>
                     <p x-text="`${index+1}/${answer_count}`"></p>
-                  </td>
-
-                  <td>
-                    <img
+                  </td>                
+                    <!-- Remove because is not really necessary for the result? 
+                     <td>
+                     <img
                       src="{% static 'images/' %}{{ summary.question.question_format }}.png"
                       alt="{{ summary.question.question_format }}"
                       class="question-icon result"
                     />
-                  </td>
-
+                    </td>
+                    -->
                   <td>
                     <button
                       @click="if(index < answer_count - 1) index++"
