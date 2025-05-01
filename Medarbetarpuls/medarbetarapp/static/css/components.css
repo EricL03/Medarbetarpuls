@@ -122,7 +122,8 @@
 }
 
 .add-button-link {
-    margin-top: 10%;
+    padding-top: 5%;
+    padding-bottom: 5%;
     text-decoration: none;
     /* Remove underline */
     display: inline-block;
