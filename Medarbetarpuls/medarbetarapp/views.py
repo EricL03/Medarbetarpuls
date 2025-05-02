@@ -625,7 +625,7 @@ def authentication_org_view(request):
 
 @login_required
 @allowed_roles('surveycreator', 'admin')
-def create_question(request, survey_id: int) -> HttpResponse: 
+def create_question(request, survey_id: int | None = None) -> HttpResponse: 
     """
     Makes it possible to create a question with predefined formats.
     This function is reachable from create_survey.
@@ -742,7 +742,7 @@ def create_org(request) -> HttpResponse:
 @csrf_protect
 @login_required
 @allowed_roles('surveycreator', 'admin')
-def delete_question(request, question_id: int, survey_id: int) -> HttpResponse:
+def delete_question(request, question_id: int, survey_id: int | None = None ) -> HttpResponse:
     """
     Makes it possible to delete a specific question from
     a specific survey.
@@ -754,17 +754,25 @@ def delete_question(request, question_id: int, survey_id: int) -> HttpResponse:
     Returns:
         HttpResponse: Redirects to create_survey or 400
     """
+
+    source = request.GET.get('source')
+    print (f"Source: {source}")
+
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             question: models.Question = get_object_or_404(
                 models.Question, id=question_id
             )
-            print(f"Deleting question: {question.question_title}")
             question.delete()
 
-
-
-            hx_redirect_url = f"/create-survey/{survey_id}?source={request.GET.get('source')}"
+            if survey_id is None:
+                # If no survey_id is given, redirect to create_survey
+                hx_redirect_url = source
+            else:
+                hx_redirect_url = f"/create-survey/{survey_id}"
+                if source:  # Only append source if it's not None or empty
+                    hx_redirect_url += f"?source={source}"
+            
             return HttpResponse(
                 headers={
                     "HX-Redirect": hx_redirect_url
@@ -888,6 +896,11 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
         survey_temp.name = "Survey " + str(survey_id)
         survey_temp.save()
 
+        if source == "organization_templates" and request.user.admin:
+            # If the source is from organization templates, redirect to the create_survey page
+            organization: models.Organization = request.user.admin
+            organization.survey_template_bank.add(survey_temp)
+
         # Redirect to the create_survey view with the new survey_id
         # This will allow the user to edit the survey template immediately
         redirect_url = f"{reverse('create_survey_with_id', args=[survey_temp.id])}"
@@ -926,8 +939,8 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
 @allowed_roles('surveycreator', 'admin')
 def edit_question_view(
     request,
-    survey_id: int,
     question_format: models.QuestionFormat,
+    survey_id: int | None = None,
     question_id: str | None = None,
 ) -> HttpResponse:
     """
@@ -1487,6 +1500,7 @@ def organization_templates(request, search_str: str | None = None) -> HttpRespon
     organization = request.user.admin
     survey_templates = organization.survey_template_bank.all()
     question_templates = organization.question_bank.all()
+    source = "organization_templates"
 
 
     # # Annotate and filter templates with 0 questions
@@ -1528,7 +1542,9 @@ def organization_templates(request, search_str: str | None = None) -> HttpRespon
         request, "organization_templates.html", 
         {
             "survey_templates": survey_templates,
-            "question_templates" : question_templates,}
+            "question_templates" : question_templates,
+            "source": source,
+            }
     )
 
 

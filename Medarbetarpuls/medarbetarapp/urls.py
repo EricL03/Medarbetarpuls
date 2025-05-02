@@ -30,10 +30,20 @@ urlpatterns = [
         views.create_question,
         name="create_question",
     ),
+    path(
+        "create-question/",
+        views.create_question,
+        name="create_question",
+    ),
     path("create_acc/", views.create_acc, name="create_acc"),
     path("create_org/", views.create_org, name="create_org"),
     path(
         "delete_question/<int:question_id>/<int:survey_id>/",
+        views.delete_question,
+        name="delete_question",
+    ),
+    path(
+        "delete_question/<int:question_id>/",
         views.delete_question,
         name="delete_question",
     ),
@@ -60,6 +70,11 @@ urlpatterns = [
     ),
     path(
         "edit-question/<int:survey_id>/<str:question_format>/<int:question_id>/",
+        views.edit_question_view,
+        name="edit_question",
+    ),
+    path(
+        "edit-question/<str:question_format>/<int:question_id>/",
         views.edit_question_view,
         name="edit_question",
     ),
