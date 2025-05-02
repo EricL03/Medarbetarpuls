@@ -784,7 +784,7 @@ def delete_question(request, question_id: int, survey_id: int | None = None ) ->
 
             if survey_id is None:
                 # If no survey_id is given, redirect to create_survey
-                hx_redirect_url = source
+                hx_redirect_url = ''
             else:
                 hx_redirect_url = f"/create-survey/{survey_id}"
                 if source:  # Only append source if it's not None or empty
@@ -1003,7 +1003,7 @@ def edit_question_view(
                 question: models.Question = models.Question()
                 question.save()
 
-                if source == "organization_templates" and request.user.admin:
+                if source == "organization_templates" and request.user.admin and survey_id is None:
                     # If the source is from organization templates, add the question to the survey template
                     organization.question_bank.add(question)
                     # Add the question to the survey template
@@ -1021,13 +1021,13 @@ def edit_question_view(
                     survey_temp.questions.add(
                         question, through_defaults={"order": next_order}
                     )
-            else:
+            elif survey_id is not None:
                 question = survey_temp.questions.filter(id=question_id).first()
 
-            if question is None:
+            if question_id is not None:
                 question = organization.question_bank.filter(id=question_id).first()
 
-                if source != "organization_templates":
+                if source != "organization_templates" or survey_id is not None:
                     current_max = (
                         models.QuestionOrder.objects.filter(survey_temp=survey_temp)
                         .aggregate(m=Max("order"))
@@ -1053,6 +1053,12 @@ def edit_question_view(
             question.question_format = question_format
             question.save()
 
+            question_title = request.POST.get("question_name")
+            
+            if question_title is not None:
+                question.question_title = question_title   
+                question.save()
+
             # Add testcase for multiplechoice questions
             if question_format == models.QuestionFormat.MULTIPLE_CHOICE:
                 options = request.POST.getlist("options")
@@ -1072,7 +1078,7 @@ def edit_question_view(
             question.question = request.POST.get("question")
             question.save()
 
-            if source != "organization_templates":
+            if source != "organization_templates" or survey_id is not None:
                 # Update last edited date of survey
                 survey_temp.last_edited = timezone.now()
                 survey_temp.save()
@@ -1504,6 +1510,9 @@ def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse
         num_questions=Count("questions")
     ).filter(num_questions=0)
 
+    organization = find_organization_by_email(email=request.user.email)
+    organization_survey_templates = organization.survey_template_bank.all()
+
     # Delete them
     empty_templates.delete()
 
@@ -1535,7 +1544,9 @@ def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse
                 )
 
     return render(
-        request, "templates_and_drafts.html", {"survey_templates": survey_templates}
+        request, "templates_and_drafts.html", {
+            "survey_templates": survey_templates,
+            "organization_survey_templates": organization_survey_templates,}
     )
 
 @csrf_protect
@@ -1548,41 +1559,12 @@ def organization_templates(request, search_str: str | None = None) -> HttpRespon
     question_templates = organization.question_bank.all()
     source = "organization_templates"
 
+    empty_templates: models.SurveyTemplate = survey_templates.annotate(
+        num_questions=Count("questions")
+    ).filter(num_questions=0)
 
-    # # Annotate and filter templates with 0 questions
-    # empty_templates: models.SurveyTemplate = request.user.survey_templates.annotate(
-    #     num_questions=Count("questions")
-    # ).filter(num_questions=0)
-
-    # # Delete them
-    # empty_templates.delete()
-
-    # if search_str is None:
-    #     # Order templates by last time edited
-    #     survey_templates = request.user.survey_templates.all().order_by("-last_edited")
-    # else:
-    #     # Order templates by search bar input relevance
-    #     survey_templates = request.user.survey_templates.annotate(
-    #         relevance=Case(
-    #             When(name__iexact=search_str, then=Value(3)),  # exact match
-    #             When(name__istartswith=search_str, then=Value(2)),  # startswith
-    #             When(name__icontains=search_str, then=Value(1)),  # somewhere inside
-    #             default=Value(0),
-    #             output_field=IntegerField(),
-    #         )
-    #     ).order_by("-relevance", "-last_edited")
-
-    # Post request for when search button is pressed
-    if request.method == "POST":
-        if request.headers.get("HX-Request"):
-            search_str_input: str = request.POST.get("search-bar")
-
-            if search_str_input is None:
-                return HttpResponse(headers={"HX-Redirect": "/organization_templates/"})
-            else:
-                return HttpResponse(
-                    headers={"HX-Redirect": "/organization_templates/" + search_str_input}
-                )
+    # Delete them
+    empty_templates.delete()
 
     return render(
         request, "organization_templates.html", 
