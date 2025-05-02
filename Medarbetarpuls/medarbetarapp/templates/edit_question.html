@@ -20,14 +20,22 @@
         {% if question_id is None %} 
         <form
           class="question-form"
-          hx-post="{% url 'edit_question_new' survey_temp.id question_format %}{% if source and source != 'None' %}?source={{ source }}{% endif %}"
+          {% if survey_temp.id %}
+            hx-post="{% url 'edit_question_new' survey_temp.id question_format %}{% if source and source != 'None' %}?source={{ source }}{% endif %}"
+          {% else %}
+            hx-post="{% url 'edit_question_new' question_format %}?source={{ source }}"
+          {% endif %}
           hx-target=".question-form"
           hx-trigger="submit"
         >
         {% else %} 
         <form
           class="question-form"
-          hx-post="{% url 'edit_question' survey_temp.id question_format question_id %}{% if source and source != 'None' %}?source={{ source }}{% endif %}"
+          {% if survey_temp.id %}
+            hx-post="{% url 'edit_question' survey_temp.id question_format question_id %}{% if source and source != 'None' %}?source={{ source }}{% endif %}"
+          {% else %}
+            hx-post="{% url 'edit_question' question_format question_id %}?source={{ source }}"
+          {% endif %}
           hx-target=".question-form"
           hx-trigger="submit"
         >
@@ -121,10 +129,17 @@
           <button type="submit">Spara</button>
         </form>
         {% endif %}
-        <button
-          class="image-button"
-          onclick="window.location.href='{% url 'create_survey_with_id' survey_temp.id %}{% if source and source != 'None' %}?source={{ source }}{% endif %}'"
-        >
+        {% if survey_temp.id %}
+          <button
+            class="image-button"
+            onclick="window.location.href='{% url 'create_survey_with_id' survey_temp.id %}{% if source and source != 'None' %}?source={{ source }}{% endif %}'"
+          >
+        {% else %}
+          <button
+            class="image-button"
+            onclick="window.location.href='{% url 'organization_templates' %}'"
+          >
+        {% endif %}
           <img
             src="{% static 'images/go-back-btn.png' %}"
             alt="Go Back"
