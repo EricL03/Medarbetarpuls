@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="sv">
   <head>
     {% load static %}
@@ -20,8 +20,9 @@
         </button>
         <h2>Skapa enkät</h2>
       </div>
-
+      <button class="button" onclick="openPopup()">Publicera</button>
       <div class="grid-container" id="question-list">
+        
         {% for question in survey_temp.get_ordered_questions %}
         <a
           href="{% url 'edit_question' survey_temp.id question.question_format question.id %}{% if source and source != 'None' %}?source={{ source }}{% endif %}"
@@ -87,9 +88,13 @@
           </div>
         </a>
       </div>
-      <button class="button" onclick="openPopup()">Publicera enkät</button>
     </div>
-    <div id="publish-popup" class="popup-overlay" style="display: none"  data-survey-id="{{ survey_temp.id }}">
+    <div
+      id="publish-popup"
+      class="popup-overlay"
+      style="display: none"
+      data-survey-id="{{ survey_temp.id }}"
+    >
       <div class="popup-content">
         <h2>Publicera enkät</h2>
 
@@ -187,7 +192,7 @@
             <div id="reminder-tags" class="reminder-tags">
               <!-- Tags will dynamically be inserted here -->
             </div>
-          </div>         
+          </div>
 
           <!-- Buttons -->
           <div class="popup-buttons">
@@ -250,7 +255,7 @@
         for (let option of reminderOptions) {
           const tag = document.createElement("div");
           tag.className = "reminder-tag";
-          tag.dataset.days = option.value; // For form submission 
+          tag.dataset.days = option.value; // For form submission
 
           tag.innerHTML = `
             ${option.label}
@@ -272,8 +277,12 @@
       }
 
       // Update reminders whenever date changes
-      document.getElementById("publish-date").addEventListener("change", generateReminderOptions);
-      document.getElementById("end-date").addEventListener("change", generateReminderOptions); 
+      document
+        .getElementById("publish-date")
+        .addEventListener("change", generateReminderOptions);
+      document
+        .getElementById("end-date")
+        .addEventListener("change", generateReminderOptions);
 
       document.addEventListener("DOMContentLoaded", function () {
         // Get today's date
@@ -315,6 +324,25 @@
       }
 
     });
+
+      // Timer that calls logout form after specified time
+      let logoutTimer;
+      function resetTimer() {
+        clearTimeout(logoutTimer);
+        logoutTimer = setTimeout(() => {
+          document.getElementById('logout-form').requestSubmit();
+          }, 10 * 60 * 1000); // 10 minutes
+      }
+  
+      window.onload = resetTimer;
+      document.onmousemove = resetTimer;
+      document.onkeypress = resetTimer;
+      document.onscroll = resetTimer;
+      document.onclick = resetTimer;
+  
     </script>
+    <form id="logout-form" method="post" hx-post="/logout/" hx-target="body" hx-swap="outerHTML" style="display:none;">
+      {% csrf_token %}
+    </form>
   </body>
 </html>

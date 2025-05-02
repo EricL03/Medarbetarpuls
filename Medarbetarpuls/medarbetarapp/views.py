@@ -8,7 +8,7 @@ from xmlrpc.client import Boolean
 from django.core.cache import cache
 from datetime import datetime, time
 from django.http import HttpResponse
-from .models import QuestionType, SurveyUserResult
+from .models import QuestionType, SurveyUserResult, EmployeeGroup
 from django.core.mail import send_mail
 from .tasks import schedule_notification, publish_survey_async
 from django.utils.timezone import make_aware
@@ -103,12 +103,13 @@ def create_acc(request):
         else:
             return render(request, "create_acc.html")
 
+
 @login_required
-@csrf_protect   
-@allowed_roles('admin')
+@csrf_protect
+@allowed_roles("admin")
 def edit_employee_group_view(request):
     if request.method == "POST":
-        if request.headers.get("HX-Request"):  
+        if request.headers.get("HX-Request"):
             email = request.POST.get("add-employee-group-email")
             employee_group = request.POST.get("new_employee_group")
             user = request.user
@@ -129,11 +130,11 @@ def edit_employee_group_view(request):
 
 
 @login_required
-@csrf_protect   
-@allowed_roles('admin')
+@csrf_protect
+@allowed_roles("admin")
 def edit_survey_group_view(request):
     if request.method == "POST":
-        if request.headers.get("HX-Request"):  
+        if request.headers.get("HX-Request"):
             email = request.POST.get("add-survey-group-email")
             survey_group = request.POST.get("new_survey_group")
             user = request.user
@@ -152,9 +153,10 @@ def edit_survey_group_view(request):
 
     return HttpResponse(status=400)
 
+
 @login_required
-@csrf_protect   
-@allowed_roles('admin')
+@csrf_protect
+@allowed_roles("admin")
 def edit_employee_view(request):
     if request.method == "POST":
         if request.headers.get("HX-Request"):
@@ -170,7 +172,7 @@ def edit_employee_view(request):
 
 @login_required
 @csrf_protect
-@allowed_roles('admin')
+@allowed_roles("admin")
 def add_employee_view(request):
     """
     Adds the given email to the organization
@@ -247,10 +249,13 @@ def add_employee_view(request):
         {"pagetitle": f"Lägg till medarbetare i<br>{request.user.admin.name}"},
     )
 
+
 @login_required
 @csrf_protect
-@allowed_roles('surveycreator','surveyresponder')
-def answer_survey_view(request, survey_result_id: int, question_index: int = 0) -> HttpResponse:
+@allowed_roles("surveycreator", "surveyresponder")
+def answer_survey_view(
+    request, survey_result_id: int, question_index: int = 0
+) -> HttpResponse:
     """
     Makes it possible for the user to answer all questions of a survey.
     Page is navigated using its question index which is then used to
@@ -443,8 +448,6 @@ def resend_authentication_code_acc(request):
         )
         return HttpResponse("Sent", status=204)
 
-
-
 @csrf_protect
 def authentication_acc_view(request):
     """
@@ -479,7 +482,9 @@ def authentication_acc_view(request):
                 org = find_organization_by_email(email)
                 if org is None:
                     logger.error("This email is not authorized for registration.")
-                    return HttpResponse("Denna mejladress tillhör ej någon organisation", status=400)
+                    return HttpResponse(
+                        "Denna mejladress tillhör ej någon organisation", status=400
+                    )
                 existing_user.is_active = True
                 existing_user.name = name
                 existing_user.user_role = models.UserRole.SURVEY_RESPONDER
@@ -498,7 +503,9 @@ def authentication_acc_view(request):
                 org = find_organization_by_email(email)
                 if org is None:
                     logger.error("This email is not authorized for registration.")
-                    return HttpResponse("Denna mejladress tillhör ej någon organisation", status=400)
+                    return HttpResponse(
+                        "Denna mejladress tillhör ej någon organisation", status=400
+                    )
                 # Create user
                 new_user = models.CustomUser.objects.create_user(email, name, password)
                 # get the email and get the correct employeegroups
@@ -523,7 +530,7 @@ def authentication_acc_view(request):
         else:
             logger.error("Wrong authentication code")
             return HttpResponse("Felaktig kod", status=400)
-    
+
     return render(request, "authentication_acc.html")
 
 
@@ -583,9 +590,10 @@ def authentication_org_view(request):
             # Create and add standard questions to the question bank
             for question_data in STANDARD_QUESTIONS:
                 question_format = question_data[2]
-                options = question_data[4] if len(question_data) > 4 else None  # Check if options are provided
+                options = (
+                    question_data[4] if len(question_data) > 4 else None
+                )  # Check if options are provided
 
-                
                 question: models.Question = models.Question()
 
                 question.question_title = question_data[0]
@@ -593,21 +601,21 @@ def authentication_org_view(request):
                 question.bank_question = org
                 question.question_format = question_format
                 question.question_type = question_data[3]
-    
+
                 if question_format == models.QuestionFormat.MULTIPLE_CHOICE and options:
                     multiple_choice_question = models.MultipleChoiceQuestion(
                         question_format=question_format,
-                        options = question_data[4],
+                        options=question_data[4],
                     )
                     question.multiple_choice_question = multiple_choice_question
                     question.multiple_choice_question.save()
                     question.save()
-           
+
                 elif question_format == models.QuestionFormat.SLIDER and options:
                     slider_question = models.SliderQuestion(
                         question_format=question_format,
-                        min_interval= 0,
-                        max_interval= 10,
+                        min_interval=0,
+                        max_interval=10,
                         min_text="Test",
                         max_text="Test2",
                     )
@@ -622,6 +630,7 @@ def authentication_org_view(request):
             return HttpResponse("Felaktig kod", status=400)
 
     return render(request, "authentication_org.html")
+
 
 @login_required
 @allowed_roles('surveycreator', 'admin')
@@ -653,6 +662,14 @@ def create_question(request, survey_id: int | None = None) -> HttpResponse:
         # Handle the case where the survey template does not exist
         return HttpResponse("Survey template not found", status=404)
     
+    # The swedish translations
+    QUESTION_LABEL_TRANSLATIONS = {
+    "Slider": "Skala",
+    "Text": "Fritext",
+    "Yes No": "Ja/Nej",
+    "Multiple choice": "Flerval",
+    }
+    
     source = request.GET.get('source')
     print (f"Source: {source}")
 
@@ -664,6 +681,7 @@ def create_question(request, survey_id: int | None = None) -> HttpResponse:
             "source" : source,
             "organization_questions": organization_questions,
             "QuestionFormat": models.QuestionFormat,
+            "question_labels": QUESTION_LABEL_TRANSLATIONS
         },
     )
 
@@ -935,6 +953,7 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
                       "source": source,
                       })
 
+
 @login_required
 @allowed_roles('surveycreator', 'admin')
 def edit_question_view(
@@ -1006,7 +1025,7 @@ def edit_question_view(
 
             if question is None:
                 question = organization.question_bank.filter(id=question_id).first()
-                
+
                 current_max = (
                     models.QuestionOrder.objects.filter(survey_temp=survey_temp)
                     .aggregate(m=Max("order"))
@@ -1021,7 +1040,6 @@ def edit_question_view(
                     question, through_defaults={"order": next_order}
                 )
                 # Handle the case where the question does not exist
-                
 
             # Check for valid question format
             if question_format not in [
@@ -1095,8 +1113,9 @@ def edit_question_view(
         },
     )
 
+
 @login_required
-@allowed_roles('surveycreator')
+@allowed_roles("surveycreator")
 def publish_survey(request, survey_id: int) -> HttpResponse:
     if request.method == "POST":
         if request.headers.get("HX-Request"):
@@ -1134,7 +1153,8 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 return render(
                     request,
                     "partials/error_message.html",
-                    {"message": "Felaktig arbetsgrupp vald"}, status=400
+                    {"message": "Felaktig arbetsgrupp vald"},
+                    status=400,
                 )
 
             # Get the dates
@@ -1198,7 +1218,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
                 creator=user,
                 deadline=deadline,
                 sending_date=sending_date,
-                last_notification=current_time, 
+                last_notification=current_time,
                 is_viewable=is_public,
                 is_anonymous=is_anonymous,
             )
@@ -1230,12 +1250,13 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
 
             return render(
                 request,
-                    "partials/error_message.html",
-                    {"message": "Enkäten har nu publicerats"},
-                    status=200,
+                "partials/error_message.html",
+                {"message": "Enkäten har nu publicerats"},
+                status=200,
             )
 
     return HttpResponse(status=400)
+
 
 @logout_required()
 def login_view(request):
@@ -1287,22 +1308,35 @@ def login_view(request):
 
     return render(request, "login.html")
 
+
 @csrf_protect
 @login_required
-@allowed_roles('admin','surveycreator','surveyresponder')
+@allowed_roles("admin", "surveycreator", "surveyresponder")
 def logout_view(request):
+    """
+    A logout function that logs out the user and clears the session
+
+    Args:
+        request: HTMX post request 
+
+    Returns:
+        HttpResponse: If successful redirect to login page otherwise status 400.
+    """
     if request.method == "POST":
         if request.headers.get("HX-Request"):
+            print("here")
             logout(request)
             request.session.flush()  # Make sure session is cleared
             response = HttpResponse(status=200) 
             response['HX-Redirect'] = '/'
+            print("also here")
             return response
     return HttpResponse(status=400)
 
+
 @csrf_protect
 @login_required
-@allowed_roles('admin')
+@allowed_roles("admin")
 def my_org_view(request):
     """
     Displays the organization's employee list and processes employee removal.
@@ -1377,7 +1411,7 @@ def my_org_view(request):
 
 
 @login_required
-@allowed_roles('surveycreator','surveyresponder')
+@allowed_roles("surveycreator", "surveyresponder")
 def my_results_view(request):
     """
     Displays the logged-in user's survey results.
@@ -1406,13 +1440,13 @@ def my_results_view(request):
             "answered_surveys": answered_surveys,
             "current_time": current_time,
             "pagetitle": "Resultat på besvarade enkäter",
-            "user_role": user.user_role
+            "user_role": user.user_role,
         },
     )
 
 
 @csrf_protect
-@allowed_roles('surveycreator')
+@allowed_roles("surveycreator")
 def delete_survey_template(request, survey_id: int) -> HttpResponse:
     """
     Deletes a survey template via HTMX.
@@ -1438,7 +1472,7 @@ def delete_survey_template(request, survey_id: int) -> HttpResponse:
 
 @csrf_protect
 @login_required
-@allowed_roles('surveycreator')
+@allowed_roles("surveycreator")
 def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse:
     """
     Displays the survey templates and drafts page with all created survey templates.
@@ -1552,6 +1586,7 @@ def organization_templates(request, search_str: str | None = None) -> HttpRespon
 def my_surveys_view(request):
     return render(request, "my_surveys.html")
 
+
 @csrf_protect
 def remove_employee_from_employee_group_view(request):
     if request.method == "POST":
@@ -1563,6 +1598,7 @@ def remove_employee_from_employee_group_view(request):
             user.employee_groups.remove(group_to_remove)
             return HttpResponse(status=200)
     return HttpResponse(status=400)
+
 
 @csrf_protect
 def remove_employee_from_survey_group_view(request):
@@ -1576,7 +1612,8 @@ def remove_employee_from_survey_group_view(request):
             return HttpResponse(status=200)
     return HttpResponse(status=400)
 
-@allowed_roles('admin')
+
+@allowed_roles("admin")
 def settings_admin_view(request):
     """
     Transfers admin rights to a new admin user.
@@ -1598,7 +1635,7 @@ def settings_admin_view(request):
             # get old admin and the organisation
             user = request.user
             org = user.admin
-            if(new_admin_email==user.email):
+            if new_admin_email == user.email:
                 return HttpResponse(
                     "Du kan inte lämna över konto till dig själv", status=400
                 )
@@ -1651,7 +1688,7 @@ def settings_admin_view(request):
 
 @login_required
 @csrf_protect
-@allowed_roles('surveycreator', 'surveyresponder')
+@allowed_roles("surveycreator", "surveyresponder")
 def settings_user_view(request):
     """
     Deletes the user account after password verification.
@@ -1689,14 +1726,15 @@ def settings_user_view(request):
 
 
 @login_required
-@allowed_roles('surveycreator')
+@allowed_roles("surveycreator")
 def start_creator_view(request):
     user = request.user  # Assuming the user is authenticated
     unanswered_count = user.count_unanswered_surveys()
     unanswered_surveys = user.get_unanswered_surveys()
     current_time = timezone.now()
     return render(
-        request, "start_creator.html", 
+        request,
+        "start_creator.html",
         {
             "pagetitle": f"Välkommen<br>{request.user.name}",
             "unanswered_count": unanswered_count,
@@ -1708,7 +1746,7 @@ def start_creator_view(request):
 
 @login_required
 @csrf_protect
-@allowed_roles('admin','surveycreator','surveyresponder')
+@allowed_roles("admin", "surveycreator", "surveyresponder")
 def settings_change_name(request):
     """
     Changes the name of a CustomUser
@@ -1741,7 +1779,8 @@ def settings_change_name(request):
                 "user": request.user,
                 "organization": request.user.admin,
                 "pagetitle": "Inställningar",
-            }, status=200
+            },
+            status=200,
         )
     else:
         return render(
@@ -1751,13 +1790,14 @@ def settings_change_name(request):
                 "user": request.user,
                 "organization": request.user.admin,
                 "pagetitle": "Inställningar",
-            }, status=200
+            },
+            status=200,
         )
 
 
 @login_required
 @csrf_protect
-@allowed_roles('admin','surveycreator','surveyresponder')
+@allowed_roles("admin", "surveycreator", "surveyresponder")
 def settings_change_pass(request):
     """
     Changes the password of a CustomUser
@@ -1809,31 +1849,33 @@ def settings_change_pass(request):
 
 
 @login_required
-@allowed_roles('surveyresponder')
+@allowed_roles("surveyresponder")
 def start_user_view(request):
     user = request.user  # Assuming the user is authenticated
     unanswered_count = user.count_unanswered_surveys()
     unanswered_surveys = user.get_unanswered_surveys()
     current_time = timezone.now()
     return render(
-        request, "start_user.html", 
+        request,
+        "start_user.html",
         {
             "pagetitle": f"Välkommen<br>{request.user.name}",
             "unanswered_count": unanswered_count,
             "unanswered_surveys": unanswered_surveys,
             "current_time": current_time,
-         }
+        },
     )
 
 
 @login_required
-@allowed_roles('admin')
+@allowed_roles("admin")
 def start_admin_view(request):
     return render(
         request, "start_admin.html", {"pagetitle": f"Välkommen<br>{request.user.name}"}
     )
 
-@allowed_roles('surveycreator','surveyresponder')
+
+@allowed_roles("surveycreator", "surveyresponder")
 def survey_result_view(request, survey_id):
     survey = models.Survey.objects.filter(id=survey_id).first()
 
@@ -1844,19 +1886,10 @@ def survey_result_view(request, survey_id):
     # TODO : Ändra så att analysis handler fås från organization
     analysis_handler = AnalysisHandler()
 
-    user = request.user
-
     # Retrievs all survey results of this survey
     survey_results = survey.survey_results.all()
-    # Retrieve the survey result connected to the user
-    survey_result = survey_results.filter(user=user).first()
 
-    if survey_result:  # Lägg till "... and survey_result.is_answered"
-        answers = survey_result.answers.all()
-    else:
-        answers = None
-
-    summary_context = analysis_handler.get_survey_summary(survey.id, answers)
+    summary_context = analysis_handler.get_survey_summary(survey.id)
 
     if survey_results is None:
         # This survey has no answers (should not even be displayed to the user then)
@@ -1871,7 +1904,7 @@ def survey_result_view(request, survey_id):
 
 
 @login_required
-@allowed_roles('surveycreator')
+@allowed_roles("surveycreator")
 def survey_status_view(request):
     user = request.user
     published_count = user.published_surveys.count()
@@ -1891,7 +1924,7 @@ def survey_status_view(request):
 
 
 @login_required
-@allowed_roles('surveycreator','surveyresponder')
+@allowed_roles("surveycreator", "surveyresponder")
 def unanswered_surveys_view(request):
     user = request.user  # Assuming the user is authenticated
     unanswered_count = user.count_unanswered_surveys()
@@ -1940,36 +1973,50 @@ def correct_name(name: str) -> Boolean | str:
         return res
 
 
-
 @login_required
-@allowed_roles('admin','surveycreator')
+@allowed_roles("admin", "surveycreator")
 def analysis_view(request):
     group_id = request.GET.get("group_id")
+    survey_count = request.GET.get("surveys","1")
     analysisHandler = AnalysisHandler()
-    context: dict = {}
 
-    context["time_periods"] = [
-        ("senaste", "sen"),
-        ("1 mån", "1m"),
-        ("3 mån", "3m"),
-        ("6 mån", "6m"),
-        ("1 år", "1y"),
-    ]
+    context = {
+        "survey_ranges": [
+            ("Senaste", "1"),
+            ("Senaste 3", "3"),
+            ("Senaste 5", "5"),
+            ("Alla", "all"),
+        ],
+        "selected_survey_range": survey_count,
+    }
+    
     if not group_id:
         return render(request, "analysis.html", context)
 
-    group = get_object_or_404(models.EmployeeGroup, id=group_id)
-
+    group = get_object_or_404(EmployeeGroup, id=group_id)
     surveys = analysisHandler.get_surveys_for_group(group)
 
     if not surveys.exists():
         context["message"] = "Gruppen har inga enkäter ännu."
         return render(request, "analysis.html", context)
+    
+    if survey_count != "all":
+        try:
+            count = int(survey_count)
+            filtered_surveys = surveys[:count]
+        except ValueError:
+            filtered_surveys = surveys
+    else:
+        filtered_surveys = surveys
 
-    survey = surveys.latest("sending_date")  # behöver fixas
-
+    if not filtered_surveys:
+        context["message"] = "Inga filtrerade enkäter hittades."
+        return render(request, "analysis.html", context)
+    
+    latest_survey = filtered_surveys[0]
+    
     summary = analysisHandler.get_survey_summary(
-        survey_id=survey.id,
+        survey_id=latest_survey.id,
         employee_group=group,
     )
 
@@ -1978,14 +2025,10 @@ def analysis_view(request):
             enps_question = i["question"]
             context.update(i)
             break
-
-    # if not context:
-    #   context["message"] = "Ingen eNPS-fråga i den här enkäten."
-    #  return render(request, "analysis.html", context)
-
-    context["deadline"] = summary["survey"].deadline.strftime(
-        "%Y-%m-%d"
-    )  # maybe move this row to get_survey_summary
+        
+    #if not enps_question:
+     #   context["message"] = "Ingen eNPS-fråga i den här enkäten."
+      #  return render(request, "analysis.html", context)
 
     context["deadline"] = summary["survey"].deadline.strftime("%Y-%m-%d")
     context["amount"] = summary["survey"].collected_answer_count
@@ -1996,17 +2039,12 @@ def analysis_view(request):
         )
     )
 
-    filtered_surveys = analysisHandler.get_filtered_surveys(
-        "2024-10-01", "2026-10-01", group
-    )
+
     trends = analysisHandler.get_question_trend(
         enps_question, list(filtered_surveys), group
     )
-    print(trends)
-    deadlines = [entry["deadline"] for entry in trends]
-    enps_scores = [entry["summary"]["enpsScore"] for entry in trends]
-
-    context["lineLabels"] = deadlines
-    context["lineData"] = enps_scores
-
+    context["lineLabels"] = [entry["sending_date"] for entry in trends]
+    context["lineData"] = [entry["summary"]["enpsScore"] for entry in trends]
+    print(context["lineData"])
+    
     return render(request, "analysis.html", context)
