@@ -1107,11 +1107,11 @@ def edit_question_view(
                 # The new questions order is one higher
                 next_order = current_max + 1
 
-                # Use through_defaults to set the right order
-                survey_temp.questions.add(
-                    question, through_defaults={"order": next_order}
-                )
-                # Handle the case where the question does not exist
+                    # Use through_defaults to set the right order
+                    survey_temp.questions.add(
+                        question, through_defaults={"order": next_order}
+                    )
+                    # Handle the case where the question does not exist
 
             # Check for valid question format
             if question_format not in [
