@@ -1,25 +1,26 @@
 import logging
 import platform
 from . import models
-from django.db.models import Q, Max, Count
 from django.utils import timezone
 from xmlrpc.client import Boolean
 from django.core.cache import cache
 from datetime import datetime, time
 from django.http import HttpResponse
-from .models import QuestionType, SurveyUserResult, EmployeeGroup
 from django.core.mail import send_mail
-from .tasks import schedule_notification, publish_survey_async
+from django.db.models import Q, Max, Count
 from django.utils.timezone import make_aware
 from .analysis_handler import AnalysisHandler
 from django.shortcuts import redirect, render
 from django.shortcuts import get_object_or_404
+from .standard_questions import STANDARD_QUESTIONS
 from django.views.decorators.csrf import csrf_protect
 from .decorators import allowed_roles, logout_required
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, When, IntegerField, Value
+from .tasks import schedule_notification, publish_survey_async
+from .models import QuestionType, SurveyUserResult, EmployeeGroup
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-from .standard_questions import STANDARD_QUESTIONS
+
 
 
 logger = logging.getLogger(__name__)
@@ -107,6 +108,15 @@ def create_acc(request):
 @csrf_protect
 @allowed_roles("admin")
 def edit_employee_group_view(request):
+    """
+    Assign a user to an employee group, creating the group under the admin’s organization if it doesn’t exist.
+
+    Args:
+        request (HttpRequest): HTMX POST request with 'add-employee-group-email' and 'new_employee_group'.
+
+    Returns:
+        HttpResponse: 200 on success, 400 on invalid request.
+    """
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             email = request.POST.get("add-employee-group-email")
@@ -132,6 +142,15 @@ def edit_employee_group_view(request):
 @csrf_protect
 @allowed_roles("admin")
 def edit_survey_group_view(request):
+    """
+    Assign a user to a survey group, creating the group if it doesn’t exist.
+
+    Args:
+        request (HttpRequest): HTMX POST with 'add-survey-group-email' and 'new_survey_group'.
+
+    Returns:
+        HttpResponse: 200 on success, 400 on failure.
+    """
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             email = request.POST.get("add-survey-group-email")
@@ -157,6 +176,15 @@ def edit_survey_group_view(request):
 @csrf_protect
 @allowed_roles("admin")
 def edit_employee_view(request):
+    """
+    Update a user’s role based on email from an HTMX POST request.
+
+    Args:
+        request (HttpRequest): HTMX POST with 'email' and 'edit_user_role'.
+
+    Returns:
+        HttpResponse: 200 on success, 400 on invalid request.
+    """
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             email = request.POST.get("email")
@@ -426,6 +454,16 @@ def answer_survey_view(
 
 @csrf_protect
 def resend_authentication_code_acc(request):
+    """
+    Resend the two-factor authentication code for account or organization flow.
+
+    Args:
+        request (HttpRequest): POST request with 'source' indicating 'from_account' or 'from_org',
+            and session keys 'email_two_factor_code' or 'email_two_factor_code_org'.
+
+    Returns:
+        HttpResponse: 204 if code sent, 404 if no email defined.
+    """
     if request.method == "POST":
         source = request.POST.get("source")
         email = "not_defined"
@@ -861,15 +899,18 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
     """
 
     # Check if survey_id is not given
-    if survey_id is None:
+    if survey_id is None and request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        print("name is ", name)
+        if not name:
+            return HttpResponse("Namn får inte vara tomt", status=400)
+
         # Create a new survey template and assign it to the user
         survey_temp: models.SurveyTemplate = models.SurveyTemplate(
-            creator=request.user, last_edited=timezone.now()
-        )
+            creator=request.user, last_edited=timezone.now(), name = name
+        )# onödigt med namnfältet
         survey_temp.save()
-        # Set a placeholder name for the survey
         survey_id = survey_temp.id
-        survey_temp.name = "Survey " + str(survey_id)
         survey_temp.save()
 
         # Redirect to the create_survey view with the new survey_id
@@ -887,6 +928,7 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
         return HttpResponse("Survey template not found", status=404)
 
     # Redirect to publish survey
+    """ 
     if request.method == "GET":
         if request.headers.get("HX-Request"):
             return HttpResponse(
@@ -896,6 +938,7 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
                     + "?trigger_popup=true"
                 }
             )
+    """
 
     return render(request, "create_survey.html", {"survey_temp": survey_temp})
 
@@ -1047,6 +1090,16 @@ def edit_question_view(
 @login_required
 @allowed_roles("surveycreator")
 def publish_survey(request, survey_id: int) -> HttpResponse:
+    """
+    Publish a survey template as an active survey with scheduling, reminders, and privacy settings.
+
+    Args:
+        request (HttpRequest): HTMX POST containing survey details (name, dates, privacy, group, reminders).
+        survey_id (int): ID of the SurveyTemplate to publish.
+
+    Returns:
+        HttpResponse: Renders success or error partial with appropriate status code.
+    """
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             # Fetch the corresponding survey template by survey id
@@ -1422,6 +1475,8 @@ def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse
         num_questions=Count("questions")
     ).filter(num_questions=0)
 
+    search_term = request.POST.get('search-bar', '').strip()
+
     # Delete them
     empty_templates.delete()
 
@@ -1452,9 +1507,10 @@ def templates_and_drafts(request, search_str: str | None = None) -> HttpResponse
                     headers={"HX-Redirect": "/templates_and_drafts/" + search_str_input}
                 )
 
-    return render(
-        request, "templates_and_drafts.html", {"survey_templates": survey_templates}
-    )
+    return render(request, 'templates_and_drafts.html', {
+        'survey_templates': survey_templates,
+        'search_term': search_term,
+    })
 
 
 @login_required
@@ -1464,6 +1520,15 @@ def my_surveys_view(request):
 
 @csrf_protect
 def remove_employee_from_employee_group_view(request):
+    """
+    Remove a user from an employee group based on email and group name.
+
+    Args:
+        request (HttpRequest): HTMX POST containing 'email' and 'group' in POST data.
+
+    Returns:
+        HttpResponse: 200 if removal succeeds, 400 for invalid request.
+    """
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             email = request.POST.get("email")
@@ -1477,6 +1542,15 @@ def remove_employee_from_employee_group_view(request):
 
 @csrf_protect
 def remove_employee_from_survey_group_view(request):
+    """
+    Remove a user from a survey group based on their email and group name.
+
+    Args:
+        request (HttpRequest): HTMX POST containing 'email' and 'group' keys.
+
+    Returns:
+        HttpResponse: 200 on successful removal, 400 on invalid request.
+    """
     if request.method == "POST":
         if request.headers.get("HX-Request"):
             email = request.POST.get("email")
@@ -1603,6 +1677,19 @@ def settings_user_view(request):
 @login_required
 @allowed_roles("surveycreator")
 def start_creator_view(request):
+    """
+    Render the survey creator dashboard with the user’s pending surveys.
+
+    Args:
+        request (HttpRequest): The incoming request from an authenticated survey creator.
+
+    Returns:
+        HttpResponse: The rendered 'start_creator.html' template with context:
+            pagetitle (str): Greeting with the user's name.
+            unanswered_count (int): Number of surveys the user hasn’t completed.
+            unanswered_surveys (QuerySet[Survey]): The list of those surveys.
+            current_time (datetime): The current timestamp.
+    """
     user = request.user  # Assuming the user is authenticated
     unanswered_count = user.count_unanswered_surveys()
     unanswered_surveys = user.get_unanswered_surveys()
@@ -1616,7 +1703,7 @@ def start_creator_view(request):
             "unanswered_surveys": unanswered_surveys,
             "current_time": current_time,
         },
-    )  # Fix so only works if the user is actually an admin
+    ) 
 
 
 @login_required
@@ -1726,7 +1813,17 @@ def settings_change_pass(request):
 @login_required
 @allowed_roles("surveyresponder")
 def start_user_view(request):
-    user = request.user  # Assuming the user is authenticated
+    """
+    Render the responder dashboard showing pending surveys and the current time.
+
+    Args:
+        request (HttpRequest): The incoming request from an authenticated survey responder.
+
+    Returns:
+        HttpResponse: The rendered 'start_user.html' template with context:
+            pagetitle (str), unanswered_count (int), unanswered_surveys (QuerySet[Survey]), current_time (datetime).
+    """
+    user = request.user 
     unanswered_count = user.count_unanswered_surveys()
     unanswered_surveys = user.get_unanswered_surveys()
     current_time = timezone.now()
@@ -1752,6 +1849,16 @@ def start_admin_view(request):
 
 @allowed_roles("surveycreator", "surveyresponder")
 def survey_result_view(request, survey_id):
+    """
+    Display aggregated results for a given survey.
+
+    Args:
+        request (HttpRequest): Incoming request from an authorized user.
+        survey_id (int): ID of the survey to view results for.
+
+    Returns:
+        HttpResponse: Renders 'survey_result.html' with analysis context, or 400 if survey not found or has no answers.
+    """
     survey = models.Survey.objects.filter(id=survey_id).first()
 
     if survey is None:
@@ -1781,6 +1888,18 @@ def survey_result_view(request, survey_id):
 @login_required
 @allowed_roles("surveycreator")
 def survey_status_view(request):
+    """
+    Render the survey status page showing all published surveys and their deadlines.
+
+    Args:
+        request (HttpRequest): The incoming request from an authenticated survey creator.
+
+    Returns:
+        HttpResponse: Renders 'survey_status.html' with:
+            published_surveys (QuerySet[Survey]): Surveys ordered by descending deadline.
+            published_count (int): Total number of published surveys.
+            current_time (datetime): Timestamp of the view render.
+    """
     user = request.user
     published_count = user.published_surveys.count()
 
@@ -1801,6 +1920,20 @@ def survey_status_view(request):
 @login_required
 @allowed_roles("surveycreator", "surveyresponder")
 def unanswered_surveys_view(request):
+    """
+    Render the list of surveys the user has not yet answered.
+
+    Args:
+        request (HttpRequest): Request from an authenticated user.
+
+    Returns:
+        HttpResponse: Renders 'unanswered_surveys.html' with context:
+            unanswered_count (int): Number of pending surveys.
+            unanswered_surveys (QuerySet[Survey]): Surveys awaiting response.
+            pagetitle (str): Page title.
+            current_time (datetime): Timestamp of render.
+            user_role (str): Role of the current user.
+    """
     user = request.user  # Assuming the user is authenticated
     unanswered_count = user.count_unanswered_surveys()
     unanswered_surveys = user.get_unanswered_surveys()
@@ -1819,9 +1952,18 @@ def unanswered_surveys_view(request):
 
 
 def find_organization_by_email(email: str) -> models.Organization | None:
+    """
+    Retrieve the organization linked to a given email address. (helper function)
+
+    Args:
+        email (str): The email address to look up in the EmailList.
+
+    Returns:
+        models.Organization | None: The associated Organization if found; otherwise, None.
+    """
     org = models.EmailList.objects.filter(email=email).exists()
     if not org:
-        # No organization found
+        logger.error("No organization found")
         return None
     email_entry = get_object_or_404(models.EmailList, email=email)
     return email_entry.org  # Follow the ForeignKey to Organization
@@ -1851,6 +1993,16 @@ def correct_name(name: str) -> Boolean | str:
 @login_required
 @allowed_roles("admin", "surveycreator")
 def analysis_view(request):
+    """
+    Render analysis page for a selected employee group and survey range.
+
+    Args:
+        request (HttpRequest): GET may include 'group_id' and 'surveys' range.
+
+    Returns:
+        HttpResponse: Renders 'analysis.html' with survey options, metrics, and trend data,
+            or shows messages if no group, no surveys, or no filtered results.
+    """
     group_id = request.GET.get("group_id")
     survey_count = request.GET.get("surveys","1")
     analysisHandler = AnalysisHandler()
