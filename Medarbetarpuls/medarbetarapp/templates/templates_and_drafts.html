@@ -21,7 +21,7 @@
 
       {% include "topbar.html" with pagetitle="Mallar & utkast" %}
       <div class="title-background">
-        <h2>Dina mallar</h2>
+        <h2>Dina utkast</h2>
       </div>
       <div class="search-container">
         <form hx-post="{% url 'templates_and_drafts' %}" hx-trigger="submit">
@@ -30,11 +30,10 @@
             type="text"
             id="search-bar"
             name="search-bar"
-            class="search-bar"
             placeholder="Sök bland enkätmallar..."
             value="{{ search_term|default:'' }}"
           />
-          <button type="submit" class="search-button">Sök</button>
+          <button type="submit" >Sök</button>
         </form>
       </div>
       <!-- Change name to variable -->
@@ -83,6 +82,33 @@
           </div>
         </button>
       </div>
+      
+      {% if organization_survey_templates is not None %}
+      <div class="title-background">
+        <h2>Organisationens standardformulär</h2>
+      </div>
+      <div class="grid-container">
+        {% for survey in organization_survey_templates %}
+        <a
+          href="{% url 'create_survey_with_id' survey.id%}?source=readonly"
+          class="grid-item blue"
+        >
+          <div class="question-title">
+            <h1>{{ survey.name }}</h1>
+          </div>
+
+          <div class="question-background">
+            <p>{{ survey.last_edited }}</p>
+          </div>
+          <div class="question-result">
+            
+          </div>
+        </a>
+        {% endfor %}
+
+      {%endif %}
+
+
     </div>
     <!-- Namnge-ny-mall–popup -->
     <div id="name-popup" class="popup-overlay" style="display: none">
