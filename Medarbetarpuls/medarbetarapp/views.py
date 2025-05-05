@@ -928,7 +928,8 @@ def create_survey_view(request, survey_id: int | None = None) -> HttpResponse:
         return HttpResponse("Survey template not found", status=404)
 
     # Redirect to publish survey
-    """ 
+
+    """
     if request.method == "GET":
         if request.headers.get("HX-Request"):
             return HttpResponse(
