@@ -1,6 +1,7 @@
 import logging
 import platform
 from . import models
+from django.conf import settings
 from django.utils import timezone
 from django.urls import reverse
 from xmlrpc.client import Boolean
@@ -19,9 +20,8 @@ from .decorators import allowed_roles, logout_required
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, When, IntegerField, Value
 from .tasks import schedule_notification, publish_survey_async
-from .models import QuestionType, SurveyUserResult, EmployeeGroup
+from .models import QuestionType, SurveyUserResult, EmployeeGroup, QuestionFormat
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
-
 
 
 logger = logging.getLogger(__name__)
@@ -712,6 +712,7 @@ def create_question(request, survey_id: int | None = None) -> HttpResponse:
     }
 
     source = request.GET.get("source")
+    print(f"Source: {source}")
 
     return render(
         request,
@@ -816,6 +817,7 @@ def delete_question(
     """
 
     source = request.GET.get("source")
+    print(f"Source: {source}")
 
     if request.method == "POST":
         if request.headers.get("HX-Request"):
@@ -1031,7 +1033,9 @@ def edit_question_view(
     """
     user: models.CustomUser = request.user
     options = None  # Use later to show options
+
     source = request.GET.get("source")
+    print(f"SOURCE: {source}")
 
     # SurveyCreator needs a help-function to access organization
     if user.admin is None:
@@ -1360,7 +1364,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
 
             # Only tries scheduling if we are on linux system!
             os_type = platform.system()
-
+            
             if os_type == "Linux":
                 publish_survey_async.apply_async(
                     args=[survey.id], eta=survey.sending_date
@@ -2181,6 +2185,9 @@ def analysis_view(request):
     """
     group_id = request.GET.get("group_id")
     survey_count = request.GET.get("surveys", "1")
+    user_id = request.GET.get("user_id")
+    question_id = request.GET.get("question_id")
+
     analysisHandler = AnalysisHandler()
 
     context = {
@@ -2191,6 +2198,8 @@ def analysis_view(request):
             ("Alla", "all"),
         ],
         "selected_survey_range": survey_count,
+        "selected_user_id": user_id,
+        "selected_question_id": question_id,
     }
 
     if not group_id:
@@ -2203,6 +2212,8 @@ def analysis_view(request):
         context["message"] = "Gruppen har inga enkäter ännu."
         return render(request, "analysis.html", context)
 
+    
+    surveys = surveys.order_by("-sending_date")
     if survey_count != "all":
         try:
             count = int(survey_count)
@@ -2215,38 +2226,69 @@ def analysis_view(request):
     if not filtered_surveys:
         context["message"] = "Inga filtrerade enkäter hittades."
         return render(request, "analysis.html", context)
-
     latest_survey = filtered_surveys[0]
-
-    summary = analysisHandler.get_survey_summary(
-        survey_id=latest_survey.id,
-        employee_group=group,
-    )
-
-    for i in summary["summaries"]:
-        if i["question"].question_type == QuestionType.ENPS:
-            enps_question = i["question"]
-            context.update(i)
-            break
-
-    # if not enps_question:
-    #   context["message"] = "Ingen eNPS-fråga i den här enkäten."
-    #  return render(request, "analysis.html", context)
-
-    context["deadline"] = summary["survey"].deadline.strftime("%Y-%m-%d")
-    context["amount"] = summary["survey"].collected_answer_count
-
-    context.update(
-        analysisHandler.get_participation_metrics(
-            summary["survey"], summary["employee_group"]
+    respondents_dict = analysisHandler.get_respondents(latest_survey, group)
+    context["respondents"] = respondents_dict
+ 
+    participation_metrics = analysisHandler.get_participation_metrics(
+            list(filtered_surveys), group
         )
-    )
+    print(participation_metrics)
+    context["answerFrequencyData"] = [entry["answer_pct"] for entry in participation_metrics]
+    context["answer_pct"] = context["answerFrequencyData"][0]
+    context["answerFrequencyLabels"] = [str(entry["survey"].sending_date) for entry in participation_metrics]
 
-    trends = analysisHandler.get_question_trend(
-        enps_question, list(filtered_surveys), group
-    )
-    context["lineLabels"] = [entry["sending_date"] for entry in trends]
-    context["lineData"] = [entry["summary"]["enpsScore"] for entry in trends]
-    print(context["lineData"])
+    survey_answer_dist = analysisHandler.get_survey_answer_distribution(latest_survey, user=respondents_dict.get(user_id) if user_id else None, employee_group=group)
+    context["answerDistributionLabels"] = [entry["question"].question for entry in survey_answer_dist]
+    context["answerDistributionData"] = [entry["answered_count"] for entry in survey_answer_dist]
+    
+    selected_question_format = None
+    if question_id:
+        selected_question = get_object_or_404(models.Question, id=question_id)
+        context["selected_question_text"] = selected_question.question
+
+        if selected_question.question_type == QuestionType.ENPS:
+            selected_question_format = QuestionType.ENPS
+        else:
+            selected_question_format = selected_question.question_format
+
+        # Trenddata för alla format
+        trend_data = analysisHandler.get_question_trend(
+            selected_question,
+            list(filtered_surveys),
+            group,
+            respondents_dict.get(user_id) if user_id else None,
+        )
+
+        if trend_data:
+            last_summary = trend_data[-1]["summary"]
+
+            context["slider_mean"] = last_summary.get("mean", 0)
+            context["slider_std"] = last_summary.get("standard_deviation", 0)
+            context["slider_cv"] = last_summary.get("variation_coefficient", 0)
+            context["slider_median"] = last_summary.get("median", 0)  # om tillgänglig
+
+            context["slider_values"] = last_summary.get("labels", [str(i) for i in range(11)])
+            context["sliderDistribution"] = last_summary.get("distribution", [0]*11)
+            context["sliderTrendData"] = [entry["summary"].get("mean", 0) for entry in trend_data]
+            context["sliderTrendLabels"] = [entry["sending_date"] for entry in trend_data]
+        
+            context["enpsScore"] = last_summary.get("enpsScore")
+            context["enpsPieLabels"] = last_summary.get("enpsPieLabels")
+            context["enpsPieData"] = last_summary.get("enpsPieData")
+            context["enpsDistribution"] = last_summary.get("enpsDistribution") 
+            
+            context["multipleChoiceLabels"] = last_summary.get("answer_options") 
+            context["multipleChoiceData"] =last_summary.get("distribution") 
+            
+            context["yesNoLabels"] = last_summary.get("answer_options") 
+            context["yesNoData"] =last_summary.get("distribution") 
+            
+
+
+    context["selected_question_format"] = selected_question_format
+    context["bank_questions"] = analysisHandler.get_bank_questions()
+    context["QuestionFormat"] = QuestionFormat
+    context["QuestionType"] = QuestionType
 
     return render(request, "analysis.html", context)
