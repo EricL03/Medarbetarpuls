@@ -41,7 +41,7 @@
         {% for survey_temp in survey_templates %}
         <a
           href="{% url 'create_survey_with_id' survey_temp.id %}"
-          class="grid-item blue"
+          class="grid-item"
         >
           <div class="question-title">
             <h1>{{ survey_temp.name }}</h1>
@@ -67,7 +67,7 @@
                 src="{% static 'images/share-icon.png' %}"
                 class="icon-img"
                 onclick="event.stopPropagation(); event.preventDefault();"
-                hx-get="{% url 'create_survey_with_id' survey_temp.id %}"
+                hx-get="{% url 'create_survey_with_id' survey_temp.id %}?trigger_popup=true"
                 hx-target="body"
                 hx-swap="outerHTML"
               />
@@ -91,7 +91,7 @@
         {% for survey in organization_survey_templates %}
         <a
           href="{% url 'create_survey_with_id' survey.id%}?source=readonly"
-          class="grid-item blue"
+          class="grid-item"
         >
           <div class="question-title">
             <h1>{{ survey.name }}</h1>
