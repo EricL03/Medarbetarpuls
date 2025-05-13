@@ -71,9 +71,11 @@
           <!-- Question number and title -->
           <div class="question-title result">
             <!-- Button for toggle between personal answer and result -->
+             <!-- Must override the width for this specific case -->
             <button class="default-button"
               @click="toggle_answer(STATES.PERSONAL_ANSWER)"
-              x-text="show_state === STATES.PERSONAL_ANSWER ? 'Frågan' : 'Svar'"
+              x-text="show_state === STATES.PERSONAL_ANSWER ? 'Resultat' : 'Ditt svar'"
+              style="width: 35%;"
             ></button>
 
             <h1>Fråga {{ forloop.counter }}</h1>
