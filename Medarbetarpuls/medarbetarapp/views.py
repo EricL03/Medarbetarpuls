@@ -1219,7 +1219,7 @@ def publish_survey(request, survey_id: int) -> HttpResponse:
             ).exists()
 
             if survey_temp:
-                    survey_temp = user.survey_templates.filter(id=survey_id).first()
+                survey_temp = user.survey_templates.filter(id=survey_id).first()
             else:
                 organization: models.Organization = find_organization_by_email(
                     email=user.email
