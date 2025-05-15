@@ -25,7 +25,7 @@ source venv/bin/activate
 deactivate
 ```
 
-### **Warning: From here on the virtual environment needs to be activated!**
+#### **Warning: From here on the virtual environment needs to be activated!**
 
 If the virtual environment is deactivate or the terminal is restarted the
 venv needs to be activated again!
@@ -46,7 +46,7 @@ django-admin --version
 ```
 Here a version of Django should be printed in the terminal!
 
-### Running the Development Server
+### Running the server
 
 1. **Change directory to Django-project one:** 
 ```sh
@@ -68,7 +68,7 @@ sudo systemctl start redis
 sudo systemctl enable redis
 ```
 
-### **Warning: Redis should be configured with a separate systemd profile for security reasons**
+#### **Warning: Redis should be configured with a separate systemd profile for security reasons**
 
 4. **Start the Django and Redis servers:**
 ```sh
