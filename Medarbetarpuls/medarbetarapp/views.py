@@ -2022,11 +2022,9 @@ def survey_result_view(request, survey_id):
     user = request.user
 
     # Check if user has answered this survey
-    has_result: bool = False
-    for result in survey_results:
-        if result.user == user:
-            has_result = True
+    has_result: bool = survey_results.filter(user=user, is_answered=True).exists()
 
+    # Check if user is the creator
     is_creator: bool = survey.creator == user
 
     summary_context = analysis_handler.get_survey_summary(survey.id)
